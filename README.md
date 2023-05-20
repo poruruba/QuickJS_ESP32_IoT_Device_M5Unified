@@ -55,3 +55,9 @@ https://qiita.com/poruruba
   - Blocklyにおいて、Javascript出力でpressになっていたのを修正
 - 2022-5-1
   - Audioのdispose方法を修正
+
+## QuickJS_ESP32_IoT_Deviceからの移行時の注意事項
+以下の点で異なります。
+- SDを使う前に、sd.begin(ssPin)を呼び出す必要があります。
+- Inputのボタンの割り当て(BUTTON_X)が異なります。
+- Imuの関数名が変更となっています。
