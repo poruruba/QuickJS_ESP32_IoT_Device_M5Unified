@@ -3,7 +3,6 @@
 
 #ifdef _RTC_ENABLE_
 
-#include <WiFi.h>
 #include "module_type.h"
 #include "quickjs.h"
 
