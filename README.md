@@ -55,6 +55,8 @@ https://qiita.com/poruruba
   - Blocklyにおいて、Javascript出力でpressになっていたのを修正
 - 2022-5-1
   - Audioのdispose方法を修正
+- 2023-6-16
+  - SPIFFSのFile.path()となるべきところをFile.name()としていたところを修正
 
 ## QuickJS_ESP32_IoT_Deviceからの移行時の注意事項
 以下の点で異なります。
