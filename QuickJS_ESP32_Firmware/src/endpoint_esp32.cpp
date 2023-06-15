@@ -164,7 +164,7 @@ long endp_code_list(JsonObject request, JsonObject response, int magic)
   File file = dir.openNextFile();
   int i = 0;
   while(file){
-    const char *fname = file.name();
+    const char *fname = file.path();
     if( strncmp(fname, MODULE_DIR, strlen(MODULE_DIR)) == 0 ){
       arry[i++] = (char*)&fname[strlen(MODULE_DIR)];
     }
