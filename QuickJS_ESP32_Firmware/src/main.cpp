@@ -266,7 +266,7 @@ static long get_all_modules_size(void)
     return -1;
   File file = dir.openNextFile();
   while(file){
-    const char *fname = file.name();
+    const char *fname = file.path();
     if( strncmp(fname, MODULE_DIR, strlen(MODULE_DIR)) == 0 )
       sum += file.size();
     file.close();
@@ -299,7 +299,7 @@ static long load_all_modules(void)
   File file = dir.openNextFile();
   char module_name[32];
   while(file){
-    const char *fname = file.name();
+    const char *fname = file.path();
     if( strncmp(fname, MODULE_DIR, strlen(MODULE_DIR)) == 0 &&
         strlen(&fname[strlen(MODULE_DIR)]) <= sizeof(module_name) - 1)
     {
