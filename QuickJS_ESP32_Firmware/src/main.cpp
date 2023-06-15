@@ -268,7 +268,7 @@ static long get_all_modules_size(void)
   while(file){
     const char *fname = file.path();
     if( strncmp(fname, MODULE_DIR, strlen(MODULE_DIR)) == 0 )
-      sum += file.size();
+      sum += file.size() + 1;
     file.close();
     file = dir.openNextFile();
   }
