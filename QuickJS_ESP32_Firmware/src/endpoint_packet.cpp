@@ -42,7 +42,7 @@ void packet_appendEntry(EndpointEntry *tables, int num_of_entry)
     endpoint_list[tables[i].name] = &tables[i];
 }
 
-long packet_execute(const char *endpoint, JsonObject params, JsonObject responseResult)
+long packet_execute(const char *endpoint, JsonObject& params, JsonObject& responseResult)
 {
   std::unordered_map<std::string, EndpointEntry*>::iterator itr = endpoint_list.find(endpoint);
   if( itr != endpoint_list.end() ){
@@ -103,7 +103,8 @@ long packet_initialize(void)
     responseResult["status"] = "OK";
     responseResult["endpoint"] = (char*)endpoint;
     bool sem = xSemaphoreTake(binSem, portMAX_DELAY);
-    long ret = packet_execute(endpoint, jsonObj["params"], responseResult);
+    JsonObject params = jsonObj["params"];
+    long ret = packet_execute(endpoint, params, responseResult);
     if( sem )
       xSemaphoreGive(binSem);
     if( ret != 0 ){

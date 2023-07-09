@@ -6,7 +6,7 @@
 #include "endpoint_types.h"
 #include "endpoint_rtc.h"
 
-long endp_rtc_setTime(JsonObject request, JsonObject response, int magic)
+long endp_rtc_setTime(JsonObject& request, JsonObject& response, int magic)
 {
   uint32_t hours = request["Hours"];
   uint32_t minutes = request["Minutes"];
@@ -21,7 +21,7 @@ long endp_rtc_setTime(JsonObject request, JsonObject response, int magic)
   return 0;
 }
 
-long endp_rtc_setDate(JsonObject request, JsonObject response, int magic)
+long endp_rtc_setDate(JsonObject& request, JsonObject& response, int magic)
 {
   uint32_t year = request["Year"];
   uint32_t month = request["Month"];
@@ -38,7 +38,7 @@ long endp_rtc_setDate(JsonObject request, JsonObject response, int magic)
   return 0;
 }
 
-long endp_rtc_getTime(JsonObject request, JsonObject response, int magic)
+long endp_rtc_getTime(JsonObject& request, JsonObject& response, int magic)
 {
   m5::rtc_time_t def;
   M5.Rtc.getTime(&def);
@@ -50,7 +50,7 @@ long endp_rtc_getTime(JsonObject request, JsonObject response, int magic)
   return 0;
 }
 
-long endp_rtc_getDate(JsonObject request, JsonObject response, int magic)
+long endp_rtc_getDate(JsonObject& request, JsonObject& response, int magic)
 {
   m5::rtc_date_t def;
   M5.Rtc.getDate(&def);

@@ -4,7 +4,7 @@
 #include "endpoint_types.h"
 #include "endpoint_ledc.h"
 
-long endp_ledc_setup(JsonObject request, JsonObject response, int magic)
+long endp_ledc_setup(JsonObject& request, JsonObject& response, int magic)
 {
   uint8_t channel = request["channel"];
   float freq = request["freq"];
@@ -16,7 +16,7 @@ long endp_ledc_setup(JsonObject request, JsonObject response, int magic)
   return 0;
 }
 
-long endp_ledc_attachPin(JsonObject request, JsonObject response, int magic)
+long endp_ledc_attachPin(JsonObject& request, JsonObject& response, int magic)
 {
   uint8_t pin = request["pin"];
   uint8_t channel = request["channel"];
@@ -26,7 +26,7 @@ long endp_ledc_attachPin(JsonObject request, JsonObject response, int magic)
   return 0;
 }
 
-long endp_ledc_detachPin(JsonObject request, JsonObject response, int magic)
+long endp_ledc_detachPin(JsonObject& request, JsonObject& response, int magic)
 {
   uint8_t pin = request["pin"];
 
@@ -35,7 +35,7 @@ long endp_ledc_detachPin(JsonObject request, JsonObject response, int magic)
   return 0;
 }
 
-long endp_ledc_write(JsonObject request, JsonObject response, int magic)
+long endp_ledc_write(JsonObject& request, JsonObject& response, int magic)
 {
   uint8_t channel = request["channel"];
   uint32_t duty = request["duty"];
@@ -45,7 +45,7 @@ long endp_ledc_write(JsonObject request, JsonObject response, int magic)
   return 0;
 }
 
-long endp_ledc_writeTone(JsonObject request, JsonObject response, int magic)
+long endp_ledc_writeTone(JsonObject& request, JsonObject& response, int magic)
 {
   uint8_t channel = request["channel"];
   float freq = request["freq"];
@@ -56,7 +56,7 @@ long endp_ledc_writeTone(JsonObject request, JsonObject response, int magic)
   return 0;
 }
 
-long endp_ledc_writeNote(JsonObject request, JsonObject response, int magic)
+long endp_ledc_writeNote(JsonObject& request, JsonObject& response, int magic)
 {
   uint8_t channel = request["channel"];
   uint8_t note = request["note"];
@@ -68,7 +68,7 @@ long endp_ledc_writeNote(JsonObject request, JsonObject response, int magic)
   return 0;
 }
 
-long endp_ledc_read(JsonObject request, JsonObject response, int magic)
+long endp_ledc_read(JsonObject& request, JsonObject& response, int magic)
 {
   uint8_t channel = request["channel"];
 
@@ -78,7 +78,7 @@ long endp_ledc_read(JsonObject request, JsonObject response, int magic)
   return 0;
 }
 
-long endp_ledc_readFreq(JsonObject request, JsonObject response, int magic)
+long endp_ledc_readFreq(JsonObject& request, JsonObject& response, int magic)
 {
   uint8_t channel = request["channel"];
 

@@ -3,7 +3,7 @@
 #include "endpoint_types.h"
 #include "endpoint_gpio.h"
 
-long endp_gpio_pinMode(JsonObject request, JsonObject response, int magic)
+long endp_gpio_pinMode(JsonObject& request, JsonObject& response, int magic)
 {
   uint8_t pin = request["pin"];
   uint8_t mode = request["mode"];
@@ -13,7 +13,7 @@ long endp_gpio_pinMode(JsonObject request, JsonObject response, int magic)
   return 0;
 }
 
-long endp_gpio_analogRead(JsonObject request, JsonObject response, int magic)
+long endp_gpio_analogRead(JsonObject& request, JsonObject& response, int magic)
 {
   uint8_t pin = request["pin"];
 
@@ -24,7 +24,7 @@ long endp_gpio_analogRead(JsonObject request, JsonObject response, int magic)
   return 0;
 }
 
-long endp_gpio_digitalRead(JsonObject request, JsonObject response, int magic)
+long endp_gpio_digitalRead(JsonObject& request, JsonObject& response, int magic)
 {
   uint8_t pin = request["pin"];
 
@@ -35,7 +35,7 @@ long endp_gpio_digitalRead(JsonObject request, JsonObject response, int magic)
   return 0;
 }
 
-long endp_gpio_digitalWrite(JsonObject request, JsonObject response, int magic)
+long endp_gpio_digitalWrite(JsonObject& request, JsonObject& response, int magic)
 {
   uint8_t pin = request["pin"];
   uint8_t value = request["value"];

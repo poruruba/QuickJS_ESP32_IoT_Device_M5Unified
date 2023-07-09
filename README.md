@@ -43,6 +43,8 @@ https://qiita.com/poruruba
   - M5StampC3を追加
 - 2023-5-20
   - LovyanGFXからM5Unitiedに変更
+- 2023-7-9
+  - JsonObjectを参照渡しに変更
   
 ## 誤記訂正
 - 2022-03-31

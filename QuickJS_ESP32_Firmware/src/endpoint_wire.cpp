@@ -4,7 +4,7 @@
 #include "endpoint_types.h"
 #include "endpoint_wire.h"
 
-long endp_wire_begin(JsonObject request, JsonObject response, int magic)
+long endp_wire_begin(JsonObject& request, JsonObject& response, int magic)
 {
   TwoWire *wire;
   if (magic == 0)
@@ -25,7 +25,7 @@ long endp_wire_begin(JsonObject request, JsonObject response, int magic)
   return 0;
 }
 
-long endp_wire_requestFrom(JsonObject request, JsonObject response, int magic)
+long endp_wire_requestFrom(JsonObject& request, JsonObject& response, int magic)
 {
   TwoWire *wire;
   if (magic == 0)
@@ -45,7 +45,7 @@ long endp_wire_requestFrom(JsonObject request, JsonObject response, int magic)
   return 0;
 }
 
-long endp_wire_beginTransmission(JsonObject request, JsonObject response, int magic)
+long endp_wire_beginTransmission(JsonObject& request, JsonObject& response, int magic)
 {
   TwoWire *wire;
   if (magic == 0)
@@ -62,7 +62,7 @@ long endp_wire_beginTransmission(JsonObject request, JsonObject response, int ma
   return 0;
 }
 
-long endp_wire_endTransmission(JsonObject request, JsonObject response, int magic)
+long endp_wire_endTransmission(JsonObject& request, JsonObject& response, int magic)
 {
   TwoWire *wire;
   if (magic == 0)
@@ -80,7 +80,7 @@ long endp_wire_endTransmission(JsonObject request, JsonObject response, int magi
   return 0;
 }
 
-long endp_wire_write(JsonObject request, JsonObject response, int magic)
+long endp_wire_write(JsonObject& request, JsonObject& response, int magic)
 {
   TwoWire *wire;
   if (magic == 0)
@@ -109,7 +109,7 @@ long endp_wire_write(JsonObject request, JsonObject response, int magic)
   return 0;
 }
 
-long endp_wire_available(JsonObject request, JsonObject response, int magic)
+long endp_wire_available(JsonObject& request, JsonObject& response, int magic)
 {
   TwoWire *wire;
   if (magic == 0)
@@ -126,7 +126,7 @@ long endp_wire_available(JsonObject request, JsonObject response, int magic)
   return 0;
 }
 
-long endp_wire_read(JsonObject request, JsonObject response, int magic)
+long endp_wire_read(JsonObject& request, JsonObject& response, int magic)
 {
   TwoWire *wire;
   if (magic == 0)

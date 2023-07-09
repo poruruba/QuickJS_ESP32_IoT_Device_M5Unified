@@ -5,7 +5,7 @@
 #include "module_utils.h"
 #include "endpoint_prefs.h"
 
-long endp_prefs_remove(JsonObject request, JsonObject response, int magic)
+long endp_prefs_remove(JsonObject& request, JsonObject& response, int magic)
 {
   const char *name = request["name"];
   if( name == NULL )
@@ -26,7 +26,7 @@ long endp_prefs_remove(JsonObject request, JsonObject response, int magic)
   return 0;
 }
 
-long endp_prefs_isKey(JsonObject request, JsonObject response, int magic)
+long endp_prefs_isKey(JsonObject &request, JsonObject& response, int magic)
 {
   const char *name = request["name"];
   if( name == NULL )
@@ -47,7 +47,7 @@ long endp_prefs_isKey(JsonObject request, JsonObject response, int magic)
   return 0;
 }
 
-long endp_prefs_getType(JsonObject request, JsonObject response, int magic)
+long endp_prefs_getType(JsonObject& request, JsonObject& response, int magic)
 {
   const char *name = request["name"];
   if( name == NULL )
@@ -68,7 +68,7 @@ long endp_prefs_getType(JsonObject request, JsonObject response, int magic)
   return 0;
 }
 
-long endp_prefs_clear(JsonObject request, JsonObject response, int magic)
+long endp_prefs_clear(JsonObject& request, JsonObject& response, int magic)
 {
   const char *name = request["name"];
   if( name == NULL )
@@ -87,7 +87,7 @@ long endp_prefs_clear(JsonObject request, JsonObject response, int magic)
   return 0;
 }
 
-long endp_prefs_putNumber(JsonObject request, JsonObject response, int magic)
+long endp_prefs_putNumber(JsonObject& request, JsonObject& response, int magic)
 {
   const char *name = request["name"];
   if( name == NULL )
@@ -109,7 +109,7 @@ long endp_prefs_putNumber(JsonObject request, JsonObject response, int magic)
   return 0;
 }
 
-long endp_prefs_getNumber(JsonObject request, JsonObject response, int magic)
+long endp_prefs_getNumber(JsonObject& request, JsonObject& response, int magic)
 {
   const char *name = request["name"];
   if( name == NULL )
@@ -131,7 +131,7 @@ long endp_prefs_getNumber(JsonObject request, JsonObject response, int magic)
   return 0;
 }
 
-long endp_prefs_putDouble(JsonObject request, JsonObject response, int magic)
+long endp_prefs_putDouble(JsonObject& request, JsonObject& response, int magic)
 {
   const char *name = request["name"];
   if( name == NULL )
@@ -153,7 +153,7 @@ long endp_prefs_putDouble(JsonObject request, JsonObject response, int magic)
   return 0;
 }
 
-long endp_prefs_getDouble(JsonObject request, JsonObject response, int magic)
+long endp_prefs_getDouble(JsonObject& request, JsonObject& response, int magic)
 {
   const char *name = request["name"];
   if( name == NULL )
@@ -175,7 +175,7 @@ long endp_prefs_getDouble(JsonObject request, JsonObject response, int magic)
   return 0;
 }
 
-long endp_prefs_putBool(JsonObject request, JsonObject response, int magic)
+long endp_prefs_putBool(JsonObject& request, JsonObject& response, int magic)
 {
   const char *name = request["name"];
   if( name == NULL )
@@ -197,7 +197,7 @@ long endp_prefs_putBool(JsonObject request, JsonObject response, int magic)
   return 0;
 }
 
-long endp_prefs_getBool(JsonObject request, JsonObject response, int magic)
+long endp_prefs_getBool(JsonObject& request, JsonObject& response, int magic)
 {
   const char *name = request["name"];
   if( name == NULL )
@@ -219,7 +219,7 @@ long endp_prefs_getBool(JsonObject request, JsonObject response, int magic)
   return 0;
 }
 
-long endp_prefs_putString(JsonObject request, JsonObject response, int magic)
+long endp_prefs_putString(JsonObject& request, JsonObject& response, int magic)
 {
   const char *name = request["name"];
   if( name == NULL )
@@ -243,7 +243,7 @@ long endp_prefs_putString(JsonObject request, JsonObject response, int magic)
   return 0;
 }
 
-long endp_prefs_getString(JsonObject request, JsonObject response, int magic)
+long endp_prefs_getString(JsonObject& request, JsonObject& response, int magic)
 {
   const char *name = request["name"];
   if( name == NULL )
@@ -264,7 +264,7 @@ long endp_prefs_getString(JsonObject request, JsonObject response, int magic)
   return 0;
 }
 
-long endp_prefs_putBytes(JsonObject request, JsonObject response, int magic)
+long endp_prefs_putBytes(JsonObject& request, JsonObject& response, int magic)
 {
   const char *name = request["name"];
   if( name == NULL )
@@ -294,7 +294,7 @@ long endp_prefs_putBytes(JsonObject request, JsonObject response, int magic)
   return 0;
 }
 
-long endp_prefs_getBytes(JsonObject request, JsonObject response, int magic)
+long endp_prefs_getBytes(JsonObject& request, JsonObject& response, int magic)
 {
   const char *name = request["name"];
   if( name == NULL )

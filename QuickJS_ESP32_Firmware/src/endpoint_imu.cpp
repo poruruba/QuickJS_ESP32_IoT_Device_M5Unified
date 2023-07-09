@@ -6,7 +6,7 @@
 #include "endpoint_types.h"
 #include "endpoint_imu.h"
 
-long endp_imu_getAccelData(JsonObject request, JsonObject response, int magic)
+long endp_imu_getAccelData(JsonObject& request, JsonObject& response, int magic)
 {
   float ax, ay, az;
   M5.Imu.getAccel(&ax, &ay, &az);
@@ -18,7 +18,7 @@ long endp_imu_getAccelData(JsonObject request, JsonObject response, int magic)
   return 0;
 }
 
-long endp_imu_getGyroData(JsonObject request, JsonObject response, int magic)
+long endp_imu_getGyroData(JsonObject& request, JsonObject& response, int magic)
 {
   float gx, gy, gz;
   M5.Imu.getGyro(&gx, &gy, &gz);
@@ -30,7 +30,7 @@ long endp_imu_getGyroData(JsonObject request, JsonObject response, int magic)
   return 0;
 }
 
-long endp_imu_getTempData(JsonObject request, JsonObject response, int magic)
+long endp_imu_getTempData(JsonObject& request, JsonObject& response, int magic)
 {
   float t;
   M5.Imu.getTemp(&t);

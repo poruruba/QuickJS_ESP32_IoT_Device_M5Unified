@@ -8,7 +8,7 @@
 #include "endpoint_esp32.h"
 #include "module_esp32.h"
 
-long endp_setSyslogServer(JsonObject request, JsonObject response, int magic)
+long endp_setSyslogServer(JsonObject& request, JsonObject& response, int magic)
 {
   const char* host = request["host"];
   if( host == NULL )
@@ -31,7 +31,7 @@ long endp_setSyslogServer(JsonObject request, JsonObject response, int magic)
   return 0;
 }
 
-long endp_getSyslogServer(JsonObject request, JsonObject response, int magic)
+long endp_getSyslogServer(JsonObject& request, JsonObject& response, int magic)
 {
   String server = read_config_string(CONFIG_FNAME_SYSLOG);
   int delim = server.indexOf(':');
@@ -46,7 +46,7 @@ long endp_getSyslogServer(JsonObject request, JsonObject response, int magic)
   return 0;
 }
 
-long endp_putText(JsonObject request, JsonObject response, int magic)
+long endp_putText(JsonObject& request, JsonObject& response, int magic)
 {
   const char *p_text = request["text"];
   if( p_text == NULL )
@@ -60,7 +60,7 @@ long endp_putText(JsonObject request, JsonObject response, int magic)
   return 0;
 }
 
-long endp_update(JsonObject request, JsonObject response, int magic)
+long endp_update(JsonObject& request, JsonObject& response, int magic)
 {
   g_download_buffer[0] = '\0';
   g_fileloading = magic;
@@ -68,20 +68,20 @@ long endp_update(JsonObject request, JsonObject response, int magic)
   return 0;
 }
 
-long endp_millis(JsonObject request, JsonObject response, int magic)
+long endp_millis(JsonObject& request, JsonObject& response, int magic)
 {
   response["result"] = millis();
   return 0;
 }
 
-long endp_getStatus(JsonObject request, JsonObject response, int magic)
+long endp_getStatus(JsonObject& request, JsonObject& response, int magic)
 {
   response["result"] = g_fileloading;
 
   return 0;
 }
 
-long endp_getIpAddress(JsonObject request, JsonObject response, int magic)
+long endp_getIpAddress(JsonObject& request, JsonObject& response, int magic)
 {
   IPAddress address = WiFi.localIP();
   response["result"] = (uint32_t)(((uint32_t)address[0]) << 24 | address[1] << 16 | address[2] << 8 | address[3]);
@@ -89,7 +89,7 @@ long endp_getIpAddress(JsonObject request, JsonObject response, int magic)
   return 0;
 }
 
-long endp_getMacAddress(JsonObject request, JsonObject response, int magic)
+long endp_getMacAddress(JsonObject& request, JsonObject& response, int magic)
 {
   uint8_t address[6];
   WiFi.macAddress(address);
@@ -99,7 +99,7 @@ long endp_getMacAddress(JsonObject request, JsonObject response, int magic)
   return 0;
 }
 
-long endp_code_upload(JsonObject request, JsonObject response, int magic)
+long endp_code_upload(JsonObject& request, JsonObject& response, int magic)
 {
   const char *p_code = request["code"];
   const char *p_fname = request["fname"];
@@ -126,7 +126,7 @@ long endp_code_upload(JsonObject request, JsonObject response, int magic)
   return 0;
 }
 
-long endp_code_download(JsonObject request, JsonObject response, int magic)
+long endp_code_download(JsonObject& request, JsonObject& response, int magic)
 {
   const char *p_fname = request["fname"];
 
@@ -144,7 +144,7 @@ long endp_code_download(JsonObject request, JsonObject response, int magic)
   return 0;
 }
 
-long endp_code_delete(JsonObject request, JsonObject response, int magic)
+long endp_code_delete(JsonObject& request, JsonObject& response, int magic)
 {
   const char *p_fname = request["fname"];
 
@@ -154,7 +154,7 @@ long endp_code_delete(JsonObject request, JsonObject response, int magic)
   return 0;
 }
 
-long endp_code_list(JsonObject request, JsonObject response, int magic)
+long endp_code_list(JsonObject& request, JsonObject& response, int magic)
 {
   JsonArray arry = response.createNestedArray("result");
 
@@ -164,7 +164,7 @@ long endp_code_list(JsonObject request, JsonObject response, int magic)
   File file = dir.openNextFile();
   int i = 0;
   while(file){
-    const char *fname = file.name();
+    const char *fname = file.path();
     if( strncmp(fname, MODULE_DIR, strlen(MODULE_DIR)) == 0 ){
       arry[i++] = (char*)&fname[strlen(MODULE_DIR)];
     }
@@ -176,7 +176,7 @@ long endp_code_list(JsonObject request, JsonObject response, int magic)
   return 0;
 }
 
-long endp_code_eval(JsonObject request, JsonObject response, int magic)
+long endp_code_eval(JsonObject& request, JsonObject& response, int magic)
 {
   const char *code = request["code"];
   if( code == NULL )
@@ -191,7 +191,7 @@ long endp_code_eval(JsonObject request, JsonObject response, int magic)
   return 0;
 }
 
-long endp_console_log(JsonObject request, JsonObject response, int magic)
+long endp_console_log(JsonObject& request, JsonObject& response, int magic)
 {
   if( request["msg"].is<JsonArray>() ){
     JsonArray arry = request["msg"];

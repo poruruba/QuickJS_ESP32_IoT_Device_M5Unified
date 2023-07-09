@@ -8,7 +8,7 @@
 
 #define SD_DEFAULT_FREQ   25000000
 
-long endp_sd_begin(JsonObject request, JsonObject response, int magic)
+long endp_sd_begin(JsonObject& request, JsonObject& response, int magic)
 {
   uint32_t ssPin = request["ssPin"];
 
@@ -19,7 +19,7 @@ long endp_sd_begin(JsonObject request, JsonObject response, int magic)
   return 0;
 }
 
-long endp_sd_exists(JsonObject request, JsonObject response, int magic)
+long endp_sd_exists(JsonObject& request, JsonObject& response, int magic)
 {
   const char *fname = request["filename"];
   if( fname == NULL )
@@ -31,7 +31,7 @@ long endp_sd_exists(JsonObject request, JsonObject response, int magic)
   return 0;
 }
 
-long endp_sd_mkdir(JsonObject request, JsonObject response, int magic)
+long endp_sd_mkdir(JsonObject& request, JsonObject& response, int magic)
 {
   const char *fname = request["filename"];
   if( fname == NULL )
@@ -43,7 +43,7 @@ long endp_sd_mkdir(JsonObject request, JsonObject response, int magic)
   return 0;
 }
 
-long endp_sd_remove(JsonObject request, JsonObject response, int magic)
+long endp_sd_remove(JsonObject& request, JsonObject& response, int magic)
 {
   const char *fname = request["filename"];
   if( fname == NULL )
@@ -55,7 +55,7 @@ long endp_sd_remove(JsonObject request, JsonObject response, int magic)
   return 0;
 }
 
-long endp_sd_rmdir(JsonObject request, JsonObject response, int magic)
+long endp_sd_rmdir(JsonObject& request, JsonObject& response, int magic)
 {
   const char *fname = request["filename"];
   if( fname == NULL )
@@ -67,7 +67,7 @@ long endp_sd_rmdir(JsonObject request, JsonObject response, int magic)
   return 0;
 }
 
-long endp_sd_size(JsonObject request, JsonObject response, int magic)
+long endp_sd_size(JsonObject& request, JsonObject& response, int magic)
 {
   const char *fname = request["filename"];
   if( fname == NULL )
@@ -83,7 +83,7 @@ long endp_sd_size(JsonObject request, JsonObject response, int magic)
   return 0;
 }
 
-long endp_sd_readBinary(JsonObject request, JsonObject response, int magic)
+long endp_sd_readBinary(JsonObject& request, JsonObject& response, int magic)
 {
   const char *fname = request["filename"];
   if( fname == NULL )
@@ -127,7 +127,7 @@ long endp_sd_readBinary(JsonObject request, JsonObject response, int magic)
   return 0;
 }
 
-long endp_sd_writeBinary(JsonObject request, JsonObject response, int magic)
+long endp_sd_writeBinary(JsonObject& request, JsonObject& response, int magic)
 {
   const char *fname = request["filename"];
   if( fname == NULL )
@@ -167,7 +167,7 @@ long endp_sd_writeBinary(JsonObject request, JsonObject response, int magic)
 }
 
 
-long endp_sd_readText(JsonObject request, JsonObject response, int magic)
+long endp_sd_readText(JsonObject& request, JsonObject& response, int magic)
 {
   const char *fname = request["filename"];
   if( fname == NULL )
@@ -192,7 +192,7 @@ long endp_sd_readText(JsonObject request, JsonObject response, int magic)
   return 0;
 }
 
-long endp_sd_writeText(JsonObject request, JsonObject response, int magic)
+long endp_sd_writeText(JsonObject& request, JsonObject& response, int magic)
 {
   const char *fname = request["filename"];
   if( fname == NULL )
@@ -220,7 +220,7 @@ long endp_sd_writeText(JsonObject request, JsonObject response, int magic)
   return 0;
 }
 
-long endp_sd_isDirectory(JsonObject request, JsonObject response, int magic)
+long endp_sd_isDirectory(JsonObject& request, JsonObject& response, int magic)
 {
   const char *fname = request["filename"];
   if( fname == NULL )
@@ -237,7 +237,7 @@ long endp_sd_isDirectory(JsonObject request, JsonObject response, int magic)
   return 0;
 }
 
-long endp_sd_list(JsonObject request, JsonObject response, int magic)
+long endp_sd_list(JsonObject& request, JsonObject& response, int magic)
 {
   const char *fname = request["filename"];
   if( fname == NULL )

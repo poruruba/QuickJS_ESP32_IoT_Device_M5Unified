@@ -11,7 +11,7 @@
 #include "endpoint_lcd.h"
 #include "module_lcd.h"
 
-long endp_lcd_setRotation(JsonObject request, JsonObject response, int magic)
+long endp_lcd_setRotation(JsonObject& request, JsonObject& response, int magic)
 {
   int32_t rot = request["rot"];
 
@@ -20,7 +20,7 @@ long endp_lcd_setRotation(JsonObject request, JsonObject response, int magic)
   return 0;
 }
 
-long endp_lcd_setBrightness(JsonObject request, JsonObject response, int magic)
+long endp_lcd_setBrightness(JsonObject& request, JsonObject& response, int magic)
 {
   int32_t brt = request["brt"];
 
@@ -29,7 +29,7 @@ long endp_lcd_setBrightness(JsonObject request, JsonObject response, int magic)
   return 0;
 }
 
-long endp_lcd_setFont(JsonObject request, JsonObject response, int magic)
+long endp_lcd_setFont(JsonObject& request, JsonObject& response, int magic)
 {
   int32_t size = request["size"];
 
@@ -38,7 +38,7 @@ long endp_lcd_setFont(JsonObject request, JsonObject response, int magic)
   return 0;
 }
 
-long endp_lcd_setTextColor(JsonObject request, JsonObject response, int magic)
+long endp_lcd_setTextColor(JsonObject& request, JsonObject& response, int magic)
 {
   int32_t fore = request["fore"];
   int32_t back = request["back"] || -1;
@@ -50,7 +50,7 @@ long endp_lcd_setTextColor(JsonObject request, JsonObject response, int magic)
   return 0;
 }
 
-long endp_lcd_setTextSize(JsonObject request, JsonObject response, int magic)
+long endp_lcd_setTextSize(JsonObject& request, JsonObject& response, int magic)
 {
   float scale = request["scale"];
   float yscale = request["yscale"] || -1.0;
@@ -62,7 +62,7 @@ long endp_lcd_setTextSize(JsonObject request, JsonObject response, int magic)
   return 0;
 }
 
-long endp_lcd_setTextDatum(JsonObject request, JsonObject response, int magic)
+long endp_lcd_setTextDatum(JsonObject& request, JsonObject& response, int magic)
 {
   int32_t datum = request["datum"];
   M5.Display.setTextDatum(datum);
@@ -70,7 +70,7 @@ long endp_lcd_setTextDatum(JsonObject request, JsonObject response, int magic)
   return 0;
 }
 
-long endp_lcd_drawPixel(JsonObject request, JsonObject response, int magic)
+long endp_lcd_drawPixel(JsonObject& request, JsonObject& response, int magic)
 {
   int32_t x = request["x"];
   int32_t y = request["y"];
@@ -80,7 +80,7 @@ long endp_lcd_drawPixel(JsonObject request, JsonObject response, int magic)
   return 0;
 }
 
-long endp_lcd_drawLine(JsonObject request, JsonObject response, int magic)
+long endp_lcd_drawLine(JsonObject& request, JsonObject& response, int magic)
 {
   int32_t x0 = request["x0"];
   int32_t y0 = request["y0"];
@@ -92,7 +92,7 @@ long endp_lcd_drawLine(JsonObject request, JsonObject response, int magic)
   return 0;
 }
 
-long endp_lcd_drawRect(JsonObject request, JsonObject response, int magic)
+long endp_lcd_drawRect(JsonObject& request, JsonObject& response, int magic)
 {
   int32_t x = request["x"];
   int32_t y = request["y"];
@@ -114,7 +114,7 @@ long endp_lcd_drawRect(JsonObject request, JsonObject response, int magic)
   return 0;
 }
 
-long endp_lcd_drawRoundRect(JsonObject request, JsonObject response, int magic)
+long endp_lcd_drawRoundRect(JsonObject& request, JsonObject& response, int magic)
 {
   int32_t x = request["x"];
   int32_t y = request["y"];
@@ -137,7 +137,7 @@ long endp_lcd_drawRoundRect(JsonObject request, JsonObject response, int magic)
   return 0;
 }
 
-long endp_lcd_drawCircle(JsonObject request, JsonObject response, int magic)
+long endp_lcd_drawCircle(JsonObject& request, JsonObject& response, int magic)
 {
   int32_t x = request["x"];
   int32_t y = request["y"];
@@ -158,7 +158,7 @@ long endp_lcd_drawCircle(JsonObject request, JsonObject response, int magic)
   return 0;
 }
 
-long endp_lcd_setCursor(JsonObject request, JsonObject response, int magic)
+long endp_lcd_setCursor(JsonObject& request, JsonObject& response, int magic)
 {
   int32_t x = request["x"];
   int32_t y = request["y"];
@@ -167,7 +167,7 @@ long endp_lcd_setCursor(JsonObject request, JsonObject response, int magic)
   return 0;
 }
 
-long endp_lcd_getCursor(JsonObject request, JsonObject response, int magic)
+long endp_lcd_getCursor(JsonObject& request, JsonObject& response, int magic)
 {
   response["result"]["x"] = M5.Display.getCursorX();
   response["result"]["y"] = M5.Display.getCursorY();
@@ -175,7 +175,7 @@ long endp_lcd_getCursor(JsonObject request, JsonObject response, int magic)
   return 0;
 }
 
-long endp_lcd_textWidth(JsonObject request, JsonObject response, int magic)
+long endp_lcd_textWidth(JsonObject& request, JsonObject& response, int magic)
 {
   const char *text = request["text"];
   if( text == NULL )
@@ -187,7 +187,7 @@ long endp_lcd_textWidth(JsonObject request, JsonObject response, int magic)
   return 0;
 }
 
-long endp_lcd_print(JsonObject request, JsonObject response, int magic)
+long endp_lcd_print(JsonObject& request, JsonObject& response, int magic)
 {
   const char *message = request["message"];
   if( message == NULL )
@@ -201,7 +201,7 @@ long endp_lcd_print(JsonObject request, JsonObject response, int magic)
   return 0;
 }
 
-long endp_lcd_fillScreen(JsonObject request, JsonObject response, int magic)
+long endp_lcd_fillScreen(JsonObject& request, JsonObject& response, int magic)
 {
   uint32_t color = request["color"];
   M5.Display.fillScreen(color);
@@ -210,7 +210,7 @@ long endp_lcd_fillScreen(JsonObject request, JsonObject response, int magic)
 }
 
 #ifdef _SD_ENABLE_
-long endp_lcd_drawImageFile(JsonObject request, JsonObject response, int magic)
+long endp_lcd_drawImageFile(JsonObject& request, JsonObject& response, int magic)
 {
   const char* filename = request["filename"];
   if( filename == NULL )
@@ -243,7 +243,7 @@ long endp_lcd_drawImageFile(JsonObject request, JsonObject response, int magic)
 }
 #endif
 
-long endp_lcd_getMetric(JsonObject request, JsonObject response, int magic)
+long endp_lcd_getMetric(JsonObject& request, JsonObject& response, int magic)
 {
   int32_t value = 0;
 

@@ -3,7 +3,7 @@
 
 #include <ArduinoJson.h>
 
-typedef long(*EndpointImpl)(JsonObject, JsonObject, int magic);
+typedef long(*EndpointImpl)(JsonObject&, JsonObject&, int magic);
 
 typedef struct {
   EndpointImpl impl;

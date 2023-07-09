@@ -44,6 +44,10 @@ void setup()
         Serial.println("SPIFFS format failed");
       Serial.println("SPIFFS FORMAT END");
 
+      if( !SPIFFS.begin() )
+        Serial.println("SPIFFS begin failed");
+      delay(100);
+
       fp = SPIFFS.open(DUMMY_FNAME, FILE_WRITE);
       if( fp )
         fp.close();
@@ -266,9 +270,9 @@ static long get_all_modules_size(void)
     return -1;
   File file = dir.openNextFile();
   while(file){
-    const char *fname = file.name();
+    const char *fname = file.path();
     if( strncmp(fname, MODULE_DIR, strlen(MODULE_DIR)) == 0 )
-      sum += file.size();
+      sum += file.size() + 1;
     file.close();
     file = dir.openNextFile();
   }
@@ -293,33 +297,33 @@ static long load_all_modules(void)
     return -1;
 
   js_modules_code = (char*)malloc(all_size + 1);
+  if( js_modules_code == NULL ){
+    Serial.println("malloc failed");
+    return -1;
+  }
   js_modules_code[0] = '\0';
   int32_t js_modules_len = 0;
 
   File file = dir.openNextFile();
-  char module_name[32];
   while(file){
-    const char *fname = file.name();
-    if( strncmp(fname, MODULE_DIR, strlen(MODULE_DIR)) == 0 &&
-        strlen(&fname[strlen(MODULE_DIR)]) <= sizeof(module_name) - 1)
-    {
-      strcpy(module_name, &fname[strlen(MODULE_DIR)]);
+    const char *fname = file.path();
+    if( strncmp(fname, MODULE_DIR, strlen(MODULE_DIR)) == 0 ){
+      const char *module_name = file.name();
       size_t size = file.size();
       file.readBytes(&js_modules_code[js_modules_len], size);
-      file.close();
       js_modules_code[js_modules_len + size] = '\0';
 
-      long ret = qjs.load_module(&js_modules_code[js_modules_len], size, module_name);
+      long ret = qjs.load_module(&js_modules_code[js_modules_len], strlen(&js_modules_code[js_modules_len]), module_name);
       if( ret != 0 ){
-        dir.close();
         Serial.printf("load module(%s) failed\n", module_name);
+        file.close();
+        dir.close();
         return -1;
       }
       Serial.printf("load module(%s) loaded\n", module_name);
       js_modules_len += size + 1;
-    }else{
-      file.close();
     }
+    file.close();
     file = dir.openNextFile();
   }
   dir.close();
