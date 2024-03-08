@@ -47,6 +47,7 @@ https://qiita.com/poruruba
   - JsonObjectを参照渡しに変更
 - 2024-3-8
   - Httpモジュールのfetchのパラメータを変更。HttpBridgeサーバ方式に変更
+  - EnvProユニットを追加
   
 ## 誤記訂正
 - 2022-03-31
