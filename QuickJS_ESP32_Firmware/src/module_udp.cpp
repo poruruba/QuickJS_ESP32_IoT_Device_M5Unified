@@ -152,7 +152,6 @@ static JSValue esp32_udp_checkRecvText(JSContext *ctx, JSValueConst jsThis, int 
   }
 }
 
-
 static const JSCFunctionListEntry udp_funcs[] = {
     JSCFunctionListEntry{"recvBegin", 0, JS_DEF_CFUNC, 0, {
                            func : {1, JS_CFUNC_generic, esp32_udp_recvBegin}
@@ -166,13 +165,11 @@ static const JSCFunctionListEntry udp_funcs[] = {
     JSCFunctionListEntry{"recvStop", 0, JS_DEF_CFUNC, 0, {
                            func : {0, JS_CFUNC_generic, esp32_udp_recvStop}
                          }},
-    JSCFunctionListEntry{
-        "checkRecvText", 0, JS_DEF_CFUNC, 0, {
-          func : {0, JS_CFUNC_generic_magic, {generic_magic : esp32_udp_checkRecvText}}
-        }},
-    JSCFunctionListEntry{
-        "checkRecv", 0, JS_DEF_CFUNC, 1, {
-          func : {0, JS_CFUNC_generic_magic, {generic_magic : esp32_udp_checkRecvText}}
+    JSCFunctionListEntry{"checkRecvText", 0, JS_DEF_CFUNC, 0, {
+                          func : {0, JS_CFUNC_generic_magic, {generic_magic : esp32_udp_checkRecvText}}
+                        }},
+    JSCFunctionListEntry{"checkRecv", 0, JS_DEF_CFUNC, 1, {
+                          func : {0, JS_CFUNC_generic_magic, {generic_magic : esp32_udp_checkRecvText}}
                          }},
     JSCFunctionListEntry{"checkRecvBinary", 0, JS_DEF_CFUNC, 0, {
                            func : {0, JS_CFUNC_generic, esp32_udp_checkRecvBinary}

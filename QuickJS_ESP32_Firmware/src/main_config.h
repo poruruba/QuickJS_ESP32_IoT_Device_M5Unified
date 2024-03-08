@@ -9,6 +9,7 @@
 #define _UNIT_GESTURE_ENABLE_
 #define _UNIT_PBHUB_ENABLE_
 #define _UNIT_ANGLE8_ENABLE_
+#define _UNIT_ENVPRO_ENABLE_
 #define _HTTP_ENABLE_
 #define _MQTT_ENABLE_
 #define _ENV_ENABLE_

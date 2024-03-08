@@ -8,12 +8,14 @@ static JSValue esp32_wire_begin(JSContext *ctx, JSValueConst jsThis,
                                       int argc, JSValueConst *argv, int magic)
 {
   TwoWire *wire;
-  if (magic == 0)
+  if (magic == 0){
     wire = &Wire;
-  else if (magic == 1)
+  }else if (magic == 1){
+    Wire1.end();
     wire = &Wire1;
-  else
+  }else{
     return JS_EXCEPTION;
+  }
 
   int32_t sda = -1;
   int32_t scl = -1;

@@ -45,6 +45,9 @@
 #ifdef _UNIT_ANGLE8_ENABLE_
 #include "module_unit_angle8.h"
 #endif
+#ifdef _UNIT_ENVPRO_ENABLE_
+#include "module_unit_envpro.h"
+#endif
 #ifdef _HTTP_ENABLE_
 #include "module_http.h"
 #endif
@@ -100,6 +103,9 @@ static JsModuleEntry module_entries[] = {
 #endif
 #ifdef _UNIT_ANGLE8_ENABLE_
   unit_angle8_module,
+#endif
+#ifdef _UNIT_ENVPRO_ENABLE_
+  unit_envpro_module,
 #endif
 #ifdef _HTTP_ENABLE_
   http_module,
