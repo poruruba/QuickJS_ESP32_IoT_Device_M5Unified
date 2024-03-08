@@ -6,62 +6,85 @@
 #include "module_type.h"
 #include "module_utils.h"
 
-#define HTTP_TYPE_MASK  0xF
-
 #define HTTP_RESP_SHIFT   0
 #define HTTP_RESP_NONE    0x0
 #define HTTP_RESP_TEXT    0x1
 #define HTTP_RESP_JSON    0x2
 #define HTTP_RESP_BINARY  0x3
+#define HTTP_RESP_MASK   0x07
 
-#define HTTP_METHOD_SHIFT   4
-#define HTTP_METHOD_GET    0x0
-#define HTTP_METHOD_POST   0x1
+#define HTTP_METHOD_SHIFT          8
+#define HTTP_METHOD_GET            0x0
+#define HTTP_METHOD_POST_JSON      0x1
+#define HTTP_METHOD_POST_URLENCODE 0x2
+#define HTTP_METHOD_POST_FORMDATA  0x3
+#define HTTP_METHOD_MASK           0x07
 
-#define HTTP_CONTENT_SHIFT   8
-#define HTTP_CONTENT_NONE    0x0
-#define HTTP_CONTENT_JSON    0x1
-#define HTTP_CONTENT_URLENCODE    0x2
-#define HTTP_CONTENT_FORMDATA    0x3
-
-#define HTTP_TYPE_POST_JSON ((HTTP_METHOD_POST << HTTP_METHOD_SHIFT) | (HTTP_CONTENT_JSON << HTTP_CONTENT_SHIFT) | (HTTP_RESP_JSON << HTTP_RESP_SHIFT))
-#define HTTP_TYPE_GET_JSON  ((HTTP_METHOD_GET << HTTP_METHOD_SHIFT) | (HTTP_CONTENT_JSON << HTTP_CONTENT_SHIFT) | (HTTP_RESP_JSON << HTTP_RESP_SHIFT))
-#define HTTP_TYPE_POST_TEXT ((HTTP_METHOD_POST << HTTP_METHOD_SHIFT) | (HTTP_CONTENT_JSON << HTTP_CONTENT_SHIFT) | (HTTP_RESP_TEXT << HTTP_RESP_SHIFT))
-#define HTTP_TYPE_GET_TEXT  ((HTTP_METHOD_GET << HTTP_METHOD_SHIFT) | (HTTP_CONTENT_JSON << HTTP_CONTENT_SHIFT) | (HTTP_RESP_TEXT << HTTP_RESP_SHIFT))
-
-static JSValue http_gateway(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv, int magic)
+static JSValue http_bridge(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv, int magic)
 {
+  uint16_t method = (magic >> HTTP_METHOD_SHIFT) & HTTP_METHOD_MASK;
+  const char *p_target_type;
+  switch(method){
+    case HTTP_METHOD_GET: p_target_type = "get"; break;
+    case HTTP_METHOD_POST_JSON: p_target_type = "post_json"; break;
+    case HTTP_METHOD_POST_FORMDATA: p_target_type = "post_form-data"; break;
+    case HTTP_METHOD_POST_URLENCODE: p_target_type = "post_x-www-form-urlencoded"; break;
+    default: {
+      return JS_EXCEPTION;
+    }
+  }
+
+  const char *target_host = JS_ToCString(ctx, argv[0]);
+  if( target_host == NULL ){
+    return JS_EXCEPTION;
+  }
+
   JSValue obj = JS_NewObject(ctx);
-  JS_SetPropertyStr(ctx, obj, "url", JS_DupValue(ctx, argv[0]));
   if (argc >= 1)
-    JS_SetPropertyStr(ctx, obj, "params", JS_DupValue(ctx, argv[1]));
-  if (argc >= 2)
-    JS_SetPropertyStr(ctx, obj, "headers", JS_DupValue(ctx, argv[2]));
-  JS_SetPropertyStr(ctx, obj, "method_type", magic);
+    JS_SetPropertyStr(ctx, obj, "qs", JS_DupValue(ctx, argv[1]));
+  if (argc >= 2){
+    if( method == HTTP_METHOD_POST_JSON)
+      JS_SetPropertyStr(ctx, obj, "body", JS_DupValue(ctx, argv[2]));
+    else if( method != HTTP_METHOD_GET)
+      JS_SetPropertyStr(ctx, obj, "params", JS_DupValue(ctx, argv[2]));
+  }
+  if (argc >= 3)
+    JS_SetPropertyStr(ctx, obj, "headers", JS_DupValue(ctx, argv[3]));
 
   JSValue json = JS_JSONStringify(ctx, obj, JS_UNDEFINED, JS_UNDEFINED);
   JS_FreeValue(ctx, obj);
   if( json == JS_UNDEFINED ){
+    JS_FreeCString(ctx, target_host);
     return JS_EXCEPTION;
   }
   const char *body = JS_ToCString(ctx, json);
   if (body == NULL){
+    JS_FreeCString(ctx, target_host);
     JS_FreeValue(ctx, json);
     return JS_EXCEPTION;
   }
 
-  String server = read_config_string(CONFIG_FNAME_GATEWAY);
+  String server = read_config_string(CONFIG_FNAME_BRIDGE);
+
+  Serial.printf("target_host=%s\n", target_host);
+  Serial.printf("target_type=%s\n", p_target_type);
+  Serial.printf("server=%s\n", server.c_str());
+  Serial.printf("body=%s\n", body);
+
   HTTPClient http;
-  http.begin(server); //HTTP
+  http.begin(server + "/agent"); //HTTP
   http.addHeader("Content-Type", "application/json");
+  http.addHeader("target_host", target_host);
+  http.addHeader("target_type", p_target_type);
 
   int status_code;
   // HTTP POST JSON
   status_code = http.POST(body);
+  JS_FreeCString(ctx, target_host);
   JS_FreeCString(ctx, body);
   JS_FreeValue(ctx, json);
 
-  uint8_t response_type = ( magic >> HTTP_RESP_SHIFT ) & HTTP_TYPE_MASK;
+  uint8_t response_type = ( magic >> HTTP_RESP_SHIFT ) & HTTP_RESP_MASK;
   JSValue value = JS_EXCEPTION;
   if (status_code != 200){
     Serial.printf("status_code=%d\n", status_code);
@@ -105,17 +128,17 @@ static JSValue http_fetch(JSContext *ctx, JSValueConst jsThis, int argc, JSValue
   int32_t type;
   JS_ToInt32(ctx, &type, argv[0]);
 
-  return http_gateway(ctx, jsThis, argc - 1, &argv[1], type);
+  return http_bridge(ctx, jsThis, argc - 1, &argv[1], type);
 }
 
-static JSValue http_setGatewayServer(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
+static JSValue http_setHttpBridgeServer(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
 {
   const char *url = JS_ToCString(ctx, argv[0]);
   if( url == NULL )
     return JS_EXCEPTION;
 
   long ret;  
-  ret = write_config_string(CONFIG_FNAME_GATEWAY, url);
+  ret = write_config_string(CONFIG_FNAME_BRIDGE, url);
   JS_FreeCString(ctx, url);
   if( ret != 0 )
     return JS_EXCEPTION;
@@ -123,34 +146,22 @@ static JSValue http_setGatewayServer(JSContext *ctx, JSValueConst jsThis, int ar
   return JS_UNDEFINED;
 }
 
-static JSValue http_getGatewayServer(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
+static JSValue http_getHttpBridgeServer(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
 {
-  String url = read_config_string(CONFIG_FNAME_GATEWAY);
+  String url = read_config_string(CONFIG_FNAME_BRIDGE);
 
   return JS_NewString(ctx, url.c_str());
 }
 
 static const JSCFunctionListEntry http_funcs[] = {
-    JSCFunctionListEntry{"postJson", 0, JS_DEF_CFUNC, HTTP_TYPE_POST_JSON, {
-                           func : {3, JS_CFUNC_generic_magic, {generic_magic : http_gateway}}
-                         }},
-    JSCFunctionListEntry{"getJson", 0, JS_DEF_CFUNC, HTTP_TYPE_GET_JSON, {
-                           func : {3, JS_CFUNC_generic_magic, {generic_magic : http_gateway}}
-                         }},
-    JSCFunctionListEntry{"postText", 0, JS_DEF_CFUNC, HTTP_TYPE_POST_TEXT, {
-                           func : {3, JS_CFUNC_generic_magic, {generic_magic : http_gateway}}
-                         }},
-    JSCFunctionListEntry{"getText", 0, JS_DEF_CFUNC, HTTP_TYPE_GET_TEXT, {
-                           func : {3, JS_CFUNC_generic_magic, {generic_magic : http_gateway}}
-                         }},
     JSCFunctionListEntry{"fetch", 0, JS_DEF_CFUNC, 0, {
-                           func : {4, JS_CFUNC_generic, http_fetch}
+                           func : {5, JS_CFUNC_generic, http_fetch}
                          }},
-    JSCFunctionListEntry{"setGatewayServer", 0, JS_DEF_CFUNC, 0, {
-                           func : {1, JS_CFUNC_generic, http_setGatewayServer}
+    JSCFunctionListEntry{"setHttpBridgeServer", 0, JS_DEF_CFUNC, 0, {
+                           func : {1, JS_CFUNC_generic, http_setHttpBridgeServer}
                          }},
-    JSCFunctionListEntry{"getGatewayServer", 0, JS_DEF_CFUNC, 0, {
-                           func : {0, JS_CFUNC_generic, http_getGatewayServer}
+    JSCFunctionListEntry{"getHttpBridgeServer", 0, JS_DEF_CFUNC, 0, {
+                           func : {0, JS_CFUNC_generic, http_getHttpBridgeServer}
                          }},
     JSCFunctionListEntry{
         "resp_none", 0, JS_DEF_PROP_INT32, 0, {
@@ -173,24 +184,16 @@ static const JSCFunctionListEntry http_funcs[] = {
           i32 : (HTTP_METHOD_GET << HTTP_METHOD_SHIFT)
         }},
     JSCFunctionListEntry{
-        "method_post", 0, JS_DEF_PROP_INT32, 0, {
-          i32 : (HTTP_METHOD_POST << HTTP_METHOD_SHIFT)
+        "method_post_json", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : (HTTP_METHOD_POST_JSON << HTTP_METHOD_SHIFT)
         }},
     JSCFunctionListEntry{
-        "content_none", 0, JS_DEF_PROP_INT32, 0, {
-          i32 : (HTTP_CONTENT_NONE << HTTP_CONTENT_SHIFT)
+        "method_post_urlencode", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : (HTTP_METHOD_POST_URLENCODE << HTTP_METHOD_SHIFT)
         }},
     JSCFunctionListEntry{
-        "content_json", 0, JS_DEF_PROP_INT32, 0, {
-          i32 : (HTTP_CONTENT_JSON << HTTP_CONTENT_SHIFT)
-        }},
-    JSCFunctionListEntry{
-        "content_urlencode", 0, JS_DEF_PROP_INT32, 0, {
-          i32 : (HTTP_CONTENT_URLENCODE << HTTP_CONTENT_SHIFT)
-        }},
-    JSCFunctionListEntry{
-        "content_formdata", 0, JS_DEF_PROP_INT32, 0, {
-          i32 : (HTTP_CONTENT_FORMDATA << HTTP_CONTENT_SHIFT)
+        "method_post_formdata", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : (HTTP_METHOD_POST_FORMDATA << HTTP_METHOD_SHIFT)
         }},
 };
 

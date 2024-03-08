@@ -65,7 +65,7 @@ void setup()
   binSem = xSemaphoreCreateBinary();
   xSemaphoreGive(binSem);
 
-  ret = packet_initialize();
+  ret = packet_initialize(ENABLE_STATIC_WEB_PAGE);
   if( ret != 0 )
     Serial.println("packet_initialize error");
 

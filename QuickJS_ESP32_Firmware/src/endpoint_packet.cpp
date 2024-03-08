@@ -64,7 +64,7 @@ static void notFound(AsyncWebServerRequest *request)
   }
 }
 
-long packet_initialize(void)
+long packet_initialize(bool enableStaticPage)
 {
   if( !is_wifi_connected() )
     return -1;
@@ -120,7 +120,8 @@ long packet_initialize(void)
 
   DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
   DefaultHeaders::Instance().addHeader("Access-Control-Allow-Headers", "*");
-//  server.serveStatic("/", SPIFFS, "/html/").setDefaultFile("index.html");
+  if( enableStaticPage )
+    server.serveStatic("/", SPIFFS, "/html/").setDefaultFile("index.html");
   server.onNotFound(notFound);
   server.begin();
 

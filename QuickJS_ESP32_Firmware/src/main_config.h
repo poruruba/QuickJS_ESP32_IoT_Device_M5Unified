@@ -62,7 +62,7 @@
 #define CONFIG_FNAME  "/config.ini"
 #define CONFIG_FNAME_SYSLOG  "/syslog.ini"
 #define CONFIG_FNAME_MQTT  "/mqtt.ini"
-#define CONFIG_FNAME_GATEWAY  "/gateway.ini"
+#define CONFIG_FNAME_BRIDGE  "/bridge.ini"
 
 #define CONFIG_INDEX_AUTOUPDATE 0
 
@@ -83,6 +83,9 @@
 #define FILE_BUFFER_SIZE DEFAULT_BUFFER_SIZE
 
 #define NUM_BTN_FUNC 4
+
+#define ENABLE_STATIC_WEB_PAGE  false
+//#define ENABLE_STATIC_WEB_PAGE  true
 
 #define FILE_LOADING_NONE     0
 #define FILE_LOADING_RESTART  1
