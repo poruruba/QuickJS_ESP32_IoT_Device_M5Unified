@@ -8,6 +8,9 @@ https://poruruba.booth.pm/items/3735175
 以下のQiitaでも適時機能拡張を紹介しています！<br>
 https://qiita.com/poruruba
 
+管理コンソールはこちら<br>
+https://poruruba.github.io/QuickJS_ESP32_IoT_Device_M5Unified/QuickJS_ESP32_Firmware/data/html/
+
 ## 更新履歴
 - 2022-3-26
   - UDP通信機能の追加
