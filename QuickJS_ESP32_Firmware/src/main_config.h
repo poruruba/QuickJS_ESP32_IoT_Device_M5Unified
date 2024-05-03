@@ -55,6 +55,9 @@
 #define _LCD_ENABLE_
 #define _IMU_ENABLE_
 #define MDNS_NAME "QuickJS_ESP32_M5AtomS3" // mDNSサービスホスト名
+#elif defined(ARDUINO_ESP32C6_DEV)
+#include <M5Unified.h>
+#define MDNS_NAME "QuickJS_ESP32_C6" // mDNSサービスホスト名
 #endif
 
 #define DUMMY_FNAME  "/dummy"
@@ -85,8 +88,8 @@
 
 #define NUM_BTN_FUNC 4
 
-#define ENABLE_STATIC_WEB_PAGE  false
-//#define ENABLE_STATIC_WEB_PAGE  true
+//#define ENABLE_STATIC_WEB_PAGE
+#define STATIC_REDIRECT_PAGE  "https://poruruba.github.io/QuickJS_ESP32_IoT_Device_M5Unified/QuickJS_ESP32_Firmware/data/html/"
 
 #define FILE_LOADING_NONE     0
 #define FILE_LOADING_RESTART  1

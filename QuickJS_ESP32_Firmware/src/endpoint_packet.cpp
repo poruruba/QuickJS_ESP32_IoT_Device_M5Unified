@@ -60,11 +60,18 @@ static void notFound(AsyncWebServerRequest *request)
   if (request->method() == HTTP_OPTIONS){
     request->send(200);
   }else{
+#ifdef STATIC_REDIRECT_PAGE
+    String url(STATIC_REDIRECT_PAGE);
+    IPAddress address = WiFi.localIP();
+    url += "?base_url=http%3A%2F%2F" + String(address[0]) + "." + String(address[1]) + "." + String(address[2]) + "." + String(address[3]);
+    request->redirect(url);
+#else
     request->send(404);
+#endif
   }
 }
 
-long packet_initialize(bool enableStaticPage)
+long packet_initialize(void)
 {
   if( !is_wifi_connected() )
     return -1;
@@ -120,8 +127,9 @@ long packet_initialize(bool enableStaticPage)
 
   DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
   DefaultHeaders::Instance().addHeader("Access-Control-Allow-Headers", "*");
-  if( enableStaticPage )
-    server.serveStatic("/", SPIFFS, "/html/").setDefaultFile("index.html");
+#ifdef ENABLE_STATIC_WEB_PAGE
+  server.serveStatic("/", SPIFFS, "/html/").setDefaultFile("index.html");
+#endif
   server.onNotFound(notFound);
   server.begin();
 

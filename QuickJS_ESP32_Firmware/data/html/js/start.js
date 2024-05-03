@@ -791,6 +791,11 @@ var vue_options = {
     },
     mounted: function(){
         proc_load();
+
+        if( searchs.base_url ){
+            this.base_url = searchs.base_url;
+            this.seturl();
+        }
     
         this.wires = [this.Wire, this.Wire1];
     }

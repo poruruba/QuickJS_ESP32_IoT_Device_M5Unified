@@ -30,9 +30,9 @@ static WiFiUDP syslog_udp;
 static Syslog g_syslog(syslog_udp);
 static char *p_syslog_host = NULL;
 
-long syslog_send(const char *p_message)
+long syslog_send(uint16_t pri, const char *p_message)
 {
-  bool ret = g_syslog.log(LOG_INFO, p_message);
+  bool ret = g_syslog.log(pri, p_message);
   return ret ? 0 : -1;
 }
 
@@ -152,7 +152,23 @@ static JSValue esp32_syslog(JSContext *ctx, JSValueConst jsThis, int argc, JSVal
   if( message == NULL )
     return JS_EXCEPTION;
 
-  syslog_send(message);
+  syslog_send(LOG_INFO, message);
+
+  JS_FreeCString(ctx, message);
+
+  return JS_UNDEFINED;
+}
+
+static JSValue esp32_syslog2(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
+{
+  uint32_t pri;
+  JS_ToUint32(ctx, &pri, argv[0]);
+
+  const char *message = JS_ToCString(ctx, argv[1]);
+  if( message == NULL )
+    return JS_EXCEPTION;
+
+  syslog_send((uint16_t)pri, message);
 
   JS_FreeCString(ctx, message);
 
@@ -316,6 +332,9 @@ static const JSCFunctionListEntry esp32_funcs[] = {
     JSCFunctionListEntry{"syslog", 0, JS_DEF_CFUNC, 0, {
                            func : {1, JS_CFUNC_generic, esp32_syslog}
                          }},
+    JSCFunctionListEntry{"syslog2", 0, JS_DEF_CFUNC, 0, {
+                           func : {2, JS_CFUNC_generic, esp32_syslog2}
+                         }},
     JSCFunctionListEntry{"setSyslogServer", 0, JS_DEF_CFUNC, 0, {
                            func : {2, JS_CFUNC_generic, esp32_setSyslogServer}
                          }},
@@ -376,6 +395,38 @@ static const JSCFunctionListEntry esp32_funcs[] = {
     JSCFunctionListEntry{
         "MODEL_M5StampS3", 0, JS_DEF_PROP_INT32, 0, {
           i32 : MODEL_M5StampS3
+        }},
+    JSCFunctionListEntry{
+        "SYSLOG_PRIORITY_EMERG", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : LOG_EMERG
+        }},
+    JSCFunctionListEntry{
+        "SYSLOG_PRIORITY_ALERT", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : LOG_ALERT
+        }},
+    JSCFunctionListEntry{
+        "SYSLOG_PRIORITY_CRIT", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : LOG_CRIT
+        }},
+    JSCFunctionListEntry{
+        "SYSLOG_PRIORITY_ERR", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : LOG_ERR
+        }},
+    JSCFunctionListEntry{
+        "SYSLOG_PRIORITY_WARNING", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : LOG_WARNING
+        }},
+    JSCFunctionListEntry{
+        "SYSLOG_PRIORITY_NOTICE", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : LOG_NOTICE
+        }},
+    JSCFunctionListEntry{
+        "SYSLOG_PRIORITY_INFO", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : LOG_INFO
+        }},
+    JSCFunctionListEntry{
+        "SYSLOG_PRIORITY_DEBUG", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : LOG_DEBUG
         }},
 };
 

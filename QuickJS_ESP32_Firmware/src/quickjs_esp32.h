@@ -27,6 +27,7 @@
 #include "module_ir.h"
 #include "module_udp.h"
 #include "module_prefs.h"
+#include "module_uart.h"
 #ifdef _UNIT_SONICIO_ENABLE_
 #include "module_unit_sonicio.h"
 #endif
@@ -86,6 +87,7 @@ static JsModuleEntry module_entries[] = {
   ir_module,
   udp_module,
   prefs_module,
+  uart_module,
 #ifdef _UNIT_SONICIO_ENABLE_
   unit_sonicio_module,
 #endif
