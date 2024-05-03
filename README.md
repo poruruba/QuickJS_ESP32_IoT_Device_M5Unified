@@ -8,6 +8,9 @@ https://poruruba.booth.pm/items/3735175
 以下のQiitaでも適時機能拡張を紹介しています！<br>
 https://qiita.com/poruruba
 
+管理コンソールはこちら<br>
+https://poruruba.github.io/QuickJS_ESP32_IoT_Device_M5Unified/QuickJS_ESP32_Firmware/data/html/
+
 ## 更新履歴
 - 2022-3-26
   - UDP通信機能の追加
@@ -47,6 +50,7 @@ https://qiita.com/poruruba
   - JsonObjectを参照渡しに変更
 - 2024-3-8
   - Httpモジュールのfetchのパラメータを変更。HttpBridgeサーバ方式に変更
+  - EnvProユニットを追加
 - 2024-5-3
   - Uartモジュールを追加
 
