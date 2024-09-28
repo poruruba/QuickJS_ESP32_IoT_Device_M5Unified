@@ -229,7 +229,10 @@ static JSValue esp32_getMemoryUsage(JSContext *ctx, JSValueConst jsThis, int arg
   JS_SetPropertyStr(ctx, obj, "malloc_limit", JS_NewUint32(ctx, usage.malloc_limit));
   JS_SetPropertyStr(ctx, obj, "memory_usage_size", JS_NewUint32(ctx, usage.memory_used_size));
   JS_SetPropertyStr(ctx, obj, "malloc_size", JS_NewUint32(ctx, usage.malloc_size));
+  JS_SetPropertyStr(ctx, obj, "total_heap", JS_NewUint32(ctx, ESP.getHeapSize()));
   JS_SetPropertyStr(ctx, obj, "free_heap", JS_NewUint32(ctx, ESP.getFreeHeap()));
+  JS_SetPropertyStr(ctx, obj, "total_psram", JS_NewUint32(ctx, ESP.getPsramSize()));
+  JS_SetPropertyStr(ctx, obj, "free_psram", JS_NewUint32(ctx, ESP.getFreePsram()));
 
   return obj;
 }
@@ -484,10 +487,13 @@ JsModuleEntry console_module = {
 
 long esp32_initialize(void)
 {
+  Serial.begin(115200);
+
   auto cfg = M5.config();
   M5.begin(cfg);
 
   delay(500);
+
   Serial.println("[initializing]");
 
   return 0;
