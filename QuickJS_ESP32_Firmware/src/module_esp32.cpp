@@ -129,7 +129,7 @@ static JSValue esp32_get_deviceModel(JSContext *ctx, JSValueConst jsThis, int ar
   model = MODEL_M5StampC3;
 #elif defined(ARDUINO_ESP32C3U_DEV) // M5StampC3U
   model = MODEL_M5StampC3U;
-#elif defined(ARDUINO_ESP32S3_DEV) // M5StampS3
+#elif defined(ARDUINO_M5Stack_ATOMS3) // M5StampS3
   model = MODEL_M5StampS3;
 #endif
   return JS_NewUint32(ctx, model);
