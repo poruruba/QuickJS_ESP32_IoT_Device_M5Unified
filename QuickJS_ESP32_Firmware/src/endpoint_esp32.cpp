@@ -46,6 +46,19 @@ long endp_getSyslogServer(JsonObject& request, JsonObject& response, int magic)
   return 0;
 }
 
+long webcall_putText(JsonObject& request){
+  const char *p_text = request["text"];
+  if( p_text == NULL )
+    return -1;
+  if( (strlen(p_text) + 1) > FILE_BUFFER_SIZE )
+    return -1;
+
+  strcpy(g_download_buffer, p_text);
+  g_fileloading = FILE_LOADING_TEXT;
+
+  return 0;
+}
+
 long endp_putText(JsonObject& request, JsonObject& response, int magic)
 {
   const char *p_text = request["text"];

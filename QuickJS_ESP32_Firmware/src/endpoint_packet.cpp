@@ -125,6 +125,25 @@ long packet_initialize(void)
   });
   server.addHandler(handler);
 
+  AsyncCallbackJsonWebHandler *handler_putText = new AsyncCallbackJsonWebHandler("/webcall_putText", [](AsyncWebServerRequest *request, JsonVariant &json) {
+    JsonObject jsonObj = json.as<JsonObject>();
+    AsyncJsonResponse *response = new AsyncJsonResponse(false, PACKET_JSON_DOCUMENT_SIZE);
+    JsonObject responseResult = response->getRoot();
+    responseResult["status"] = "OK";
+    bool sem = xSemaphoreTake(binSem, portMAX_DELAY);
+    long ret = webcall_putText(jsonObj);
+    if( sem )
+      xSemaphoreGive(binSem);
+    if( ret != 0 ){
+      responseResult.clear();
+      responseResult["status"] = "NG";
+      responseResult["message"] = "unknown";
+    }
+    response->setLength();
+    request->send(response);
+  });
+  server.addHandler(handler_putText);
+
   DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
   DefaultHeaders::Instance().addHeader("Access-Control-Allow-Headers", "*");
 #ifdef ENABLE_STATIC_WEB_PAGE

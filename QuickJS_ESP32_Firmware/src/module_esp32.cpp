@@ -2,6 +2,7 @@
 #include <ArduinoJson.h>
 #include <WiFi.h>
 #include <Syslog.h>
+#include <ESP32Ping.h>
 
 #include "main_config.h"
 #include "quickjs.h"
@@ -237,6 +238,19 @@ static JSValue esp32_getMemoryUsage(JSContext *ctx, JSValueConst jsThis, int arg
   return obj;
 }
 
+static JSValue esp32_ping(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
+{
+  const char *host = JS_ToCString(ctx, argv[0]);
+  if( host == NULL )
+    return JS_EXCEPTION;
+
+  bool result = Ping.ping(host);
+
+  JS_FreeCString(ctx, host);
+
+  return JS_NewBool(ctx, result);
+}
+
 static JSValue esp32_console_log(JSContext *ctx, JSValueConst jsThis, int argc,
                             JSValueConst *argv, int magic) {
   int i = 0;
@@ -346,6 +360,9 @@ static const JSCFunctionListEntry esp32_funcs[] = {
                          }},
     JSCFunctionListEntry{"getMemoryUsage", 0, JS_DEF_CFUNC, 0, {
                            func : {0, JS_CFUNC_generic, esp32_getMemoryUsage}
+                         }},
+    JSCFunctionListEntry{"ping", 0, JS_DEF_CFUNC, 0, {
+                           func : {1, JS_CFUNC_generic, esp32_ping}
                          }},
     JSCFunctionListEntry{
         "MODEL_OTHER", 0, JS_DEF_PROP_INT32, 0, {

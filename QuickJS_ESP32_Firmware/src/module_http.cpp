@@ -66,10 +66,10 @@ static JSValue http_bridge(JSContext *ctx, JSValueConst jsThis, int argc, JSValu
 
   String server = read_config_string(CONFIG_FNAME_BRIDGE);
 
-  Serial.printf("target_host=%s\n", target_host);
-  Serial.printf("target_type=%s\n", p_target_type);
-  Serial.printf("server=%s\n", server.c_str());
-  Serial.printf("body=%s\n", body);
+  // Serial.printf("target_host=%s\n", target_host);
+  // Serial.printf("target_type=%s\n", p_target_type);
+  // Serial.printf("server=%s\n", server.c_str());
+  // Serial.printf("body=%s\n", body);
 
   HTTPClient http;
   http.begin(server + "/agent"); //HTTP
