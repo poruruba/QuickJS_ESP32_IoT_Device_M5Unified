@@ -53,6 +53,8 @@ https://poruruba.github.io/QuickJS_ESP32_IoT_Device_M5Unified/QuickJS_ESP32_Firm
   - EnvProユニットを追加
 - 2024-5-3
   - Uartモジュールを追加
+- 2024-9-29
+  - esp32.ping()を追加
 
 ## 誤記訂正
 - 2022-03-31
