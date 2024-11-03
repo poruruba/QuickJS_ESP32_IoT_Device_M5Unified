@@ -52,6 +52,9 @@
 #ifdef _HTTP_ENABLE_
 #include "module_http.h"
 #endif
+#ifdef _CRYPTO_ENABLE_
+#include "module_crypto.h"
+#endif
 #ifdef _MQTT_ENABLE_
 #include "module_mqtt.h"
 #endif
@@ -82,12 +85,11 @@ static JsModuleEntry module_entries[] = {
   wire_module,
   wire1_module,
   pixels_module,
-  utils_module,
   ledc_module,
   ir_module,
   udp_module,
-  prefs_module,
   uart_module,
+  prefs_module,
 #ifdef _UNIT_SONICIO_ENABLE_
   unit_sonicio_module,
 #endif
@@ -112,6 +114,9 @@ static JsModuleEntry module_entries[] = {
 #ifdef _HTTP_ENABLE_
   http_module,
 #endif
+#ifdef _CRYPTO_ENABLE_
+  crypto_module,
+#endif
 #ifdef _MQTT_ENABLE_
   mqtt_module,
 #endif
@@ -131,8 +136,9 @@ static JsModuleEntry module_entries[] = {
   rtc_module,
 #endif
 #ifdef _SD_ENABLE_
-  sd_module
+  sd_module,
 #endif
+  utils_module
 };
 
 static void qjs_dump_exception(JSContext *ctx, JSValue v) {

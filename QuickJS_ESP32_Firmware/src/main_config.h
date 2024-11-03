@@ -13,6 +13,7 @@
 #define _HTTP_ENABLE_
 #define _MQTT_ENABLE_
 #define _ENV_ENABLE_
+#define _CRYPTO_ENABLE_
 
 #if defined(ARDUINO_M5Stack_ATOM)
 #include <M5Unified.h>

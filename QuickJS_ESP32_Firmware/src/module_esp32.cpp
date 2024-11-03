@@ -2,6 +2,7 @@
 #include <ArduinoJson.h>
 #include <WiFi.h>
 #include <Syslog.h>
+#include "main_config.h"
 #include <ESP32Ping.h>
 
 #include "main_config.h"

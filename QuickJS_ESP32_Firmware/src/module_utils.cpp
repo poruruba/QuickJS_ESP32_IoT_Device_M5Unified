@@ -62,6 +62,8 @@ String urlencode(String str)
   return encodedString;
 }
 
+#ifdef _HTTP_ENABLE_
+
 static JSValue utils_http_text(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv, int magic)
 {
   HTTPClient http;
@@ -419,6 +421,8 @@ end:
   return value;
 }
 
+#endif
+
 static JSValue utils_urlencode(JSContext * ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
 {
   const char *str = JS_ToCString(ctx, argv[0]);
@@ -556,6 +560,7 @@ static JSValue utils_rgb2Gray(JSContext *ctx, JSValueConst jsThis,
 }
 
 static const JSCFunctionListEntry utils_funcs[] = {
+#ifdef _HTTP_ENABLE_
     JSCFunctionListEntry{"httpPostJson", 0, JS_DEF_CFUNC, 0, {
                            func : {3, JS_CFUNC_generic_magic, {generic_magic : utils_http_json}}
                          }},
@@ -574,6 +579,7 @@ static const JSCFunctionListEntry utils_funcs[] = {
     JSCFunctionListEntry{"httpUrlEncodedText", 0, JS_DEF_CFUNC, 2, {
                            func : {3, JS_CFUNC_generic_magic, {generic_magic : utils_http_text}}
                          }},
+#endif
     JSCFunctionListEntry{"urlencode", 0, JS_DEF_CFUNC, 0, {
                            func : {1, JS_CFUNC_generic, utils_urlencode}
                          }},

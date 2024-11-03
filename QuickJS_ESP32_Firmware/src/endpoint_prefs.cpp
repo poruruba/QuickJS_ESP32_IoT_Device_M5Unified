@@ -1,5 +1,6 @@
 #include <Arduino.h>
 
+#include "main_config.h"
 #include "endpoint_types.h"
 #include "module_prefs.h"
 #include "module_utils.h"

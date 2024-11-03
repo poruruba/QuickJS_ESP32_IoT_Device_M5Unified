@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include "main_config.h"
 #include <Preferences.h>
 #include "main_config.h"
 #include "quickjs.h"

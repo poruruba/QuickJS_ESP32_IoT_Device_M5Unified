@@ -3,6 +3,9 @@
 #include "main_config.h"
 #include "module_type.h"
 #include "module_utils.h"
+
+#ifdef _AUDIO_ENABLE_
+
 #include "module_audio.h"
 
 #include <driver/i2s.h>
@@ -308,3 +311,5 @@ JsModuleEntry audio_module = {
   NULL,
   endModule_audio
 };
+
+#endif

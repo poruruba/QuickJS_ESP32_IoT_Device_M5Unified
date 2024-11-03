@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include "main_config.h"
 #include "quickjs.h"
 #include "module_type.h"
 #include "module_utils.h"

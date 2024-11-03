@@ -112,6 +112,15 @@ long endp_getMacAddress(JsonObject& request, JsonObject& response, int magic)
   return 0;
 }
 
+long endp_get_code_config(JsonObject& request, JsonObject& response, int magic)
+{
+  long autoupdate = read_config_long(CONFIG_INDEX_AUTOUPDATE, 0);
+
+  response["result"]["autoupdate"] = autoupdate ? true : false;
+
+  return 0;
+}
+
 long endp_code_upload(JsonObject& request, JsonObject& response, int magic)
 {
   const char *p_code = request["code"];
@@ -237,6 +246,7 @@ EndpointEntry esp32_table[] = {
   EndpointEntry{ endp_putText, "/putText", 0 },
   EndpointEntry{ endp_setSyslogServer, "/setSyslogServer", 0 },
   EndpointEntry{ endp_getSyslogServer, "/getSyslogServer", 0 },
+  EndpointEntry{ endp_get_code_config, "/get-code-config", 0 },
   EndpointEntry{ endp_code_upload, "/code-upload", 0 },
   EndpointEntry{ endp_code_download, "/code-download", 0 },
   EndpointEntry{ endp_code_delete, "/code-delete", 0 },
