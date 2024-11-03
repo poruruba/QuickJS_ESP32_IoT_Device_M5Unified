@@ -11,6 +11,9 @@ https://qiita.com/poruruba
 管理コンソールはこちら<br>
 https://poruruba.github.io/QuickJS_ESP32_IoT_Device_M5Unified/QuickJS_ESP32_Firmware/data/html/
 
+ダウンロードサイトはこちら（最新ではない場合があります）<br>
+https://poruruba.github.io/EspWebDownloader/quickjs_esp32_firmware/
+
 ## 更新履歴
 - 2022-3-26
   - UDP通信機能の追加
