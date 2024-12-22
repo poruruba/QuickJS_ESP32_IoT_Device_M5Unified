@@ -26,20 +26,11 @@
 #include "module_udp.h"
 #include "module_prefs.h"
 #include "module_uart.h"
-#ifdef _ESPNOW_ENABLE_
-#include "module_espnow.h"
-#endif
 #ifdef _IR_ENABLE_
 #include "module_ir.h"
 #endif
 #ifdef _LEDC_ENABLE_
 #include "module_ledc.h"
-#endif
-#ifdef _BLECENTRAL_ENABLE_
-#include "module_blecentral.h"
-#endif
-#ifdef _BLEBEACON_ENABLE_
-#include "module_blebeacon.h"
 #endif
 #ifdef _UNIT_SONICIO_ENABLE_
 #include "module_unit_sonicio.h"
@@ -61,6 +52,9 @@
 #endif
 #ifdef _UNIT_ENVPRO_ENABLE_
 #include "module_unit_envpro.h"
+#endif
+#ifdef _UNIT_IMUPRO_ENABLE_
+#include "module_unit_imupro.h"
 #endif
 #ifdef _HTTP_ENABLE_
 #include "module_http.h"
@@ -101,20 +95,11 @@ static JsModuleEntry module_entries[] = {
   udp_module,
   uart_module,
   prefs_module,
-#ifdef _ESPNOW_ENABLE_
-  espnow_module,
-#endif
 #ifdef _IR_ENABLE_
   ir_module,
 #endif
 #ifdef _LEDC_ENABLE_
   ledc_module,
-#endif
-#ifdef _BLECENTRAL_ENABLE_
-  blecentral_module,
-#endif
-#ifdef _BLEBEACON_ENABLE_
-  blebeacon_module,
 #endif
 #ifdef _UNIT_SONICIO_ENABLE_
   unit_sonicio_module,
@@ -136,6 +121,9 @@ static JsModuleEntry module_entries[] = {
 #endif
 #ifdef _UNIT_ENVPRO_ENABLE_
   unit_envpro_module,
+#endif
+#ifdef _UNIT_IMUPRO_ENABLE_
+  unit_imupro_module,
 #endif
 #ifdef _HTTP_ENABLE_
   http_module,
