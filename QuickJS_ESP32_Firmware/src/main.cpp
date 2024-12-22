@@ -4,6 +4,8 @@
 
 #include "main_config.h"
 #include "quickjs_esp32.h"
+#include "config_utils.h"
+#include "wifi_utils.h"
 
 #include "endpoint_types.h"
 #include "endpoint_packet.h"
@@ -11,7 +13,6 @@
 extern const char jscode_default[] asm("_binary_rom_default_js_start");
 extern const char jscode_epilogue[] asm("_binary_rom_epilogue_js_start");
 
-char *js_modules_code = NULL;
 bool g_autoupdate = false;
 
 char g_download_buffer[FILE_BUFFER_SIZE];
@@ -68,6 +69,10 @@ void setup()
   ret = packet_initialize();
   if( ret != 0 )
     Serial.println("packet_initialize error");
+
+  ret = packet_open();
+  if( ret != 0 )
+    Serial.println("packet_open error");
 
   long conf = read_config_long(CONFIG_INDEX_AUTOUPDATE, 0);
   g_autoupdate = (conf != 0) ? true : false;
@@ -129,7 +134,7 @@ void loop()
     }
   }
 
-//  delay(1);
+  delay(1);
 }
 
 static long start_qjs(void)
@@ -145,8 +150,6 @@ static long start_qjs(void)
   if( js_code != NULL ){
     Serial.println("[executing]");
     qjs.exec(js_code);
-    free(js_code);
-    js_code = NULL;
   }else{
     Serial.println("[can't load main]");
     qjs.exec(jscode_default);
@@ -160,7 +163,7 @@ long save_jscode(const char *p_code)
   File fp = SPIFFS.open(MAIN_FNAME, FILE_WRITE);
   if( !fp )
     return -1;
-  fp.write((uint8_t*)p_code, strlen(p_code) + 1);
+  fp.write((uint8_t*)p_code, strlen(p_code));
   fp.close();
 
   return 0;
@@ -195,11 +198,11 @@ static char* load_jscode(void)
   if( !fp )
     return NULL;
   size_t size = fp.size();
-  char* js_code = (char*)malloc(size + strlen(jscode_epilogue) + 1);
-  if( js_code == NULL ){
+  if( (size + strlen(jscode_epilogue) + 1) > sizeof(g_download_buffer) ){
     fp.close();
     return NULL;
   }
+  char* js_code = g_download_buffer;
   fp.readBytes(js_code, size);
   fp.close();
   js_code[size] = '\0';
@@ -220,7 +223,7 @@ long save_module(const char* p_fname, const char *p_code)
   File fp = SPIFFS.open(filename, FILE_WRITE);
   if( !fp )
     return -1;
-  fp.write((uint8_t*)p_code, strlen(p_code) + 1);
+  fp.write((uint8_t*)p_code, strlen(p_code));
   fp.close();
 
   return 0;
@@ -261,48 +264,11 @@ long delete_module(const char *p_fname)
   return ret ? 0 : -1;
 }
 
-static long get_all_modules_size(void)
-{
-  int32_t sum = 0;
-
-  File dir = SPIFFS.open("/");
-  if( !dir )
-    return -1;
-  File file = dir.openNextFile();
-  while(file){
-    const char *fname = file.path();
-    if( strncmp(fname, MODULE_DIR, strlen(MODULE_DIR)) == 0 )
-      sum += file.size() + 1;
-    file.close();
-    file = dir.openNextFile();
-  }
-  dir.close();
-
-  return sum;
-}
-
 static long load_all_modules(void)
 {
-  if( js_modules_code != NULL ){
-    free(js_modules_code);
-    js_modules_code = NULL;
-  }
-
-  long all_size = get_all_modules_size();
-  if( all_size < 0 )
-    return -1;
-
   File dir = SPIFFS.open("/");
   if( !dir )
     return -1;
-
-  js_modules_code = (char*)malloc(all_size + 1);
-  if( js_modules_code == NULL ){
-    Serial.println("malloc failed");
-    return -1;
-  }
-  js_modules_code[0] = '\0';
-  int32_t js_modules_len = 0;
 
   File file = dir.openNextFile();
   while(file){
@@ -310,18 +276,27 @@ static long load_all_modules(void)
     if( strncmp(fname, MODULE_DIR, strlen(MODULE_DIR)) == 0 ){
       const char *module_name = file.name();
       size_t size = file.size();
-      file.readBytes(&js_modules_code[js_modules_len], size);
-      js_modules_code[js_modules_len + size] = '\0';
 
-      long ret = qjs.load_module(&js_modules_code[js_modules_len], strlen(&js_modules_code[js_modules_len]), module_name);
+      char *js_modules_code = (char*)malloc(size + 1);
+      if( js_modules_code == NULL ){
+        Serial.println("malloc failed");
+        return -1;
+      }
+      js_modules_code[0] = '\0';
+
+      file.readBytes(&js_modules_code[0], size);
+      js_modules_code[size] = '\0';
+
+      long ret = qjs.load_module(&js_modules_code[0], strlen(js_modules_code), module_name);
       if( ret != 0 ){
         Serial.printf("load module(%s) failed\n", module_name);
         file.close();
         dir.close();
         return -1;
       }
+      free(js_modules_code);
+      js_modules_code = NULL;
       Serial.printf("load module(%s) loaded\n", module_name);
-      js_modules_len += size + 1;
     }
     file.close();
     file = dir.openNextFile();
@@ -331,139 +306,7 @@ static long load_all_modules(void)
   return 0;
 }
 
-static long wifi_connect(const char *ssid, const char *password, unsigned long timeout)
-{
-  Serial.println("");
-  Serial.print("WiFi Connenting");
-
-  if( ssid == NULL && password == NULL )
-    WiFi.begin();
-  else
-    WiFi.begin(ssid, password);
-  unsigned long past = 0;
-  while (WiFi.status() != WL_CONNECTED){
-    Serial.print(".");
-    delay(500);
-    past += 500;
-    if( past > timeout ){
-      Serial.println("\nCan't Connect");
-      return -1;
-    }
-  }
-  Serial.print("\nConnected : IP=");
-  Serial.print(WiFi.localIP());
-  Serial.print(" Mac=");
-  Serial.println(WiFi.macAddress());
-
-  return 0;
-}
-
 static long m5_connect(void)
 {
-  long ret = wifi_connect(WIFI_SSID, WIFI_PASSWORD, WIFI_TIMEOUT);
-  if( ret != 0 ){
-    char ssid[32 + 1] = {'\0'};
-    Serial.print("\ninput SSID:");
-    Serial.setTimeout(SERIAL_TIMEOUT1);
-    ret = Serial.readBytesUntil('\r', ssid, sizeof(ssid) - 1);
-    if( ret <= 0 )
-      return -1;
-
-    delay(10);
-    Serial.read();
-    char password[32 + 1] = {'\0'};
-    Serial.print("\ninput PASSWORD:");
-    Serial.setTimeout(SERIAL_TIMEOUT2);
-    ret = Serial.readBytesUntil('\r', password, sizeof(password) - 1);
-    if( ret <= 0 )
-      return -1;
-
-    delay(10);
-    Serial.read();
-    Serial.printf("\nSSID=%s PASSWORD=", ssid);
-    for( int i = 0 ; i < strlen(password); i++ )
-      Serial.print("*");
-    Serial.println("");
-    ret = wifi_connect(ssid, password, WIFI_TIMEOUT);
-    if( ret != 0 )
-      return ret;
-  }
-
-  return 0;
-}
-
-long read_config_long(uint16_t index, long def)
-{
-  File fp = SPIFFS.open(CONFIG_FNAME, FILE_READ);
-  if( !fp )
-    return def;
-  
-  size_t fsize = fp.size();
-  if( fsize < (index + 1) * sizeof(long) )
-    return def;
-
-  bool ret = fp.seek(index * sizeof(long));
-  if( !ret ){
-    fp.close();
-    return def;
-  }
-
-  long value;
-  if( fp.read((uint8_t*)&value, sizeof(long)) != sizeof(long) ){
-    fp.close();
-    return def;
-  }
-  fp.close();
-
-  return value;
-}
-
-long write_config_long(uint16_t index, long value)
-{
-  File fp = SPIFFS.open(CONFIG_FNAME, FILE_WRITE);
-  if( !fp )
-    return -1;
-  
-  size_t fsize = fp.size();
-  long temp = 0;
-  if( fsize < index * sizeof(long) ){
-    fp.seek(fsize / sizeof(long) * sizeof(long));
-    for( int i = fsize / sizeof(long) ; i < index ; i++ )
-      fp.write((uint8_t*)&temp, sizeof(long));
-  }
-
-
-  if( fp.write((uint8_t*)&value, sizeof(long)) != sizeof(long) ){
-    fp.close();
-    return -1;
-  }
-  fp.close();
-
-  return 0;
-}
-
-String read_config_string(const char *fname)
-{
-  File fp = SPIFFS.open(fname, FILE_READ);
-  if( !fp )
-    return String("");
-
-  String text = fp.readString();
-  fp.close();
-
-  return text;
-}
-
-long write_config_string(const char *fname, const char *text)
-{
-  File fp = SPIFFS.open(fname, FILE_WRITE);
-  if( !fp )
-    return -1;
-
-  long ret = fp.write((uint8_t*)text, strlen(text));
-  fp.close();
-  if( ret != strlen(text) )
-    return -1;
-
-  return 0;
+  return wifi_try_connect(false);
 }

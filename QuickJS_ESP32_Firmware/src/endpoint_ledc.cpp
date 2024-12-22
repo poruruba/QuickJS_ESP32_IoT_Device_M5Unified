@@ -1,6 +1,9 @@
 #include <Arduino.h>
-#include "esp32-hal-ledc.h"
+#include "main_config.h"
 
+#ifdef _LEDC_ENABLE_
+
+#include "esp32-hal-ledc.h"
 #include "endpoint_types.h"
 #include "endpoint_ledc.h"
 
@@ -100,3 +103,5 @@ EndpointEntry ledc_table[] = {
 };
 
 const int num_of_ledc_entry = sizeof(ledc_table) / sizeof(EndpointEntry);
+
+#endif

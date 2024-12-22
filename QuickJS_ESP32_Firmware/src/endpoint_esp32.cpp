@@ -7,6 +7,8 @@
 #include "endpoint_types.h"
 #include "endpoint_esp32.h"
 #include "module_esp32.h"
+#include "config_utils.h"
+#include "wifi_utils.h"
 
 long endp_setSyslogServer(JsonObject& request, JsonObject& response, int magic)
 {
@@ -96,16 +98,14 @@ long endp_getStatus(JsonObject& request, JsonObject& response, int magic)
 
 long endp_getIpAddress(JsonObject& request, JsonObject& response, int magic)
 {
-  IPAddress address = WiFi.localIP();
-  response["result"] = (uint32_t)(((uint32_t)address[0]) << 24 | address[1] << 16 | address[2] << 8 | address[3]);
+  response["result"] = get_ip_address();
 
   return 0;
 }
 
 long endp_getMacAddress(JsonObject& request, JsonObject& response, int magic)
 {
-  uint8_t address[6];
-  WiFi.macAddress(address);
+  uint8_t *address = get_mac_address();
   for( int i = 0 ; i < 6 ; i++ )
     response["result"][i] = address[i];
 

@@ -1,13 +1,13 @@
 #include <Arduino.h>
-#include "quickjs.h"
 #include "main_config.h"
-#include "module_type.h"
-#include "module_utils.h"
 
 #ifdef _AUDIO_ENABLE_
 
-#include "module_audio.h"
+#include "quickjs.h"
+#include "module_type.h"
+#include "module_utils.h"
 
+#include "module_audio.h"
 #include <driver/i2s.h>
 #include "AudioFileSourceHTTPStream.h"
 #include "AudioFileSourceBuffer.h"

@@ -22,12 +22,25 @@
 #include "module_input.h"
 #include "module_gpio.h"
 #include "module_utils.h"
-#include "module_ledc.h"
 #include "module_pixels.h"
-#include "module_ir.h"
 #include "module_udp.h"
 #include "module_prefs.h"
 #include "module_uart.h"
+#ifdef _ESPNOW_ENABLE_
+#include "module_espnow.h"
+#endif
+#ifdef _IR_ENABLE_
+#include "module_ir.h"
+#endif
+#ifdef _LEDC_ENABLE_
+#include "module_ledc.h"
+#endif
+#ifdef _BLECENTRAL_ENABLE_
+#include "module_blecentral.h"
+#endif
+#ifdef _BLEBEACON_ENABLE_
+#include "module_blebeacon.h"
+#endif
 #ifdef _UNIT_SONICIO_ENABLE_
 #include "module_unit_sonicio.h"
 #endif
@@ -85,11 +98,24 @@ static JsModuleEntry module_entries[] = {
   wire_module,
   wire1_module,
   pixels_module,
-  ledc_module,
-  ir_module,
   udp_module,
   uart_module,
   prefs_module,
+#ifdef _ESPNOW_ENABLE_
+  espnow_module,
+#endif
+#ifdef _IR_ENABLE_
+  ir_module,
+#endif
+#ifdef _LEDC_ENABLE_
+  ledc_module,
+#endif
+#ifdef _BLECENTRAL_ENABLE_
+  blecentral_module,
+#endif
+#ifdef _BLEBEACON_ENABLE_
+  blebeacon_module,
+#endif
 #ifdef _UNIT_SONICIO_ENABLE_
   unit_sonicio_module,
 #endif
@@ -422,6 +448,15 @@ class ESP32QuickJS {
     return ret;
   }
 
+  JSValue callJsFunc_with_arg(JSContext *ctx, JSValueConst func_obj, JSValueConst this_obj, int argc, JSValueConst *argv){
+    JSValue ret = JS_Call(ctx, func_obj, this_obj, argc, argv);
+    if (JS_IsException(ret)){
+      qjs_dump_exception(ctx, ret);
+    }
+
+    return ret;
+  }
+
   bool loop(bool callLoopFn = true)
   {
     if( rt == NULL )
@@ -459,18 +494,18 @@ class ESP32QuickJS {
           JS_FreeValue(ctx, ret);
         }
       }
-
-      for( int i = 0 ; i < NUM_BTN_FUNC ; i++ ){
-        if( JS_IsFunction(ctx, btn_func[i]) && module_input_checkButtonState(FUNC_TYPE_WAS_PRESSED, i, 0) ){
-          JSValue ret = JS_Call(ctx, btn_func[i], btn_func[i], 0, nullptr);
-          if (JS_IsException(ret)) {
-            qjs_dump_exception(ctx, ret);
-            JS_FreeValue(ctx, ret);
-//            return false;
-      }else{
-        JS_FreeValue(ctx, ret);
-      }
     }
+
+    for( int i = 0 ; i < NUM_BTN_FUNC ; i++ ){
+      if( JS_IsFunction(ctx, btn_func[i]) && module_input_checkButtonState(FUNC_TYPE_WAS_PRESSED, i, 0) ){
+        JSValue ret = JS_Call(ctx, btn_func[i], btn_func[i], 0, nullptr);
+        if (JS_IsException(ret)) {
+          qjs_dump_exception(ctx, ret);
+          JS_FreeValue(ctx, ret);
+//            return false;
+        }else{
+          JS_FreeValue(ctx, ret);
+        }
       }
     }
 

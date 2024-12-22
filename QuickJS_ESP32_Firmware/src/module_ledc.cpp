@@ -1,5 +1,8 @@
 #include <Arduino.h>
 #include "main_config.h"
+
+#ifdef _LEDC_ENABLE_
+
 #include "quickjs.h"
 #include "module_ledc.h"
 #include "module_type.h"
@@ -262,3 +265,5 @@ JsModuleEntry ledc_module = {
   loopModule_ledc,
   endModule_ledc
 };
+
+#endif

@@ -6,6 +6,7 @@
 #include "main_config.h"
 #include "module_type.h"
 #include "module_utils.h"
+#include "wifi_utils.h"
 #include <base64.hpp>
 
 unsigned long b64_encode_length(unsigned long input_length)
@@ -868,9 +869,4 @@ JSValue getArrayBuffer(JSContext *ctx, JSValue value, void** p_buffer, uint8_t *
   *p_unit_size = bsize / *p_unit_num;
 
   return vbuffer;
-}
-
-bool is_wifi_connected(void)
-{
-  return WiFi.status() == WL_CONNECTED;
 }

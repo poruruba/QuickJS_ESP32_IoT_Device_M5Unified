@@ -4,20 +4,25 @@
 #include <Syslog.h>
 #include "main_config.h"
 #include <ESP32Ping.h>
+#include <M5Unified.h>
 
 #include "main_config.h"
 #include "quickjs.h"
 #include "quickjs_esp32.h"
 #include "module_type.h"
 #include "module_esp32.h"
+#include "config_utils.h"
+#include "wifi_utils.h"
+
+#include "endpoint_packet.h"
 
 #define GLOBAL_ESP32
 #define GLOBAL_CONSOLE
 
 #define MODEL_OTHER         0
 #define MODEL_M5Core2       1
-#define MODEL_M5Core        2
-#define MODEL_M5Fire        3
+#define MODEL_M5Core        2 /* no use */
+#define MODEL_M5Fire        3 /* no use */
 #define MODEL_M5StickCPlus  4
 #define MODEL_M5CoreInk     5
 #define MODEL_M5Paper       6
@@ -27,6 +32,27 @@
 #define MODEL_M5StampC3     10
 #define MODEL_M5StampC3U    11
 #define MODEL_M5StampS3     12
+#define MODEL_M5Stack       13
+#define MODEL_M5StickCPlus2 14
+#define MODEL_M5Station     15
+#define MODEL_M5CoreS3      16
+#define MODEL_M5AtomS3      17
+#define MODEL_M5Dial        18
+#define MODEL_M5DinMeter    19
+#define MODEL_M5Cardputer   20
+#define MODEL_M5AirQ        21
+#define MODEL_M5VAMeter     22
+#define MODEL_M5CoreS3SE    23
+#define MODEL_M5AtomS3R     24
+#define MODEL_M5AtomPsram   25
+#define MODEL_M5AtomU       26
+#define MODEL_M5Camera      27
+#define MODEL_M5TimerCam    28
+#define MODEL_M5StampPico   29
+#define MODEL_M5AtomS3Lite  30
+#define MODEL_M5AtomS3U     31
+#define MODEL_M5Capsule     32
+#define MODEL_M5NanoC6      33
 
 static WiFiUDP syslog_udp;
 static Syslog g_syslog(syslog_udp);
@@ -89,14 +115,12 @@ static JSValue esp32_update(JSContext *ctx, JSValueConst jsThis, int argc, JSVal
 
 static JSValue esp32_get_ipaddress(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
 {
-  IPAddress address = WiFi.localIP();  
-  return JS_NewUint32(ctx, (uint32_t)(((uint32_t)address[0]) << 24 | address[1] << 16 | address[2] << 8 | address[3]));
+  return JS_NewUint32(ctx, get_ip_address());
 }
 
 static JSValue esp32_get_macaddress(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
 {
-  uint8_t address[6];
-  WiFi.macAddress(address);
+  uint8_t *address = get_mac_address();
 
   JSValue jsArray = JS_NewArray(ctx);
   for (int i = 0; i < 6; i++)
@@ -107,32 +131,43 @@ static JSValue esp32_get_macaddress(JSContext *ctx, JSValueConst jsThis, int arg
 
 static JSValue esp32_get_deviceModel(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
 {
-  uint8_t model = MODEL_OTHER;
-#if defined(ARDUINO_M5Stack_Core_ESP32) // M5StackCore
-  model = MODEL_M5Core;
-#elif defined(ARDUINO_M5STACK_FIRE)  //M5Stack Fire
-  model = MODEL_M5Fire;
-#elif defined(ARDUINO_M5STACK_Core2) // M5Stack Core2
-  model = MODEL_M5Core2;
-#elif defined(ARDUINO_M5Stick_C) // M5Stick C
-  model = MODEL_M5StickC;
-#elif defined(ARDUINO_M5Stick_C_Plus) // M5StickCPlus
-  model = MODEL_M5StickCPlus;
-#elif defined(ARDUINO_M5Stack_CoreInk) // M5Stack CoreInk
-  model = MODEL_M5CoreInk;
-#elif defined(ARDUINO_M5STACK_Paper) // M5Paper
-  model = MODEL_M5Paper;
-#elif defined(ARDUINO_M5STACK_TOUGH) // M5Tough
-  model = MODEL_M5Tough;
-#elif defined(ARDUINO_M5Stack_ATOM) // M5Atom
-  model = MODEL_M5Atom;
-#elif defined(ARDUINO_ESP32C3_DEV) // M5StampC3
-  model = MODEL_M5StampC3;
-#elif defined(ARDUINO_ESP32C3U_DEV) // M5StampC3U
-  model = MODEL_M5StampC3U;
-#elif defined(ARDUINO_M5Stack_ATOMS3) // M5StampS3
-  model = MODEL_M5StampS3;
-#endif
+  uint8_t model;
+  m5::board_t boad = M5.getBoard();
+  switch(boad){
+    case lgfx::board_t::board_M5Stack: model = MODEL_M5Stack; break;
+    case lgfx::board_t::board_M5StackCore2: model = MODEL_M5Core2; break;
+    case lgfx::board_t::board_M5StickC: model = MODEL_M5StickC; break;
+    case lgfx::board_t::board_M5StickCPlus: model = MODEL_M5StickCPlus; break;
+    case lgfx::board_t::board_M5StickCPlus2: model = MODEL_M5StickCPlus2; break;
+    case lgfx::board_t::board_M5StackCoreInk: model = MODEL_M5CoreInk; break;
+    case lgfx::board_t::board_M5Paper: model = MODEL_M5Paper; break;
+    case lgfx::board_t::board_M5Tough: model = MODEL_M5Tough; break;
+    case lgfx::board_t::board_M5Station: model = MODEL_M5Station; break;
+    case lgfx::board_t::board_M5StackCoreS3: model = MODEL_M5CoreS3; break;
+    case lgfx::board_t::board_M5AtomS3: model = MODEL_M5AtomS3; break;
+    case lgfx::board_t::board_M5Dial: model = MODEL_M5Dial; break;
+    case lgfx::board_t::board_M5DinMeter: model = MODEL_M5DinMeter; break;
+    case lgfx::board_t::board_M5Cardputer: model = MODEL_M5Cardputer; break;
+    case lgfx::board_t::board_M5AirQ: model = MODEL_M5AirQ; break;
+    case lgfx::board_t::board_M5VAMeter: model = MODEL_M5VAMeter; break;
+    case lgfx::board_t::board_M5StackCoreS3SE: model = MODEL_M5CoreS3SE; break;
+    case lgfx::board_t::board_M5AtomS3R: model = MODEL_M5AtomS3R; break;
+    case lgfx::board_t::board_M5Atom: model = MODEL_M5Atom; break;
+    case lgfx::board_t::board_M5AtomPsram: model = MODEL_M5AtomPsram; break;
+    case lgfx::board_t::board_M5AtomU: model = MODEL_M5AtomU; break;
+    case lgfx::board_t::board_M5Camera: model = MODEL_M5Camera; break;
+    case lgfx::board_t::board_M5TimerCam: model = MODEL_M5TimerCam; break;
+    case lgfx::board_t::board_M5StampPico: model = MODEL_M5StampPico; break;
+    case lgfx::board_t::board_M5StampC3: model = MODEL_M5StampC3; break;
+    case lgfx::board_t::board_M5StampC3U: model = MODEL_M5StampC3U; break;
+    case lgfx::board_t::board_M5StampS3: model = MODEL_M5StampS3; break;
+    case lgfx::board_t::board_M5AtomS3Lite: model = MODEL_M5AtomS3Lite; break;
+    case lgfx::board_t::board_M5AtomS3U: model = MODEL_M5AtomS3U; break;
+    case lgfx::board_t::board_M5Capsule: model = MODEL_M5Capsule; break;
+    case lgfx::board_t::board_M5NanoC6: model = MODEL_M5NanoC6; break;
+    default: model = MODEL_OTHER; break;
+  }
+
   return JS_NewUint32(ctx, model);
 }
 
@@ -252,6 +287,44 @@ static JSValue esp32_ping(JSContext *ctx, JSValueConst jsThis, int argc, JSValue
   return JS_NewBool(ctx, result);
 }
 
+static JSValue esp32_wifi_connect(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
+{
+  uint32_t timeout;
+  JS_ToUint32(ctx, &timeout, argv[0]);
+
+  if( wifi_is_connected() )
+    return JS_EXCEPTION;
+
+  long ret = wifi_connect(NULL, NULL, timeout);
+  if( ret != 0 )
+    return JS_EXCEPTION;
+
+  ret = packet_open();
+  if( ret != 0 )
+    return JS_EXCEPTION;
+
+  return JS_NewInt32(ctx, ret);
+}
+
+static JSValue esp32_wifi_disconnect(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
+{
+  if( !wifi_is_connected() )
+    return JS_EXCEPTION;
+
+  packet_close();
+
+  long ret = wifi_disconnect();
+
+  return JS_NewInt32(ctx, ret);
+}
+
+static JSValue esp32_wifi_is_connected(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
+{
+  bool ret = wifi_is_connected();
+
+  return JS_NewBool(ctx, ret);
+}
+
 static JSValue esp32_console_log(JSContext *ctx, JSValueConst jsThis, int argc,
                             JSValueConst *argv, int magic) {
   int i = 0;
@@ -365,6 +438,15 @@ static const JSCFunctionListEntry esp32_funcs[] = {
     JSCFunctionListEntry{"ping", 0, JS_DEF_CFUNC, 0, {
                            func : {1, JS_CFUNC_generic, esp32_ping}
                          }},
+    JSCFunctionListEntry{"wifiConnect", 0, JS_DEF_CFUNC, 0, {
+                           func : {1, JS_CFUNC_generic, esp32_wifi_connect}
+                         }},
+    JSCFunctionListEntry{"wifiDisconnect", 0, JS_DEF_CFUNC, 0, {
+                           func : {0, JS_CFUNC_generic, esp32_wifi_disconnect}
+                         }},
+    JSCFunctionListEntry{"wifiIsConnected", 0, JS_DEF_CFUNC, 0, {
+                           func : {0, JS_CFUNC_generic, esp32_wifi_is_connected}
+                         }},
     JSCFunctionListEntry{
         "MODEL_OTHER", 0, JS_DEF_PROP_INT32, 0, {
           i32 : MODEL_OTHER
@@ -416,6 +498,90 @@ static const JSCFunctionListEntry esp32_funcs[] = {
     JSCFunctionListEntry{
         "MODEL_M5StampS3", 0, JS_DEF_PROP_INT32, 0, {
           i32 : MODEL_M5StampS3
+        }},
+    JSCFunctionListEntry{
+        "MODEL_M5Stack", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : MODEL_M5Stack
+        }},
+    JSCFunctionListEntry{
+        "MODEL_M5StickCPlus2", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : MODEL_M5StickCPlus2
+        }},
+    JSCFunctionListEntry{
+        "MODEL_M5Station", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : MODEL_M5Station
+        }},
+    JSCFunctionListEntry{
+        "MODEL_M5CoreS3", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : MODEL_M5CoreS3
+        }},
+    JSCFunctionListEntry{
+        "MODEL_M5AtomS3", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : MODEL_M5AtomS3
+        }},
+    JSCFunctionListEntry{
+        "MODEL_M5Dial", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : MODEL_M5Dial
+        }},
+    JSCFunctionListEntry{
+        "MODEL_M5DinMeter", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : MODEL_M5DinMeter
+        }},
+    JSCFunctionListEntry{
+        "MODEL_M5Cardputer", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : MODEL_M5Cardputer
+        }},
+    JSCFunctionListEntry{
+        "MODEL_M5AirQ", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : MODEL_M5AirQ
+        }},
+    JSCFunctionListEntry{
+        "MODEL_M5VAMeter", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : MODEL_M5VAMeter
+        }},
+    JSCFunctionListEntry{
+        "MODEL_M5CoreS3SE", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : MODEL_M5CoreS3SE
+        }},
+    JSCFunctionListEntry{
+        "MODEL_M5AtomS3R", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : MODEL_M5AtomS3R
+        }},
+    JSCFunctionListEntry{
+        "MODEL_M5AtomPsram", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : MODEL_M5AtomPsram
+        }},
+    JSCFunctionListEntry{
+        "MODEL_M5AtomU", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : MODEL_M5AtomU
+        }},
+    JSCFunctionListEntry{
+        "MODEL_M5Camera", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : MODEL_M5Camera
+        }},
+    JSCFunctionListEntry{
+        "MODEL_M5TimerCam", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : MODEL_M5TimerCam
+        }},
+    JSCFunctionListEntry{
+        "MODEL_M5StampPico", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : MODEL_M5StampPico
+        }},
+    JSCFunctionListEntry{
+        "MODEL_M5AtomS3Lite", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : MODEL_M5AtomS3Lite
+        }},
+    JSCFunctionListEntry{
+        "MODEL_M5AtomS3U", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : MODEL_M5AtomS3U
+        }},
+    JSCFunctionListEntry{
+        "MODEL_M5Capsule", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : MODEL_M5Capsule
+        }},
+    JSCFunctionListEntry{
+        "MODEL_M5NanoC6", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : MODEL_M5NanoC6
         }},
     JSCFunctionListEntry{
         "SYSLOG_PRIORITY_EMERG", 0, JS_DEF_PROP_INT32, 0, {

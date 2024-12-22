@@ -9,6 +9,7 @@
 #include "main_config.h"
 #include "endpoint_types.h"
 #include "endpoint_packet.h"
+#include "wifi_utils.h"
 
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
@@ -16,9 +17,11 @@
 
 #include "endpoint_esp32.h"
 #include "endpoint_gpio.h"
-#include "endpoint_ledc.h"
 #include "endpoint_wire.h"
 #include "endpoint_prefs.h"
+#ifdef _LEDC_ENABLE_
+#include "endpoint_ledc.h"
+#endif
 #ifdef _RTC_ENABLE_
 #include "endpoint_rtc.h"
 #endif
@@ -73,22 +76,13 @@ static void notFound(AsyncWebServerRequest *request)
 
 long packet_initialize(void)
 {
-  if( !is_wifi_connected() )
-    return -1;
-
-  if (!MDNS.begin(MDNS_NAME)){
-    Serial.println("MDNS.begin error");
-  }else{
-    Serial.printf("MDNS_NAME: %s\n", MDNS_NAME);
-    MDNS.addService("http", "tcp", HTTP_PORT);
-    Serial.printf("serivce_name: %s, TCP_PORT: %d\n", "http", HTTP_PORT);
-  }
-
   packet_appendEntry(esp32_table, num_of_esp32_entry);
   packet_appendEntry(gpio_table, num_of_gpio_entry);
   packet_appendEntry(wire_table, num_of_wire_entry);
-  packet_appendEntry(ledc_table, num_of_ledc_entry);
   packet_appendEntry(prefs_table, num_of_prefs_entry);
+#ifdef _LEDC_ENABLE_
+  packet_appendEntry(ledc_table, num_of_ledc_entry);
+#endif
 #ifdef _RTC_ENABLE_
   packet_appendEntry(rtc_table, num_of_rtc_entry);
 #endif
@@ -150,7 +144,33 @@ long packet_initialize(void)
   server.serveStatic("/", SPIFFS, "/html/").setDefaultFile("index.html");
 #endif
   server.onNotFound(notFound);
-  server.begin();
+//  server.begin();
 
   return 0;
 }
+
+long packet_open(void)
+{
+  if( !wifi_is_connected() )
+    return -1;
+
+  if (!MDNS.begin(MDNS_NAME)){
+    Serial.println("MDNS.begin error");
+  }else{
+    Serial.printf("MDNS_NAME: %s\n", MDNS_NAME);
+    MDNS.addService("http", "tcp", HTTP_PORT);
+    Serial.printf("serivce_name: %s, TCP_PORT: %d\n", "http", HTTP_PORT);
+  }
+
+  server.begin();
+  
+  return 0;
+}
+
+long packet_close(void){
+  server.end();
+  MDNS.end();
+
+  return 0;
+}
+

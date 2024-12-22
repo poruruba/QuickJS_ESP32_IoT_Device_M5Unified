@@ -1,6 +1,9 @@
 #include <Arduino.h>
-#include "quickjs.h"
 #include "main_config.h"
+
+#ifdef _SD_ENABLE_
+
+#include "quickjs.h"
 #include "module_type.h"
 #include "module_utils.h"
 #include "module_sd.h"
@@ -406,3 +409,5 @@ JsModuleEntry sd_module = {
   NULL,
   NULL
 };
+
+#endif

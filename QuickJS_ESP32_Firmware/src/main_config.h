@@ -3,6 +3,7 @@
 
 #include <Arduino.h>
 
+#if 1
 #define _UNIT_COLOR_ENABLE_
 #define _UNIT_SONICIO_ENABLE_
 #define _UNIT_GAS_ENABLE_
@@ -10,10 +11,13 @@
 #define _UNIT_PBHUB_ENABLE_
 #define _UNIT_ANGLE8_ENABLE_
 #define _UNIT_ENVPRO_ENABLE_
+#endif
 #define _HTTP_ENABLE_
 #define _MQTT_ENABLE_
 #define _ENV_ENABLE_
 #define _CRYPTO_ENABLE_
+#define _IR_ENABLE_
+#define _LEDC_ENABLE_
 
 #if defined(ARDUINO_M5Stack_ATOM)
 #include <M5Unified.h>
@@ -59,6 +63,9 @@
 #define _LCD_ENABLE_
 #define _IMU_ENABLE_
 #define MDNS_NAME "QuickJS_ESP32_M5AtomS3" // mDNSサービスホスト名
+#elif defined(ARDUINO_ESP32C6_DEV)
+#include <M5Unified.h>
+#define MDNS_NAME "QuickJS_ESP32_C6" // mDNSサービスホスト名
 #endif
 
 #define DUMMY_FNAME  "/dummy"
@@ -68,6 +75,9 @@
 #define CONFIG_FNAME_SYSLOG  "/syslog.ini"
 #define CONFIG_FNAME_MQTT  "/mqtt.ini"
 #define CONFIG_FNAME_BRIDGE  "/bridge.ini"
+#define CONFIG_AWS_CREDENTIAL1  "/awscred1.ini"
+#define CONFIG_AWS_CREDENTIAL2  "/awscred2.ini"
+#define CONFIG_AWS_CREDENTIAL3  "/awscred3.ini"
 
 #define CONFIG_INDEX_AUTOUPDATE 0
 
@@ -113,10 +123,5 @@ long save_module(const char* p_fname, const char *p_code);
 long delete_module(const char *p_fname);
 long read_module(const char* p_fname, char *p_buffer, uint32_t maxlen);
 long read_jscode(char *p_buffer, uint32_t maxlen);
-
-long read_config_long(uint16_t index, long def);
-long write_config_long(uint16_t index, long value);
-String read_config_string(const char *fname);
-long write_config_string(const char *fname, const char *text);
 
 #endif

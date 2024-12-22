@@ -5,6 +5,7 @@
 #include "main_config.h"
 #include "module_type.h"
 #include "module_utils.h"
+#include "config_utils.h"
 
 #define HTTP_RESP_SHIFT   0
 #define HTTP_RESP_NONE    0x0
@@ -120,6 +121,85 @@ end:
   return value;
 }
 
+static JSValue aws_bridge(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
+{
+  String accessKeyId = read_config_string(CONFIG_AWS_CREDENTIAL1);
+  String secretAccessKey = read_config_string(CONFIG_AWS_CREDENTIAL2);
+  String sessionToken = read_config_string(CONFIG_AWS_CREDENTIAL3);
+
+  JSValue cred = JS_NewObject(ctx);
+  JS_SetPropertyStr(ctx, cred, "accessKeyId", JS_NewString(ctx, accessKeyId.c_str()));
+  JS_SetPropertyStr(ctx, cred, "secretAccessKey", JS_NewString(ctx, secretAccessKey.c_str()));
+  if( sessionToken.length() > 0 )
+     JS_SetPropertyStr(ctx, cred, "sessionToken", JS_NewString(ctx, sessionToken.c_str()));
+
+  JSValue value = JS_NewObject(ctx);
+  JS_SetPropertyStr(ctx, value, "params", JS_DupValue(ctx, argv[0]));
+  JS_SetPropertyStr(ctx, value, "cred", cred);
+
+  String server = read_config_string(CONFIG_FNAME_BRIDGE);
+
+  HTTPClient http;
+  http.begin(server + "/aws");
+  http.addHeader("Content-Type", "application/json");
+
+  // HTTP POST JSON
+  JSValue value_str = JS_JSONStringify(ctx, value, JS_UNDEFINED, JS_UNDEFINED);
+  JS_FreeValue(ctx, value);
+  const char *body = JS_ToCString(ctx, value_str);
+  JS_FreeValue(ctx, value_str);
+  int status_code = http.POST(body);
+  JS_FreeCString(ctx, body);
+
+  if (status_code != 200){
+    Serial.printf("status_code=%d\n", status_code);
+    http.end();
+    return JS_EXCEPTION;
+  }
+
+  String result = http.getString();
+  http.end();
+  return JS_NewString(ctx, result.c_str());
+}
+
+static JSValue http_setAwsCredential(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
+{
+  const char *accessKeyId = JS_ToCString(ctx, argv[0]);
+  if( accessKeyId == NULL )
+    return JS_EXCEPTION;
+  const char *secretAccessKey = JS_ToCString(ctx, argv[1]);
+  if( secretAccessKey == NULL )
+    return JS_EXCEPTION;
+  const char *sessionToken = NULL;
+  if( argc > 2 ){
+    sessionToken = JS_ToCString(ctx, argv[2]);
+    if( sessionToken != NULL && strlen(sessionToken) == 0 ){
+      JS_FreeCString(ctx, sessionToken);
+      sessionToken = NULL;
+    }
+  }
+
+  long ret;  
+  ret = write_config_string(CONFIG_AWS_CREDENTIAL1, accessKeyId);
+  JS_FreeCString(ctx, accessKeyId);
+  if( ret != 0 )
+    return JS_EXCEPTION;
+  ret = write_config_string(CONFIG_AWS_CREDENTIAL2, secretAccessKey);
+  JS_FreeCString(ctx, secretAccessKey);
+  if( ret != 0 )
+    return JS_EXCEPTION;
+  if( sessionToken == NULL ){
+    ret = write_config_string(CONFIG_AWS_CREDENTIAL3, "");
+  }else{
+    ret = write_config_string(CONFIG_AWS_CREDENTIAL3, sessionToken);
+    JS_FreeCString(ctx, sessionToken);
+  }
+  if( ret != 0 )
+    return JS_EXCEPTION;
+
+  return JS_UNDEFINED;
+}
+
 static JSValue http_fetch(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
 {
   if( argc <= 1 )
@@ -154,6 +234,12 @@ static JSValue http_getHttpBridgeServer(JSContext *ctx, JSValueConst jsThis, int
 }
 
 static const JSCFunctionListEntry http_funcs[] = {
+    JSCFunctionListEntry{"fetchAws", 0, JS_DEF_CFUNC, 0, {
+                           func : {1, JS_CFUNC_generic, aws_bridge}
+                         }},
+    JSCFunctionListEntry{"setAwsCredential", 0, JS_DEF_CFUNC, 0, {
+                           func : {3, JS_CFUNC_generic, http_setAwsCredential}
+                         }},
     JSCFunctionListEntry{"fetch", 0, JS_DEF_CFUNC, 0, {
                            func : {5, JS_CFUNC_generic, http_fetch}
                          }},

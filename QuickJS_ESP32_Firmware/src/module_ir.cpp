@@ -1,8 +1,12 @@
 #include <Arduino.h>
 #include "main_config.h"
+
+#ifdef _IR_ENABLE_
+
 #include "quickjs.h"
 #include "module_type.h"
 #include "module_utils.h"
+
 #include <IRsend.h>
 #include <IRrecv.h>
 #include <IRutils.h>
@@ -224,3 +228,5 @@ JsModuleEntry ir_module = {
   NULL,
   endModule_ir
 };
+
+#endif
