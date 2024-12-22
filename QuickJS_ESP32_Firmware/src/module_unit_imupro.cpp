@@ -22,6 +22,9 @@ static float yaw   = 0;
 
 static JSValue unit_imupro_begin(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
 {
+    uint32_t sampleFrequency = 20;
+    JS_ToUint32(ctx, &sampleFrequency, argv[0]);
+
     unsigned status = bmp.begin(BMP280_SENSOR_ADDR);
     if (!status) {
         Serial.println(
@@ -38,7 +41,7 @@ static JSValue unit_imupro_begin(JSContext *ctx, JSValueConst jsThis, int argc, 
         return JS_EXCEPTION;
     }
         
-    filter.begin(20);  // 20hz
+    filter.begin(sampleFrequency);  // 20hz
 
     return JS_UNDEFINED;
 }
@@ -97,28 +100,7 @@ static JSValue unit_imupro_readMagneticField(JSContext *ctx, JSValueConst jsThis
     return obj;
 }
 
-static JSValue unit_imupro_readTemperature(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
-{
-    float temp = bmp.readTemperature();
-
-    return JS_NewFloat64(ctx, temp);
-}
-
-static JSValue unit_imupro_readPressure(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
-{
-    float press = bmp.readPressure();
-
-    return JS_NewFloat64(ctx, press);
-}
-
-static JSValue unit_imupro_readAltitude(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
-{
-    float alt = bmp.readAltitude(1013.25);
-
-    return JS_NewFloat64(ctx, alt);
-}
-
-static JSValue unit_imupro_updateImu(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
+static JSValue unit_imupro_updateFilter(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
 {
     if (!bmi270.accelerationAvailable() || !bmi270.gyroscopeAvailable())
         return JS_NULL;
@@ -145,10 +127,31 @@ static JSValue unit_imupro_updateImu(JSContext *ctx, JSValueConst jsThis, int ar
     return obj;
 }
 
+static JSValue unit_imupro_readTemperature(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
+{
+    float temp = bmp.readTemperature();
+
+    return JS_NewFloat64(ctx, temp);
+}
+
+static JSValue unit_imupro_readPressure(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
+{
+    float press = bmp.readPressure();
+
+    return JS_NewFloat64(ctx, press);
+}
+
+static JSValue unit_imupro_readAltitude(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
+{
+    float alt = bmp.readAltitude(1013.25);
+
+    return JS_NewFloat64(ctx, alt);
+}
+
 static const JSCFunctionListEntry unit_imupro_funcs[] = {
     JSCFunctionListEntry{
         "begin", 0, JS_DEF_CFUNC, 0, {
-          func : {0, JS_CFUNC_generic, unit_imupro_begin}
+          func : {1, JS_CFUNC_generic, unit_imupro_begin}
         }},
     JSCFunctionListEntry{
         "readAcceleration", 0, JS_DEF_CFUNC, 0, {
@@ -163,6 +166,10 @@ static const JSCFunctionListEntry unit_imupro_funcs[] = {
           func : {0, JS_CFUNC_generic, unit_imupro_readMagneticField}
         }},
     JSCFunctionListEntry{
+        "updateFilter", 0, JS_DEF_CFUNC, 0, {
+          func : {0, JS_CFUNC_generic, unit_imupro_updateFilter}
+        }},
+    JSCFunctionListEntry{
         "readTemperature", 0, JS_DEF_CFUNC, 0, {
           func : {0, JS_CFUNC_generic, unit_imupro_readTemperature}
         }},
@@ -174,11 +181,6 @@ static const JSCFunctionListEntry unit_imupro_funcs[] = {
         "readAltitude", 0, JS_DEF_CFUNC, 0, {
           func : {0, JS_CFUNC_generic, unit_imupro_readAltitude}
         }},
-    JSCFunctionListEntry{
-        "updateImu", 0, JS_DEF_CFUNC, 0, {
-          func : {0, JS_CFUNC_generic, unit_imupro_updateImu}
-        }},
-
 };
 
 JSModuleDef *addModule_unit_imupro(JSContext *ctx, JSValue global)
