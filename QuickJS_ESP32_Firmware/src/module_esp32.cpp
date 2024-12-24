@@ -274,6 +274,23 @@ static JSValue esp32_getMemoryUsage(JSContext *ctx, JSValueConst jsThis, int arg
   return obj;
 }
 
+static JSValue esp32_getDatetime(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
+{
+  time_t now = time(nullptr);
+  struct tm* localTime = localtime(&now); 
+
+  JSValue obj = JS_NewObject(ctx);
+  JS_SetPropertyStr(ctx, obj, "year", JS_NewUint32(ctx, 1900 + localTime->tm_year));
+  JS_SetPropertyStr(ctx, obj, "month", JS_NewUint32(ctx, localTime->tm_mon + 1));
+  JS_SetPropertyStr(ctx, obj, "day", JS_NewUint32(ctx, localTime->tm_mday));
+  JS_SetPropertyStr(ctx, obj, "hour", JS_NewUint32(ctx, localTime->tm_hour));
+  JS_SetPropertyStr(ctx, obj, "minute", JS_NewUint32(ctx, localTime->tm_min));
+  JS_SetPropertyStr(ctx, obj, "second", JS_NewUint32(ctx, localTime->tm_sec));
+  JS_SetPropertyStr(ctx, obj, "wday", JS_NewUint32(ctx, localTime->tm_wday));
+
+  return obj;
+}
+
 static JSValue esp32_ping(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
 {
   const char *host = JS_ToCString(ctx, argv[0]);
@@ -434,6 +451,9 @@ static const JSCFunctionListEntry esp32_funcs[] = {
                          }},
     JSCFunctionListEntry{"getMemoryUsage", 0, JS_DEF_CFUNC, 0, {
                            func : {0, JS_CFUNC_generic, esp32_getMemoryUsage}
+                         }},
+    JSCFunctionListEntry{"getDatetime", 0, JS_DEF_CFUNC, 0, {
+                           func : {0, JS_CFUNC_generic, esp32_getDatetime}
                          }},
     JSCFunctionListEntry{"ping", 0, JS_DEF_CFUNC, 0, {
                            func : {1, JS_CFUNC_generic, esp32_ping}
