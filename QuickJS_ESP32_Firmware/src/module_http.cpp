@@ -6,6 +6,7 @@
 #include "module_type.h"
 #include "module_utils.h"
 #include "config_utils.h"
+#include <mbedtls/md.h>
 
 #define HTTP_RESP_SHIFT   0
 #define HTTP_RESP_NONE    0x0
@@ -33,8 +34,8 @@ typedef struct _AwsAuthorizationResult {
 } AwsAuthorizationResult;
 
 static AwsAuthorizationResult makeAwsAuthorization(const char *method, const char *host, const char *canonicalUri, const char *canonicalQuerystring,
-                            const char *canonicalHeaders,const char *canonicalHeaderNames, const char *service, const char *payload,
-                            const char *region, const char *accessKeyId, const char *secretAccessKey);
+                            const char *canonicalHeaders, const char *canonicalHeaderNames, const unsigned char *payload, int payload_length, 
+                            const char *service, const char *region, const char *accessKeyId, const char *secretAccessKey);
 
 static JSValue aws_bridge(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
 {
@@ -80,12 +81,6 @@ static JSValue aws_bridge(JSContext *ctx, JSValueConst jsThis, int argc, JSValue
     return JS_EXCEPTION;
   const char *service_str = JS_ToCString(ctx, service);
   JS_FreeValue(ctx, service);
-  JSValue payload = JS_GetPropertyStr(ctx, argv[0], "payload");
-  const char *payload_str = NULL;
-  if( payload != JS_UNDEFINED ){
-    payload_str = JS_ToCString(ctx, payload);
-    JS_FreeValue(ctx, payload);
-  }
   JSValue contentType = JS_GetPropertyStr(ctx, argv[0], "contentType");
   const char *contentType_str = NULL;
   if( contentType != JS_UNDEFINED ){
@@ -99,12 +94,18 @@ static JSValue aws_bridge(JSContext *ctx, JSValueConst jsThis, int argc, JSValue
     JS_FreeValue(ctx, region);
   }
 
-  AwsAuthorizationResult amzResult = makeAwsAuthorization(method_str, host_str, canonicalUri_str, canonicalQuerystring_str, canonicalHeaders_str, canonicalHeaderNames_str, service_str, payload_str, region_str, accessKeyId.c_str(), secretAccessKey.c_str());
+  JSValue payload = JS_GetPropertyStr(ctx, argv[0], "payload");
+  const char *payload_str = NULL;
+  if( payload != JS_UNDEFINED ){
+    payload_str = JS_ToCString(ctx, payload);
+    JS_FreeValue(ctx, payload);
+  }
+
+  AwsAuthorizationResult amzResult = makeAwsAuthorization(method_str, host_str, canonicalUri_str, canonicalQuerystring_str, canonicalHeaders_str, canonicalHeaderNames_str, (uint8_t*)payload_str, strlen(payload_str), service_str, region_str, accessKeyId.c_str(), secretAccessKey.c_str());
+  if( region_str != default_region )
+    JS_FreeCString(ctx, region_str);
+  JS_FreeCString(ctx, service_str);
   if( amzResult.result != 0 ){
-    if( region_str != default_region )
-      JS_FreeCString(ctx, region_str);
-    JS_FreeCString(ctx, service_str);
-    JS_FreeCString(ctx, method_str);
     JS_FreeCString(ctx, canonicalUri_str);
     if( canonicalQuerystring_str != NULL )
       JS_FreeCString(ctx, canonicalQuerystring_str);
@@ -120,11 +121,6 @@ static JSValue aws_bridge(JSContext *ctx, JSValueConst jsThis, int argc, JSValue
   }
 
   JSValue obj = JS_NewObject(ctx);
-  JS_SetPropertyStr(ctx, obj, "region", JS_NewString(ctx, region_str));
-  if( region_str != default_region )
-    JS_FreeCString(ctx, region_str);
-  JS_SetPropertyStr(ctx, obj, "service", JS_NewString(ctx, service_str));
-  JS_FreeCString(ctx, service_str);
   JS_SetPropertyStr(ctx, obj, "method", JS_NewString(ctx, method_str));
   JS_FreeCString(ctx, method_str);
   JS_SetPropertyStr(ctx, obj, "canonicalUri", JS_NewString(ctx, canonicalUri_str));
@@ -445,7 +441,7 @@ static long hmacCreate(const uint8_t *p_key, int key_len, const uint8_t *p_input
   return 0;
 }
 
-static long hashCreate(const char *p_input, uint8_t *p_result)
+static long hashCreate(const uint8_t *p_input, int length, uint8_t *p_result)
 {  
   uint8_t digestResult[32];
   mbedtls_md_context_t context;
@@ -453,7 +449,7 @@ static long hashCreate(const char *p_input, uint8_t *p_result)
   mbedtls_md_init(&context);
   mbedtls_md_setup(&context, mbedtls_md_info_from_type(MBEDTLS_MD_SHA256), 1);
   if( p_input != NULL )
-    mbedtls_md_update(&context, (const unsigned char*)p_input, strlen(p_input));
+    mbedtls_md_update(&context, (const unsigned char*)p_input, length);
   mbedtls_md_finish(&context, p_result); // 32 bytes
 
   return 0;
@@ -494,8 +490,8 @@ static void getSignatureKey(const char *key, const char *dateStamp, const char *
 }
 
 static AwsAuthorizationResult makeAwsAuthorization(const char *method, const char *host, const char *canonicalUri, const char *canonicalQuerystring,
-                            const char *canonicalHeaders,const char *canonicalHeaderNames, const char *service, const char *payload,
-                            const char *region, const char *accessKeyId, const char *secretAccessKey)
+                            const char *canonicalHeaders,const char *canonicalHeaderNames, const unsigned char *payload, int payload_length, 
+                            const char *service, const char *region, const char *accessKeyId, const char *secretAccessKey)
 {
   // Serial.printf("method=%s\n", method);
   // Serial.printf("host=%s\n", host);
@@ -527,7 +523,7 @@ static AwsAuthorizationResult makeAwsAuthorization(const char *method, const cha
   sprintf(amzResult.amzDate, "%04d%02d%02dT%02d%02d%02dZ", 1900 + utcTime->tm_year, utcTime->tm_mon + 1, utcTime->tm_mday, utcTime->tm_hour, utcTime->tm_min, utcTime->tm_sec);
 
   uint8_t payloadHash[32];
-  hashCreate(payload, payloadHash);
+  hashCreate(payload, payload_length, payloadHash);
   toHexStr(sizeof(payloadHash), payloadHash, amzResult.payloadHash);
 
   String signedHeaderNames = String(signedHeaderNamesBase);
@@ -542,7 +538,7 @@ static AwsAuthorizationResult makeAwsAuthorization(const char *method, const cha
   sprintf(canonicalRequest, "%s\n%s\n%s\n%s\n%s\n%s", method, canonicalUri, (canonicalQuerystring != NULL ? canonicalQuerystring : ""), headers.c_str(), signedHeaderNames.c_str(), amzResult.payloadHash);
 
   uint8_t hashCanonicalRequest[32];
-  hashCreate(canonicalRequest, hashCanonicalRequest);
+  hashCreate((uint8_t*)canonicalRequest, strlen(canonicalRequest), hashCanonicalRequest);
   free(canonicalRequest);
   char hashCanonicalRequest_Hex[sizeof(hashCanonicalRequest) * 2 + 1];
   toHexStr(sizeof(hashCanonicalRequest), hashCanonicalRequest, hashCanonicalRequest_Hex);
