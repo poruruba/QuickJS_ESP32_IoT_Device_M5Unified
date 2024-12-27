@@ -60,6 +60,9 @@ https://poruruba.github.io/EspWebDownloader/quickjs_esp32_firmware/
   - esp32.ping()を追加
 - 2024-11-03
   - Cryptoモジュールを追加
+- 2024-12-25
+  - esp32.getDatetimeを追加
+  - http.fetchAws、setAwsCredentialを追加
 
 ## 誤記訂正
 - 2022-03-31

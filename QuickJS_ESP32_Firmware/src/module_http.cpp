@@ -443,7 +443,6 @@ static long hmacCreate(const uint8_t *p_key, int key_len, const uint8_t *p_input
 
 static long hashCreate(const uint8_t *p_input, int length, uint8_t *p_result)
 {  
-  uint8_t digestResult[32];
   mbedtls_md_context_t context;
 
   mbedtls_md_init(&context);
