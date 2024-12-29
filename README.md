@@ -63,6 +63,9 @@ https://poruruba.github.io/EspWebDownloader/quickjs_esp32_firmware/
 - 2024-12-25
   - esp32.getDatetimeを追加
   - http.fetchAws、setAwsCredentialを追加
+- 2024-12-29
+  - カメラ機能を追加
+  - カスタムでボタンを追加できるようになりました。
 
 ## 誤記訂正
 - 2022-03-31
