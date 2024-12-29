@@ -83,7 +83,7 @@ static const int8_t camera_pins[][16] = {
 
 static bool isInitialized = false;
 
-static long camera_initialize(uint8_t type);
+static long camera_initialize(uint8_t type, uint8_t framesize);
 static long camera_dispose(void);
 static long camera_get_capture(uint8_t **pp_image, size_t *p_image_size);
 
@@ -93,15 +93,18 @@ static JSValue esp32_camera_start(JSContext *ctx, JSValueConst jsThis, int argc,
     return JS_EXCEPTION;
 
   uint32_t type = CAMERA_MODEL_WROVER_KIT;
-  if( argc > 0 ){
+  if( argc >= 1 )
     JS_ToUint32(ctx, &type, argv[0]);
-  }
   if( type >= CAMERA_MODEL_NUM )
     return JS_EXCEPTION;
 
-  long ret = camera_initialize(type);
+  uint32_t framesize = FRAMESIZE_QVGA;
+  if( argc >= 2 )
+    JS_ToUint32(ctx, &framesize, argv[1]);
+
+  long ret = camera_initialize(type, framesize);
   if( ret != 0 ){
-    ret = camera_initialize(type);
+    ret = camera_initialize(type, framesize);
     if( ret != 0 )
       return JS_EXCEPTION;
   }
@@ -190,7 +193,7 @@ static JSValue esp32_camera_setParameter(JSContext *ctx, JSValueConst jsThis, in
     JS_FreeValue(ctx, v);
     s->set_special_effect(s, val);
   }
-  v = JS_GetPropertyStr(ctx, argv[0], "whitebal");
+  v = JS_GetPropertyStr(ctx, argv[0], "awb");
   if( v != JS_UNDEFINED ){
     int val = JS_ToBool(ctx, val);
     JS_FreeValue(ctx, v);
@@ -209,7 +212,7 @@ static JSValue esp32_camera_setParameter(JSContext *ctx, JSValueConst jsThis, in
     JS_FreeValue(ctx, v);
     s->set_wb_mode(s, val);
   }
-  v = JS_GetPropertyStr(ctx, argv[0], "exposure_ctrl");
+  v = JS_GetPropertyStr(ctx, argv[0], "aec");
   if( v != JS_UNDEFINED ){
     int val = JS_ToBool(ctx, val);
     JS_FreeValue(ctx, v);
@@ -228,7 +231,7 @@ static JSValue esp32_camera_setParameter(JSContext *ctx, JSValueConst jsThis, in
     JS_FreeValue(ctx, v);
     s->set_ae_level(s, val);
   }
-  v = JS_GetPropertyStr(ctx, argv[0], "gain_ctrl");
+  v = JS_GetPropertyStr(ctx, argv[0], "agc");
   if( v != JS_UNDEFINED ){
     int val = JS_ToBool(ctx, val);
     JS_FreeValue(ctx, v);
@@ -310,12 +313,6 @@ static JSValue esp32_camera_setParameter(JSContext *ctx, JSValueConst jsThis, in
     JS_FreeValue(ctx, v);
     s->set_denoise(s, val);
   }
-  v = JS_GetPropertyStr(ctx, argv[0], "gain_ctrl");
-  if( v != JS_UNDEFINED ){
-    int val = JS_ToBool(ctx, val);
-    JS_FreeValue(ctx, v);
-    s->set_gain_ctrl(s, val);
-  }
   v = JS_GetPropertyStr(ctx, argv[0], "aec_value");
   if( v != JS_UNDEFINED ){
     int32_t val;
@@ -377,7 +374,7 @@ static JSValue esp32_camera_getParameter(JSContext *ctx, JSValueConst jsThis, in
 
 static const JSCFunctionListEntry camera_funcs[] = {
     JSCFunctionListEntry{"start", 0, JS_DEF_CFUNC, 0, {
-                           func : {1, JS_CFUNC_generic, esp32_camera_start}
+                           func : {2, JS_CFUNC_generic, esp32_camera_start}
                          }},
     JSCFunctionListEntry{"stop", 0, JS_DEF_CFUNC, 0, {
                            func : {0, JS_CFUNC_generic, esp32_camera_stop}
@@ -611,7 +608,7 @@ static long camera_dispose(void)
   return 0;
 }
 
-static long camera_initialize(uint8_t type)
+static long camera_initialize(uint8_t type, uint8_t framesize)
 {
   camera_config_t config;
 
@@ -641,7 +638,8 @@ static long camera_initialize(uint8_t type)
   // if PSRAM IC present, init with UXGA resolution and higher JPEG quality
   //                      for larger pre-allocated frame buffer.
 
-  config.frame_size = FRAMESIZE_QVGA;
+//  config.frame_size = FRAMESIZE_QVGA;
+  config.frame_size = (framesize_t)framesize;
   config.jpeg_quality = 10;
   config.fb_count = 1;
 
