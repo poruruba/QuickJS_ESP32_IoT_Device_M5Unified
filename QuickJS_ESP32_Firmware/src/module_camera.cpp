@@ -610,6 +610,9 @@ static long camera_dispose(void)
 
 static long camera_initialize(uint8_t type, uint8_t framesize)
 {
+  if( type >= CAMERA_MODEL_NUM )
+    return -1;
+    
   camera_config_t config;
 
   config.ledc_channel = LEDC_CHANNEL_0;
