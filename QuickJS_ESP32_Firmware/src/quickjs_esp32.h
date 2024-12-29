@@ -83,6 +83,9 @@
 #ifdef _SD_ENABLE_
 #include "module_sd.h"
 #endif
+#ifdef _CAMERA_ENABLE_
+#include "module_camera.h"
+#endif
 
 static JsModuleEntry module_entries[] = {
   esp32_module,
@@ -151,6 +154,9 @@ static JsModuleEntry module_entries[] = {
 #endif
 #ifdef _SD_ENABLE_
   sd_module,
+#endif
+#ifdef _CAMERA_ENABLE_
+  camera_module,
 #endif
   utils_module
 };

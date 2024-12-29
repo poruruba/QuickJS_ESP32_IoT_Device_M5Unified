@@ -45,12 +45,12 @@ void packet_appendEntry(EndpointEntry *tables, int num_of_entry)
     endpoint_list[tables[i].name] = &tables[i];
 }
 
-long packet_execute(const char *endpoint, JsonObject& params, JsonObject& responseResult)
+long packet_execute(const char *endpoint, const JsonObject& params, const JsonObject& responseResult)
 {
   std::unordered_map<std::string, EndpointEntry*>::iterator itr = endpoint_list.find(endpoint);
   if( itr != endpoint_list.end() ){
     EndpointEntry *entry = itr->second;
-    long ret = entry->impl(params, responseResult, entry->magic);
+    long ret = entry->impl((JsonObject&)params, (JsonObject&)responseResult, entry->magic);
     return ret;
   }
 
@@ -97,14 +97,14 @@ long packet_initialize(void)
 #endif
 
   AsyncCallbackJsonWebHandler *handler = new AsyncCallbackJsonWebHandler("/endpoint", [](AsyncWebServerRequest *request, JsonVariant &json) {
-    JsonObject jsonObj = json.as<JsonObject>();
+    const JsonObject& jsonObj = json.as<JsonObject>();
     const char *endpoint = jsonObj["endpoint"];
     AsyncJsonResponse *response = new AsyncJsonResponse(false, PACKET_JSON_DOCUMENT_SIZE);
-    JsonObject responseResult = response->getRoot();
+    const JsonObject& responseResult = response->getRoot();
     responseResult["status"] = "OK";
     responseResult["endpoint"] = (char*)endpoint;
     bool sem = xSemaphoreTake(binSem, portMAX_DELAY);
-    JsonObject params = jsonObj["params"];
+    const JsonObject& params = jsonObj["params"];
     long ret = packet_execute(endpoint, params, responseResult);
     if( sem )
       xSemaphoreGive(binSem);
@@ -120,9 +120,9 @@ long packet_initialize(void)
   server.addHandler(handler);
 
   AsyncCallbackJsonWebHandler *handler_putText = new AsyncCallbackJsonWebHandler("/webcall_putText", [](AsyncWebServerRequest *request, JsonVariant &json) {
-    JsonObject jsonObj = json.as<JsonObject>();
+    const JsonObject& jsonObj = json.as<JsonObject>();
     AsyncJsonResponse *response = new AsyncJsonResponse(false, PACKET_JSON_DOCUMENT_SIZE);
-    JsonObject responseResult = response->getRoot();
+    const JsonObject& responseResult = response->getRoot();
     responseResult["status"] = "OK";
     bool sem = xSemaphoreTake(binSem, portMAX_DELAY);
     long ret = webcall_putText(jsonObj);

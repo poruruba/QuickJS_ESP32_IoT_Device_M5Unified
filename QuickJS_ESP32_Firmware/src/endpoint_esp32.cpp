@@ -48,7 +48,7 @@ long endp_getSyslogServer(JsonObject& request, JsonObject& response, int magic)
   return 0;
 }
 
-long webcall_putText(JsonObject& request){
+long webcall_putText(const JsonObject& request){
   const char *p_text = request["text"];
   if( p_text == NULL )
     return -1;
