@@ -148,25 +148,25 @@ static JSValue input_isTouched(JSContext *ctx, JSValueConst jsThis,
 
 static JSValue input_openCustomButton(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
 {
-  uint32_t btnId;
-  JS_ToUint32(ctx, &btnId, argv[0]);
-  uint32_t pinNo;
-  JS_ToUint32(ctx, &pinNo, argv[1]);
+  uint32_t btn;
+  JS_ToUint32(ctx, &btn, argv[0]);
+  uint32_t pin;
+  JS_ToUint32(ctx, &pin, argv[1]);
   bool invert;
   invert = JS_ToBool(ctx, argv[2]);
 
-  if( btnId == INPUT_BUTTON_X ){
+  if( btn == INPUT_BUTTON_X ){
     if( g_BtnX != NULL )
       delete g_BtnX;
-    g_BtnX = new MyButton(pinNo, invert, 10);
-  }else if( btnId == INPUT_BUTTON_Y ){
+    g_BtnX = new MyButton(pin, invert, 10);
+  }else if( btn == INPUT_BUTTON_Y ){
     if( g_BtnX != NULL )
       delete g_BtnY;
-    g_BtnY = new MyButton(pinNo, invert, 10);
-  }else if( btnId == INPUT_BUTTON_Z ){
+    g_BtnY = new MyButton(pin, invert, 10);
+  }else if( btn == INPUT_BUTTON_Z ){
     if( g_BtnZ != NULL )
       delete g_BtnZ;
-    g_BtnZ = new MyButton(pinNo, invert, 10);
+    g_BtnZ = new MyButton(pin, invert, 10);
   }else{
     return JS_EXCEPTION;
   }
@@ -176,20 +176,20 @@ static JSValue input_openCustomButton(JSContext *ctx, JSValueConst jsThis, int a
 
 static JSValue input_closeCustomButton(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
 {
-  uint32_t btnId;
-  JS_ToUint32(ctx, &btnId, argv[0]);
+  uint32_t btn;
+  JS_ToUint32(ctx, &btn, argv[0]);
 
-  if( btnId == INPUT_BUTTON_Y ){
+  if( btn == INPUT_BUTTON_Y ){
     if( g_BtnX != NULL ){
       delete g_BtnX;
       g_BtnX = NULL;
     }
-  }else if( btnId == INPUT_BUTTON_Y ){
+  }else if( btn == INPUT_BUTTON_Y ){
     if( g_BtnY != NULL ){
       delete g_BtnY;
       g_BtnX = NULL;
     }
-  }else if( btnId == INPUT_BUTTON_Z ){
+  }else if( btn == INPUT_BUTTON_Z ){
     if( g_BtnZ != NULL ){
       delete g_BtnZ;
       g_BtnZ = NULL;

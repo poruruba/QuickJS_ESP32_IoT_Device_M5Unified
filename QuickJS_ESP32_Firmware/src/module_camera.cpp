@@ -537,7 +537,7 @@ static const JSCFunctionListEntry camera_funcs[] = {
           i32 : CAMERA_NT99141
         }},
     JSCFunctionListEntry{
-        "MODEL_GC2145", 0, JS_DEF_PROP_INT32, 0, {
+        "CAMERA_GC2145", 0, JS_DEF_PROP_INT32, 0, {
           i32 : CAMERA_GC2145
         }},
     JSCFunctionListEntry{
