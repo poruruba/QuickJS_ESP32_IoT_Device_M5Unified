@@ -645,6 +645,7 @@ static long camera_initialize(uint8_t type, uint8_t framesize)
   config.frame_size = (framesize_t)framesize;
   config.jpeg_quality = 10;
   config.fb_count = 1;
+  config.grab_mode = CAMERA_GRAB_LATEST;
 
   // camera init
   esp_err_t err = esp_camera_init(&config);

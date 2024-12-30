@@ -219,9 +219,9 @@ static JSValue http_bridge(JSContext *ctx, JSValueConst jsThis, int argc, JSValu
     return JS_EXCEPTION;
   }
   const char *body = JS_ToCString(ctx, json);
+  JS_FreeValue(ctx, json);
   if (body == NULL){
     JS_FreeCString(ctx, target_host);
-    JS_FreeValue(ctx, json);
     return JS_EXCEPTION;
   }
 
@@ -237,13 +237,11 @@ static JSValue http_bridge(JSContext *ctx, JSValueConst jsThis, int argc, JSValu
   http.addHeader("Content-Type", "application/json");
   http.addHeader("target_host", target_host);
   http.addHeader("target_type", p_target_type);
-
-  int status_code;
-  // HTTP POST JSON
-  status_code = http.POST(body);
   JS_FreeCString(ctx, target_host);
+
+  // HTTP POST JSON
+  int status_code = http.POST(body);
   JS_FreeCString(ctx, body);
-  JS_FreeValue(ctx, json);
 
   uint8_t response_type = ( magic >> HTTP_RESP_SHIFT ) & HTTP_RESP_MASK;
   JSValue value = JS_EXCEPTION;
