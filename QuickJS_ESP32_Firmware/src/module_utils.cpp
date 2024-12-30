@@ -67,6 +67,8 @@ String urlencode(String str)
 
 static JSValue utils_http_text(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv, int magic)
 {
+  bool sem = xSemaphoreTake(binSem, portMAX_DELAY);
+  JSValue value = JS_EXCEPTION;
   HTTPClient http;
   const char *url = JS_ToCString(ctx, argv[0]);
   if (magic == 0){
@@ -82,7 +84,7 @@ static JSValue utils_http_text(JSContext *ctx, JSValueConst jsThis, int argc, JS
       int ret = JS_GetOwnPropertyNames(ctx, &atoms, &len, argv[1], JS_GPN_ENUM_ONLY | JS_GPN_STRING_MASK);
       if (ret != 0){
         JS_FreeCString(ctx, url);
-        return JS_EXCEPTION;
+        goto end;
       }
 
       String url_str = String(url);
@@ -129,7 +131,7 @@ static JSValue utils_http_text(JSContext *ctx, JSValueConst jsThis, int argc, JS
     http.addHeader("Content-Type", "application/www-form-urlencoded");
   }else{
     JS_FreeCString(ctx, url);
-    return JS_EXCEPTION;
+    goto end;
   }
   JS_FreeCString(ctx, url);
 
@@ -138,10 +140,8 @@ static JSValue utils_http_text(JSContext *ctx, JSValueConst jsThis, int argc, JS
     JSPropertyEnum *atoms;
     uint32_t len;
     int ret = JS_GetOwnPropertyNames(ctx, &atoms, &len, argv[2], JS_GPN_ENUM_ONLY | JS_GPN_STRING_MASK);
-    if (ret != 0){
-      http.end();
-      return JS_EXCEPTION;
-    }
+    if (ret != 0)
+      goto end;
 
     for (int i = 0; i < len; i++){
       JSAtom atom = atoms[i].atom;
@@ -153,7 +153,6 @@ static JSValue utils_http_text(JSContext *ctx, JSValueConst jsThis, int argc, JS
         JS_FreeValue(ctx, value);
         if( str != NULL ){
 //          Serial.printf("%s=%s\n", name, str);
-
           http.addHeader(name, str);
           JS_FreeCString(ctx, str);
         }
@@ -162,24 +161,19 @@ static JSValue utils_http_text(JSContext *ctx, JSValueConst jsThis, int argc, JS
     }
   }
 
-  JSValue value = JS_EXCEPTION;
   int status_code;
   if (magic == 0){
     // HTTP POST JSON
     if( argc >= 2 && argv[1] != JS_UNDEFINED ){
       JSValue json = JS_JSONStringify(ctx, argv[1], JS_UNDEFINED, JS_UNDEFINED);
-      if( json == JS_UNDEFINED ){
-        http.end();
-        return JS_EXCEPTION;
-      }
+      if( json == JS_UNDEFINED )
+        goto end;
       const char *body = JS_ToCString(ctx, json);
       JS_FreeValue(ctx, json);
-      if( body == NULL ){
-        http.end();
-        return JS_EXCEPTION;
-      }
-//      Serial.printf("body=%s\n", body);
+      if( body == NULL )
+        goto end;
 
+//      Serial.printf("body=%s\n", body);
       status_code = http.POST(body);
       JS_FreeCString(ctx, body);
     }else{
@@ -194,9 +188,8 @@ static JSValue utils_http_text(JSContext *ctx, JSValueConst jsThis, int argc, JS
       JSPropertyEnum *atoms;
       uint32_t len;
       int ret = JS_GetOwnPropertyNames(ctx, &atoms, &len, argv[1], JS_GPN_ENUM_ONLY | JS_GPN_STRING_MASK);
-      if (ret != 0){
-        return JS_EXCEPTION;
-      }
+      if (ret != 0)
+        goto end;
 
       String param_str = String("");
       bool first = true;
@@ -210,7 +203,6 @@ static JSValue utils_http_text(JSContext *ctx, JSValueConst jsThis, int argc, JS
           JS_FreeValue(ctx, value);
           if( str != NULL ){
 //            Serial.printf("%s=%s\n", name, str);
-
             if( first ){
               first = false;
             }else{
@@ -242,11 +234,15 @@ static JSValue utils_http_text(JSContext *ctx, JSValueConst jsThis, int argc, JS
 
 end:
   http.end();
+  if( sem )
+    xSemaphoreGive(binSem);
   return value;
 }
 
 static JSValue utils_http_json(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv, int magic)
 {
+  bool sem = xSemaphoreTake(binSem, portMAX_DELAY);  
+  JSValue value = JS_EXCEPTION;
   HTTPClient http;
   const char *url = JS_ToCString(ctx, argv[0]);
   if (magic == 0){
@@ -262,7 +258,7 @@ static JSValue utils_http_json(JSContext *ctx, JSValueConst jsThis, int argc, JS
       int ret = JS_GetOwnPropertyNames(ctx, &atoms, &len, argv[1], JS_GPN_ENUM_ONLY | JS_GPN_STRING_MASK);
       if (ret != 0){
         JS_FreeCString(ctx, url);
-        return JS_EXCEPTION;
+        goto end;
       }
 
       String url_str = String(url);
@@ -276,7 +272,6 @@ static JSValue utils_http_json(JSContext *ctx, JSValueConst jsThis, int argc, JS
           const char *str = JS_ToCString(ctx, value);
           if( str != NULL ){
 //            Serial.printf("%s=%s\n", name, str);
-
             if( first ){
               if (url_str.indexOf('?') >= 0)
                 url_str += "&";
@@ -308,7 +303,7 @@ static JSValue utils_http_json(JSContext *ctx, JSValueConst jsThis, int argc, JS
     http.addHeader("Content-Type", "application/www-form-urlencoded");
   }else{
     JS_FreeCString(ctx, url);
-    return JS_EXCEPTION;
+    goto end;
   }
   JS_FreeCString(ctx, url);
 
@@ -317,10 +312,8 @@ static JSValue utils_http_json(JSContext *ctx, JSValueConst jsThis, int argc, JS
     JSPropertyEnum *atoms;
     uint32_t len;
     int ret = JS_GetOwnPropertyNames(ctx, &atoms, &len, argv[2], JS_GPN_ENUM_ONLY | JS_GPN_STRING_MASK);
-    if (ret != 0){
-      http.end();
-      return JS_EXCEPTION;
-    }
+    if (ret != 0)
+      goto end;
 
     for (int i = 0; i < len; i++){
       JSAtom atom = atoms[i].atom;
@@ -332,7 +325,6 @@ static JSValue utils_http_json(JSContext *ctx, JSValueConst jsThis, int argc, JS
         JS_FreeValue(ctx, value);
         if( str != NULL ){
 //          Serial.printf("%s=%s\n", name, str);
-
           http.addHeader(name, str);
           JS_FreeCString(ctx, str);
         }
@@ -341,42 +333,35 @@ static JSValue utils_http_json(JSContext *ctx, JSValueConst jsThis, int argc, JS
     }
   }
 
-  JSValue value = JS_EXCEPTION;
   int status_code;
   if (magic == 0){
     // HTTP POST JSON
     if( argc >= 2 && argv[1] != JS_UNDEFINED ){
       JSValue json = JS_JSONStringify(ctx, argv[1], JS_UNDEFINED, JS_UNDEFINED);
-      if( json == JS_UNDEFINED ){
-        http.end();
-        return JS_EXCEPTION;
-      }
+      if( json == JS_UNDEFINED )
+        goto end;
       const char *body = JS_ToCString(ctx, json);
       JS_FreeValue(ctx, json);
-      if( body == NULL ){
-        http.end();
-        return JS_EXCEPTION;
-      }
-//      Serial.printf("body=%s\n", body);
+      if( body == NULL )
+        goto end;
 
+//      Serial.printf("body=%s\n", body);
       status_code = http.POST(body);
       JS_FreeCString(ctx, body);
     }else{
       status_code = http.POST("{}");
     }
   }else if( magic == 1 ){
-      // HTTP GET
-      status_code = http.GET();
+    // HTTP GET
+    status_code = http.GET();
   }else if( magic == 2 ){
     // HTTP POST UrlEncoded
     if( argc >= 2 && argv[1] != JS_UNDEFINED ){
       JSPropertyEnum *atoms;
       uint32_t len;
       int ret = JS_GetOwnPropertyNames(ctx, &atoms, &len, argv[1], JS_GPN_ENUM_ONLY | JS_GPN_STRING_MASK);
-      if (ret != 0){
-        http.end();
-        return JS_EXCEPTION;
-      }
+      if (ret != 0)
+        goto end;
 
       String param_str = String("");
       bool first = true;
@@ -390,7 +375,6 @@ static JSValue utils_http_json(JSContext *ctx, JSValueConst jsThis, int argc, JS
           JS_FreeValue(ctx, value);
           if( str != NULL ){
 //            Serial.printf("%s=%s\n", name, str);
-
             if( first ){
               first = false;
             }else{
@@ -423,6 +407,8 @@ static JSValue utils_http_json(JSContext *ctx, JSValueConst jsThis, int argc, JS
 
 end:
   http.end();
+  if( sem )
+    xSemaphoreGive(binSem);
   return value;
 }
 

@@ -162,6 +162,7 @@ static JSValue aws_bridge(JSContext *ctx, JSValueConst jsThis, int argc, JSValue
 
   String server = read_config_string(CONFIG_FNAME_BRIDGE);
 
+  bool sem = xSemaphoreTake(binSem, portMAX_DELAY);
   HTTPClient http;
   http.begin(server + "/aws"); //HTTP
   http.addHeader("Content-Type", "application/json");
@@ -170,15 +171,19 @@ static JSValue aws_bridge(JSContext *ctx, JSValueConst jsThis, int argc, JSValue
   int status_code = http.POST(body);
   JS_FreeCString(ctx, body);
 
+  JSValue value = JS_EXCEPTION;
   if (status_code != 200){
     Serial.printf("status_code=%d\n", status_code);
-    http.end();
-    return JS_EXCEPTION;
+  }else{
+    String result = http.getString();
+    value = JS_NewString(ctx, result.c_str());
   }
 
-  String result = http.getString();
+end:
   http.end();
-  return JS_NewString(ctx, result.c_str());
+  if( sem )
+    xSemaphoreGive(binSem);
+  return value;
 }
 
 static JSValue http_bridge(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv, int magic)
@@ -232,6 +237,7 @@ static JSValue http_bridge(JSContext *ctx, JSValueConst jsThis, int argc, JSValu
   // Serial.printf("server=%s\n", server.c_str());
   // Serial.printf("body=%s\n", body);
 
+  bool sem = xSemaphoreTake(binSem, portMAX_DELAY);
   HTTPClient http;
   http.begin(server + "/agent"); //HTTP
   http.addHeader("Content-Type", "application/json");
@@ -275,6 +281,8 @@ static JSValue http_bridge(JSContext *ctx, JSValueConst jsThis, int argc, JSValu
 
 end:
   http.end();
+  if( sem )
+    xSemaphoreGive(binSem);
 
   return value;
 }

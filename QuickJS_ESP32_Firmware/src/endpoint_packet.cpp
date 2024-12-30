@@ -97,17 +97,15 @@ long packet_initialize(void)
 #endif
 
   AsyncCallbackJsonWebHandler *handler = new AsyncCallbackJsonWebHandler("/endpoint", [](AsyncWebServerRequest *request, JsonVariant &json) {
+    bool sem = xSemaphoreTake(binSem, portMAX_DELAY);
     const JsonObject& jsonObj = json.as<JsonObject>();
     const char *endpoint = jsonObj["endpoint"];
     AsyncJsonResponse *response = new AsyncJsonResponse(false, PACKET_JSON_DOCUMENT_SIZE);
     const JsonObject& responseResult = response->getRoot();
     responseResult["status"] = "OK";
     responseResult["endpoint"] = (char*)endpoint;
-    bool sem = xSemaphoreTake(binSem, portMAX_DELAY);
     const JsonObject& params = jsonObj["params"];
     long ret = packet_execute(endpoint, params, responseResult);
-    if( sem )
-      xSemaphoreGive(binSem);
     if( ret != 0 ){
       responseResult.clear();
       responseResult["status"] = "NG";
@@ -116,18 +114,18 @@ long packet_initialize(void)
     }
     response->setLength();
     request->send(response);
+    if( sem )
+      xSemaphoreGive(binSem);
   });
   server.addHandler(handler);
 
   AsyncCallbackJsonWebHandler *handler_putText = new AsyncCallbackJsonWebHandler("/webcall_putText", [](AsyncWebServerRequest *request, JsonVariant &json) {
+    bool sem = xSemaphoreTake(binSem, portMAX_DELAY);
     const JsonObject& jsonObj = json.as<JsonObject>();
     AsyncJsonResponse *response = new AsyncJsonResponse(false, PACKET_JSON_DOCUMENT_SIZE);
     const JsonObject& responseResult = response->getRoot();
     responseResult["status"] = "OK";
-    bool sem = xSemaphoreTake(binSem, portMAX_DELAY);
     long ret = webcall_putText(jsonObj);
-    if( sem )
-      xSemaphoreGive(binSem);
     if( ret != 0 ){
       responseResult.clear();
       responseResult["status"] = "NG";
@@ -135,6 +133,8 @@ long packet_initialize(void)
     }
     response->setLength();
     request->send(response);
+    if( sem )
+      xSemaphoreGive(binSem);
   });
   server.addHandler(handler_putText);
 
