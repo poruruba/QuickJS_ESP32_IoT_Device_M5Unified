@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include <SPIFFS.h>
+#include <time.h>
 
 #include "main_config.h"
 #include "quickjs_esp32.h"
@@ -308,5 +309,13 @@ static long load_all_modules(void)
 
 static long m5_connect(void)
 {
-  return wifi_try_connect(false);
+  long ret = wifi_try_connect(false);
+  if( ret != 0 )
+    return 0;
+
+  configTzTime("JST-9", "ntp.nict.jp", "ntp.jst.mfeed.ad.jp");
+  time_t t = time(nullptr) + 1; // Advance one second.
+  while (t > time(nullptr));  /// Synchronization in seconds
+
+  return 0;
 }

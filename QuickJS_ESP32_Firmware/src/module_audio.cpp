@@ -74,6 +74,8 @@ static JSValue audio_begin(JSContext *ctx, JSValueConst jsThis, int argc,
     JS_ToInt32(ctx, &output_mode, argv[0]);
 
   out = new AudioOutputI2S(DEFAULT_AUDIO_PORT, output_mode);
+  if( out == NULL )
+    return JS_EXCEPTION;
   out->SetOutputModeMono(true);
   out->SetGain(audio_gain / 100.0);
   
@@ -102,10 +104,10 @@ static JSValue audio_update(JSContext *ctx, JSValueConst jsThis, int argc,
   if( mp3 != NULL ){
     if (mp3->isRunning()) {
       if( !audio_paused ){
-      if (!mp3->loop())
-        mp3->stop();
+        if (!mp3->loop())
+          mp3->stop();
+      }
     }
-  }
   }
 
   return JS_UNDEFINED;

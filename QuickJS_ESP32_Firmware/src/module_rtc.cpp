@@ -97,11 +97,6 @@ JSModuleDef *addModule_rtc(JSContext *ctx, JSValue global)
 }
 
 long initialize_rtc(void){
-  configTzTime("JST-9", "ntp.nict.jp", "ntp.jst.mfeed.ad.jp");
-
-  time_t t = time(nullptr) + 1; // Advance one second.
-  while (t > time(nullptr));  /// Synchronization in seconds
-
   if (M5.Rtc.isEnabled())
     M5.Rtc.setDateTime( gmtime( &t ) );
 
