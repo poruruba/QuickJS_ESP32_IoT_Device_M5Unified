@@ -66,6 +66,8 @@ https://poruruba.github.io/EspWebDownloader/quickjs_esp32_firmware/
 - 2024-12-29
   - カメラ機能を追加
   - カスタムでボタンを追加できるようになりました。
+- 2025-1-1
+  - EspNow機能を追加
 
 ## 誤記訂正
 - 2022-03-31
