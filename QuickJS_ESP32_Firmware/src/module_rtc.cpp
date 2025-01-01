@@ -97,6 +97,7 @@ JSModuleDef *addModule_rtc(JSContext *ctx, JSValue global)
 }
 
 long initialize_rtc(void){
+  time_t t = time(nullptr);
   if (M5.Rtc.isEnabled())
     M5.Rtc.setDateTime( gmtime( &t ) );
 
