@@ -19,6 +19,7 @@
 #define _CRYPTO_ENABLE_
 #define _IR_ENABLE_
 #define _LEDC_ENABLE_
+#define _ESPNOW_ENABLE_
 
 #if defined(ARDUINO_M5Stack_ATOM)
 #include <M5Unified.h>

@@ -86,6 +86,9 @@
 #ifdef _CAMERA_ENABLE_
 #include "module_camera.h"
 #endif
+#ifdef _ESPNOW_ENABLE_
+#include "module_espnow.h"
+#endif
 
 static JsModuleEntry module_entries[] = {
   esp32_module,
@@ -157,6 +160,9 @@ static JsModuleEntry module_entries[] = {
 #endif
 #ifdef _CAMERA_ENABLE_
   camera_module,
+#endif
+#ifdef _ESPNOW_ENABLE_
+  espnow_module,
 #endif
   utils_module
 };
