@@ -30,8 +30,8 @@ static JSValue esp32_udp_sendBinary(JSContext *ctx, JSValueConst jsThis, int arg
 
   uint8_t *p_buffer;
   uint8_t unit_size;
-  uint32_t bsize;
-  JSValue vbuffer = getArrayBuffer(ctx, argv[2], (void**)&p_buffer, &unit_size, &bsize);
+  uint32_t unit_num;
+  JSValue vbuffer = getTypedArrayBuffer(ctx, argv[2], (void**)&p_buffer, &unit_size, &unit_num);
   if( JS_IsNull(vbuffer) ){
     JS_FreeCString(ctx, host);
     return JS_EXCEPTION;
@@ -43,7 +43,7 @@ static JSValue esp32_udp_sendBinary(JSContext *ctx, JSValueConst jsThis, int arg
   }
 
   udp.beginPacket(host, port);
-  udp.write(p_buffer, bsize);
+  udp.write(p_buffer, unit_num);
   udp.endPacket();
 
   JS_FreeCString(ctx, host);

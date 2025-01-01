@@ -215,8 +215,8 @@ static JSValue sd_writeBinary(JSContext *ctx, JSValueConst jsThis, int argc, JSV
 
   uint8_t *p_buffer;
   uint8_t unit_size;
-  uint32_t bsize;
-  JSValue vbuffer = getArrayBuffer(ctx, argv[1], (void**)&p_buffer, &unit_size, &bsize);
+  uint32_t unit_num;
+  JSValue vbuffer = getTypedArrayBuffer(ctx, argv[1], (void**)&p_buffer, &unit_size, &unit_num);
   if( JS_IsNull(vbuffer) ){
     file.close();
     if( sem ) xSemaphoreGive(binSem);
@@ -238,8 +238,8 @@ static JSValue sd_writeBinary(JSContext *ctx, JSValueConst jsThis, int argc, JSV
   int32_t size = -1;
   if( argc >= 4)
     JS_ToInt32(ctx, &size, argv[3]);
-  if( size < 0 || size > bsize )
-    size = bsize;
+  if( size < 0 || size > unit_num )
+    size = unit_num;
 
   file.seek(offset);
   size_t wrote = file.write(p_buffer, size);

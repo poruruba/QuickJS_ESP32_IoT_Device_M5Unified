@@ -3,6 +3,7 @@
 #include "quickjs.h"
 #include "module_wire.h"
 #include "module_type.h"
+#include "module_utils.h"
 
 static JSValue esp32_wire_begin(JSContext *ctx, JSValueConst jsThis,
                                       int argc, JSValueConst *argv, int magic)
@@ -103,19 +104,19 @@ static JSValue esp32_wire_write(JSContext *ctx, JSValueConst jsThis,
     JS_ToUint32(ctx, &value, argv[0]);
     return JS_NewInt32(ctx, wire->write((uint8_t)value));
   }else{
-    JSValue jv = JS_GetPropertyStr(ctx, argv[0], "length");
+    int32_t *p_buffer;
     uint32_t length;
-    JS_ToUint32(ctx, &length, jv);
-    JS_FreeValue(ctx, jv);
+    long ret = getNumberArray(ctx, argv[0], &p_buffer, &length);
+    if( ret != 0 )
+      return JS_EXCEPTION;
 
     for (uint32_t i = 0; i < length; i++){
-      JSValue jv = JS_GetPropertyUint32(ctx, argv[0], i);
-      uint32_t value;
-      JS_ToUint32(ctx, &value, jv);
-      JS_FreeValue(ctx, jv);
-      if (wire->write(value) != 1)
+      if (wire->write(p_buffer[i]) != 1){
+        free(p_buffer);
         return JS_EXCEPTION;
+      }
     }
+    free(p_buffer);
 
     return JS_NewInt32(ctx, length);
   }

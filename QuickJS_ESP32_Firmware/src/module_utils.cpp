@@ -426,15 +426,15 @@ static JSValue utils_urlencode(JSContext * ctx, JSValueConst jsThis, int argc, J
 static JSValue utils_base64(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv, int magic)
 {
   if( magic == 0 ){
-    uint32_t unit_num;
-    uint8_t unit_size;
     uint8_t *p_buffer;
-    JSValue vbuffer = getArrayBuffer(ctx, argv[0], (void**)&p_buffer, &unit_size, &unit_num);
+    uint8_t unit_size;
+    uint32_t unit_num;
+    JSValue vbuffer = getTypedArrayBuffer(ctx, argv[0], (void**)&p_buffer, &unit_size, &unit_num);
     if( JS_IsNull(vbuffer) )
       return JS_EXCEPTION;
     if( unit_size != 1 ){
       JS_FreeValue(ctx, vbuffer);
-        return JS_EXCEPTION;
+      return JS_EXCEPTION;
     }
     unsigned int len = b64_encode_length(unit_num);
     char *str = (char *)malloc(len + 1);
@@ -836,7 +836,7 @@ long http_get_json(String url, JsonDocument * doc)
   return 0;
 }
 
-JSValue getArrayBuffer(JSContext *ctx, JSValue value, void** p_buffer, uint8_t *p_unit_size, uint32_t *p_unit_num)
+JSValue getTypedArrayBuffer(JSContext *ctx, JSValue value, void** pp_buffer, uint8_t *p_unit_size, uint32_t *p_unit_num)
 {
   JSValue vlen = JS_GetPropertyStr(ctx, value, "length");
   if( JS_IsException(vlen) )
@@ -850,8 +850,8 @@ JSValue getArrayBuffer(JSContext *ctx, JSValue value, void** p_buffer, uint8_t *
     return JS_NULL;
   }
   size_t bsize;
-  *p_buffer = (void*)JS_GetArrayBuffer(ctx, &bsize, vbuffer);
-  if( *p_buffer == NULL ){
+  *pp_buffer = (void*)JS_GetArrayBuffer(ctx, &bsize, vbuffer);
+  if( *pp_buffer == NULL ){
     JS_FreeValue(ctx, vbuffer);
     return JS_NULL;
   }
@@ -859,4 +859,25 @@ JSValue getArrayBuffer(JSContext *ctx, JSValue value, void** p_buffer, uint8_t *
   *p_unit_size = bsize / *p_unit_num;
 
   return vbuffer;
+}
+
+long getNumberArray(JSContext *ctx, JSValue value, int32_t **pp_buffer, uint32_t *p_length)
+{
+  JSValue jv = JS_GetPropertyStr(ctx, value, "length");
+  uint32_t length;
+  JS_ToUint32(ctx, &length, jv);
+  JS_FreeValue(ctx, jv);
+
+  int32_t *array = (int32_t*)malloc(sizeof(int32_t) * length);
+  if( array == NULL )
+    return -1;
+  for (uint32_t i = 0; i < length; i++){
+    JSValue jv = JS_GetPropertyUint32(ctx, value, i);
+    JS_ToInt32(ctx, &array[i], jv);
+    JS_FreeValue(ctx, jv);
+  }
+  *pp_buffer = array;
+  *p_length = length;
+
+  return 0;
 }

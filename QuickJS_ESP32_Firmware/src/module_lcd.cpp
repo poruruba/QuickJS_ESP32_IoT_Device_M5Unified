@@ -338,8 +338,8 @@ static JSValue esp32_lcd_createSpriteFromBmp(JSContext *ctx, JSValueConst jsThis
 {
   uint8_t *p_buffer;
   uint8_t unit_size;
-  uint32_t bsize;
-  JSValue vbuffer = getArrayBuffer(ctx, argv[0], (void**)&p_buffer, &unit_size, &bsize);
+  uint32_t unit_num;
+  JSValue vbuffer = getTypedArrayBuffer(ctx, argv[0], (void**)&p_buffer, &unit_size, &unit_num);
   if( JS_IsNull(vbuffer) )
     return JS_EXCEPTION;
   if( unit_size != 1 ){
@@ -350,7 +350,7 @@ static JSValue esp32_lcd_createSpriteFromBmp(JSContext *ctx, JSValueConst jsThis
   for( int i = 0 ; i < NUM_OF_SPRITE ; i++ ){
     if(sprites[i] == NULL ){
       sprites[i] = new LGFX_Sprite(&M5.Display);
-      sprites[i]->createFromBmp(p_buffer, bsize);
+      sprites[i]->createFromBmp(p_buffer, unit_num);
       JS_FreeValue(ctx, vbuffer);
       return JS_NewUint32(ctx, i);
     }

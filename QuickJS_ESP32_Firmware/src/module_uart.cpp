@@ -34,8 +34,8 @@ static JSValue esp32_uart_write(JSContext *ctx, JSValueConst jsThis,
   }else{
     uint8_t *p_buffer;
     uint8_t unit_size;
-    uint32_t bsize;
-    JSValue vbuffer = getArrayBuffer(ctx, argv[0], (void**)&p_buffer, &unit_size, &bsize);
+    uint32_t unit_num;
+    JSValue vbuffer = getTypedArrayBuffer(ctx, argv[0], (void**)&p_buffer, &unit_size, &unit_num);
     if( JS_IsNull(vbuffer) ){
       return JS_EXCEPTION;
     }
@@ -44,7 +44,7 @@ static JSValue esp32_uart_write(JSContext *ctx, JSValueConst jsThis,
       return JS_EXCEPTION;
     }
 
-    size_t ret = Serial1.write(p_buffer, bsize);
+    size_t ret = Serial1.write(p_buffer, unit_num);
     JS_FreeValue(ctx, vbuffer);
 
     return JS_NewInt32(ctx, ret);
@@ -55,14 +55,22 @@ static JSValue esp32_uart_read(JSContext *ctx, JSValueConst jsThis,
                                int argc, JSValueConst *argv, int magic)
 {
   if (argc > 0){
-    uint32_t value;
-    JS_ToUint32(ctx, &value, argv[0]);
-    JSValue array = JS_NewArray(ctx);
-    for (uint32_t i = 0; i < value; i++){
+    uint32_t length;
+    JS_ToUint32(ctx, &length, argv[0]);
+    uint8_t *p_buffer = (uint8_t*)malloc(length);
+    if( p_buffer == NULL )
+      return JS_EXCEPTION;
+    uint32_t i;
+    for (i = 0; i < length; i++){
       int c = Serial1.read();
-      JS_SetPropertyUint32(ctx, array, i, JS_NewInt32(ctx, c));
+      if( c < 0 )
+        break;
+      p_buffer[i] = (uint8_t)c;
     }
-    return array;
+
+    JSValue value = JS_NewArrayBufferCopy(ctx, p_buffer, i);
+    free(p_buffer);
+    return value;
   }else{
     return JS_NewInt32(ctx, Serial1.read());
   }

@@ -233,8 +233,8 @@ static JSValue esp32_prefs_putBytes(JSContext *ctx, JSValueConst jsThis,
 
   uint8_t *p_buffer;
   uint8_t unit_size;
-  uint32_t bsize;
-  JSValue vbuffer = getArrayBuffer(ctx, argv[1], (void**)&p_buffer, &unit_size, &bsize);
+  uint32_t unit_num;
+  JSValue vbuffer = getTypedArrayBuffer(ctx, argv[1], (void**)&p_buffer, &unit_size, &unit_num);
   if( JS_IsNull(vbuffer) ){
     JS_FreeCString(ctx, key);
     return JS_EXCEPTION;
@@ -244,18 +244,18 @@ static JSValue esp32_prefs_putBytes(JSContext *ctx, JSValueConst jsThis,
     JS_FreeValue(ctx, vbuffer);
     return JS_EXCEPTION;
   }
-  if( bsize > PREF_MAX_BYTES_LEN ){
+  if( unit_num > PREF_MAX_BYTES_LEN ){
     JS_FreeCString(ctx, key);
     JS_FreeValue(ctx, vbuffer);
     return JS_EXCEPTION;
   }
 
-  size_t ret = preferences.putBytes(key, p_buffer, bsize);
+  size_t len = preferences.putBytes(key, p_buffer, unit_num);
 
   JS_FreeCString(ctx, key);
   JS_FreeValue(ctx, vbuffer);
 
-  return JS_NewUint32(ctx, ret);
+  return JS_NewUint32(ctx, len);
 }
 
 static JSValue esp32_prefs_getBytes(JSContext *ctx, JSValueConst jsThis,
@@ -275,10 +275,10 @@ static JSValue esp32_prefs_getBytes(JSContext *ctx, JSValueConst jsThis,
     return JS_EXCEPTION;
   }
 
-  int32_t ret = preferences.getBytes(key, p_buffer, def);
+  int32_t len = preferences.getBytes(key, p_buffer, def);
   JS_FreeCString(ctx, key);
 
-  JSValue value = JS_NewArrayBufferCopy(ctx, p_buffer, ret);
+  JSValue value = JS_NewArrayBufferCopy(ctx, p_buffer, len);
   free(p_buffer);
 
   return value;

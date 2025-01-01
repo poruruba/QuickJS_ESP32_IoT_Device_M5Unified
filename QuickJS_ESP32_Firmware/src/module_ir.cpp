@@ -64,7 +64,7 @@ static JSValue esp32_ir_sendRaw(JSContext *ctx, JSValueConst jsThis, int argc,
   uint16_t *p_buffer;
   uint8_t unit_size;
   uint32_t unit_num;
-  JSValue vbuffer = getArrayBuffer(ctx, argv[0], (void**)&p_buffer, &unit_size, &unit_num);
+  JSValue vbuffer = getTypedArrayBuffer(ctx, argv[0], (void**)&p_buffer, &unit_size, &unit_num);
   if( JS_IsNull(vbuffer) )
     return JS_EXCEPTION;
   if( unit_size != 2 ){
