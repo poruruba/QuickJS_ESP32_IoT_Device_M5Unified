@@ -89,6 +89,9 @@
 #ifdef _ESPNOW_ENABLE_
 #include "module_espnow.h"
 #endif
+#ifdef _WEBSOCKET_ENABLE_
+#include "module_websocket.h"
+#endif
 
 static JsModuleEntry module_entries[] = {
   esp32_module,
@@ -163,6 +166,9 @@ static JsModuleEntry module_entries[] = {
 #endif
 #ifdef _ESPNOW_ENABLE_
   espnow_module,
+#endif
+#ifdef _WEBSOCKET_ENABLE_
+  websocket_module,
 #endif
   utils_module
 };
@@ -485,10 +491,10 @@ class ESP32QuickJS {
     // loop()
     if( callLoopFn ){
       if (JS_IsFunction(ctx, loop_func)) {
-      JSValue ret = JS_Call(ctx, loop_func, loop_func, 0, nullptr);
-      if (JS_IsException(ret)) {
-        qjs_dump_exception(ctx, ret);
-        JS_FreeValue(ctx, ret);
+        JSValue ret = JS_Call(ctx, loop_func, loop_func, 0, nullptr);
+        if (JS_IsException(ret)) {
+          qjs_dump_exception(ctx, ret);
+          JS_FreeValue(ctx, ret);
 //          return false;
         }else{
           JS_FreeValue(ctx, ret);

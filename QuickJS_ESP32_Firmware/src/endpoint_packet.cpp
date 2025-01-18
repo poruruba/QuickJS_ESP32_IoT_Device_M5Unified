@@ -34,8 +34,14 @@
 #ifdef _LCD_ENABLE_
 #include "endpoint_lcd.h"
 #endif
+#ifdef _WEBSOCKET_ENABLE_
+#include "module_websocket.h"
+#endif
 
 static AsyncWebServer server(HTTP_PORT);
+#ifdef _WEBSOCKET_ENABLE_
+static AsyncWebSocket ws("/ws");
+#endif
 
 static std::unordered_map<std::string, EndpointEntry*> endpoint_list;
 
@@ -144,6 +150,12 @@ long packet_initialize(void)
   server.serveStatic("/", SPIFFS, "/html/").setDefaultFile("index.html");
 #endif
   server.onNotFound(notFound);
+
+#ifdef _WEBSOCKET_ENABLE_
+  ws.onEvent(onWebsocketEvent);
+  server.addHandler(&ws);
+#endif
+
 //  server.begin();
 
   return 0;
