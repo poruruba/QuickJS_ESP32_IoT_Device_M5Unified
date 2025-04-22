@@ -18,6 +18,7 @@ bool g_autoupdate = false;
 
 char g_download_buffer[FILE_BUFFER_SIZE];
 unsigned char g_fileloading = FILE_LOADING_NONE;
+esp_sleep_wakeup_cause_t g_sleepReason = ESP_SLEEP_WAKEUP_UNDEFINED;
 
 ESP32QuickJS qjs;
 SemaphoreHandle_t binSem;
@@ -59,6 +60,8 @@ void setup()
   }
   if( !SPIFFS.exists(MODULE_DIR) )
     SPIFFS.mkdir(MODULE_DIR);
+
+  g_sleepReason = esp_sleep_get_wakeup_cause();
 
   ret = m5_connect();
   if( ret != 0 )

@@ -121,7 +121,7 @@
 #define FILE_LOADING_STOP     8
 extern unsigned char g_fileloading;
 extern char g_download_buffer[FILE_BUFFER_SIZE];
-
+extern esp_sleep_wakeup_cause_t g_sleepReason;
 extern bool g_autoupdate;
 
 extern SemaphoreHandle_t binSem;

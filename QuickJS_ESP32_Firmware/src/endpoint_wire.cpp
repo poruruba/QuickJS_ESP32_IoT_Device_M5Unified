@@ -136,9 +136,11 @@ long endp_wire_read(JsonObject& request, JsonObject& response, int magic)
   else
     return -1;
 
-  if( request.containsKey("count") ){
+//  if( request.containsKey("count") ){
+  if( request["count"].is<int>() ){
     int count = request["count"];
-    JsonArray arry = response.createNestedArray("result");
+//    JsonArray arry = response.createNestedArray("result");
+    JsonArray arry = response["result"].to<JsonArray>();
     for( int i = 0 ; i < count ; i++ )
       arry[i] = wire->read();
   }else{

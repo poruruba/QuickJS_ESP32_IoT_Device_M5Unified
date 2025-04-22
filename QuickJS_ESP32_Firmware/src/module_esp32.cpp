@@ -28,7 +28,7 @@
 #define MODEL_M5Paper       6
 #define MODEL_M5Tough       7
 #define MODEL_M5StickC      8
-#define MODEL_M5Atom        9
+#define MODEL_M5Atom        9 /* no use */
 #define MODEL_M5StampC3     10
 #define MODEL_M5StampC3U    11
 #define MODEL_M5StampS3     12
@@ -53,10 +53,13 @@
 #define MODEL_M5AtomS3U     31
 #define MODEL_M5Capsule     32
 #define MODEL_M5NanoC6      33
+#define MODEL_M5AtomLite    34
+#define MODEL_M5AtomEcho    35
 
 static WiFiUDP syslog_udp;
 static Syslog g_syslog(syslog_udp);
 static char *p_syslog_host = NULL;
+static char *p_syslog_appName = NULL;
 
 long syslog_send(uint16_t pri, const char *p_message)
 {
@@ -66,10 +69,6 @@ long syslog_send(uint16_t pri, const char *p_message)
 
 long syslog_changeServer(const char *host, uint16_t port)
 {
-  g_syslog.appName(MDNS_SERVICE);
-  g_syslog.deviceHostname(MDNS_NAME);
-  g_syslog.defaultPriority(LOG_INFO | LOG_USER);
-
   if( p_syslog_host != NULL )
     free(p_syslog_host);
   p_syslog_host = (char*)malloc(strlen(host) + 1);
@@ -81,6 +80,35 @@ long syslog_changeServer(const char *host, uint16_t port)
   Serial.printf("syslog: host=%s, port=%d\n", p_syslog_host, port);
 
   return 0;
+}
+
+static JSValue esp32_sleep_getWakeupCause(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
+{
+  return JS_NewInt32(ctx, g_sleepReason);
+}
+
+static JSValue esp32_sleep_startSleepTimer(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
+{
+  uint32_t msec;
+  JS_ToUint32(ctx, &msec, argv[0]);
+
+  esp_sleep_enable_timer_wakeup(msec * (uint64_t)1000);  
+  esp_deep_sleep_start();
+
+  return JS_UNDEFINED;
+}
+
+static JSValue esp32_sleep_startSleepExt1(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
+{
+  int64_t mask;
+  JS_ToInt64(ctx, &mask, argv[0]);
+  uint32_t mode;
+  JS_ToUint32(ctx, &mode, argv[1]);
+
+  esp_sleep_enable_ext1_wakeup(mask, (esp_sleep_ext1_wakeup_mode_t)mode);
+  esp_deep_sleep_start();
+  
+  return JS_UNDEFINED;
 }
 
 static JSValue esp32_reboot(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
@@ -152,7 +180,9 @@ static JSValue esp32_get_deviceModel(JSContext *ctx, JSValueConst jsThis, int ar
     case lgfx::board_t::board_M5VAMeter: model = MODEL_M5VAMeter; break;
     case lgfx::board_t::board_M5StackCoreS3SE: model = MODEL_M5CoreS3SE; break;
     case lgfx::board_t::board_M5AtomS3R: model = MODEL_M5AtomS3R; break;
-    case lgfx::board_t::board_M5Atom: model = MODEL_M5Atom; break;
+//    case lgfx::board_t::board_M5Atom: model = MODEL_M5Atom; break;
+    case lgfx::board_t::board_M5AtomLite: model = MODEL_M5AtomLite; break;
+    case lgfx::board_t::board_M5AtomEcho: model = MODEL_M5AtomEcho; break;
     case lgfx::board_t::board_M5AtomPsram: model = MODEL_M5AtomPsram; break;
     case lgfx::board_t::board_M5AtomU: model = MODEL_M5AtomU; break;
     case lgfx::board_t::board_M5Camera: model = MODEL_M5Camera; break;
@@ -208,6 +238,38 @@ static JSValue esp32_syslog2(JSContext *ctx, JSValueConst jsThis, int argc, JSVa
   syslog_send((uint16_t)pri, message);
 
   JS_FreeCString(ctx, message);
+
+  return JS_UNDEFINED;
+}
+
+static JSValue esp32_setSyslogAppName(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
+{
+  const char *appName = JS_ToCString(ctx, argv[0]);
+  if( appName == NULL )
+    return JS_EXCEPTION;
+
+  if( p_syslog_appName != NULL ){
+    char *p_temp = (char*)malloc(strlen(appName) + 1);
+    if( p_temp == NULL ){
+      JS_FreeCString(ctx, appName);
+      return JS_EXCEPTION;
+    }
+    strcpy(p_temp, appName);
+    g_syslog.appName(p_temp);
+    free(p_syslog_appName);
+    p_syslog_appName = p_temp;    
+  }else{
+    p_syslog_appName = (char*)malloc(strlen(appName) + 1);
+    if( p_syslog_appName == NULL ){
+      JS_FreeCString(ctx, appName);
+      return JS_EXCEPTION;
+    }
+    strcpy(p_syslog_appName, appName);
+    g_syslog.appName(p_syslog_appName);
+  }
+  g_syslog.deviceHostname(MDNS_NAME);
+  
+  JS_FreeCString(ctx, appName);
 
   return JS_UNDEFINED;
 }
@@ -443,6 +505,9 @@ static const JSCFunctionListEntry esp32_funcs[] = {
     JSCFunctionListEntry{"syslog2", 0, JS_DEF_CFUNC, 0, {
                            func : {2, JS_CFUNC_generic, esp32_syslog2}
                          }},
+    JSCFunctionListEntry{"setSyslogAppName", 0, JS_DEF_CFUNC, 0, {
+                           func : {1, JS_CFUNC_generic, esp32_setSyslogAppName}
+                         }},
     JSCFunctionListEntry{"setSyslogServer", 0, JS_DEF_CFUNC, 0, {
                            func : {2, JS_CFUNC_generic, esp32_setSyslogServer}
                          }},
@@ -466,6 +531,15 @@ static const JSCFunctionListEntry esp32_funcs[] = {
                          }},
     JSCFunctionListEntry{"wifiIsConnected", 0, JS_DEF_CFUNC, 0, {
                            func : {0, JS_CFUNC_generic, esp32_wifi_is_connected}
+                         }},
+    JSCFunctionListEntry{"getWakupCause", 0, JS_DEF_CFUNC, 0, {
+                           func : {0, JS_CFUNC_generic, esp32_sleep_getWakeupCause}
+                         }},
+    JSCFunctionListEntry{"startSleepTimer", 0, JS_DEF_CFUNC, 0, {
+                           func : {1, JS_CFUNC_generic, esp32_sleep_startSleepTimer}
+                         }},
+    JSCFunctionListEntry{"startSleepExt1", 0, JS_DEF_CFUNC, 0, {
+                           func : {2, JS_CFUNC_generic, esp32_sleep_startSleepExt1}
                          }},
     JSCFunctionListEntry{
         "MODEL_OTHER", 0, JS_DEF_PROP_INT32, 0, {
@@ -604,6 +678,14 @@ static const JSCFunctionListEntry esp32_funcs[] = {
           i32 : MODEL_M5NanoC6
         }},
     JSCFunctionListEntry{
+        "MODEL_M5AtomLite", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : MODEL_M5AtomLite
+        }},
+    JSCFunctionListEntry{
+        "MODEL_M5AtomEcho", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : MODEL_M5AtomEcho
+        }},
+    JSCFunctionListEntry{
         "SYSLOG_PRIORITY_EMERG", 0, JS_DEF_PROP_INT32, 0, {
           i32 : LOG_EMERG
         }},
@@ -632,9 +714,29 @@ static const JSCFunctionListEntry esp32_funcs[] = {
           i32 : LOG_INFO
         }},
     JSCFunctionListEntry{
-        "SYSLOG_PRIORITY_DEBUG", 0, JS_DEF_PROP_INT32, 0, {
-          i32 : LOG_DEBUG
-        }},
+      "SYSLOG_PRIORITY_DEBUG", 0, JS_DEF_PROP_INT32, 0, {
+        i32 : LOG_DEBUG
+      }},
+    JSCFunctionListEntry{
+      "WAKEUP_UNDEFINED", 0, JS_DEF_PROP_INT32, 0, {
+        i32 : ESP_SLEEP_WAKEUP_UNDEFINED
+      }},
+    JSCFunctionListEntry{
+      "WAKEUP_TIMER", 0, JS_DEF_PROP_INT32, 0, {
+        i32 : ESP_SLEEP_WAKEUP_TIMER
+      }},
+    JSCFunctionListEntry{
+      "WAKEUP_EXT1", 0, JS_DEF_PROP_INT32, 0, {
+        i32 : ESP_SLEEP_WAKEUP_EXT1
+      }},
+    JSCFunctionListEntry{
+      "MODE_ANY_HIGH", 0, JS_DEF_PROP_INT32, 0, {
+        i32 : ESP_EXT1_WAKEUP_ANY_HIGH
+      }},
+    JSCFunctionListEntry{
+      "MODE_ALL_LOW", 0, JS_DEF_PROP_INT32, 0, {
+        i32 : ESP_EXT1_WAKEUP_ALL_LOW
+      }},
 };
 
 JSModuleDef *addModule_esp32(JSContext *ctx, JSValue global)
@@ -664,6 +766,10 @@ JSModuleDef *addModule_esp32(JSContext *ctx, JSValue global)
 
 long initialize_esp32(void)
 {
+  g_syslog.appName(MDNS_SERVICE);
+  g_syslog.deviceHostname(MDNS_NAME);
+  g_syslog.defaultPriority(LOG_INFO | LOG_USER);
+
   String server = read_config_string(CONFIG_FNAME_SYSLOG);
   int delim = server.indexOf(':');
   if( delim >= 0 ){

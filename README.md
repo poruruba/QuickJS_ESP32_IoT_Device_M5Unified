@@ -70,6 +70,9 @@ https://poruruba.github.io/EspWebDownloader/quickjs_esp32_firmware/
   - EspNow機能を追加
 - 2025-1-18
   - Websocket機能を追加
+- 2025-4-23
+  - スリープモード機能を追加
+
 
 ## 誤記訂正
 - 2022-03-31

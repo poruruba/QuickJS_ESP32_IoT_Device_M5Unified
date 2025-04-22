@@ -178,7 +178,8 @@ long endp_code_delete(JsonObject& request, JsonObject& response, int magic)
 
 long endp_code_list(JsonObject& request, JsonObject& response, int magic)
 {
-  JsonArray arry = response.createNestedArray("result");
+//  JsonArray arry = response.createNestedArray("result");
+  JsonArray arry = response["result"].to<JsonArray>();
 
   File dir = SPIFFS.open("/");
   if( !dir )

@@ -414,6 +414,7 @@ class ESP32QuickJS {
     if (memoryLimit == 0) {
       memoryLimit = ESP.getFreeHeap() >> 1;
     }
+//    JS_SetMaxStackSize(rt, JS_DEFAULT_STACK_SIZE);
     JS_SetMemoryLimit(rt, memoryLimit);
     JS_SetGCThreshold(rt, memoryLimit >> 3);
     JSValue global = JS_GetGlobalObject(ctx);

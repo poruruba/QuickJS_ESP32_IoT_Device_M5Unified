@@ -246,7 +246,8 @@ long endp_sd_list(JsonObject& request, JsonObject& response, int magic)
   if( !base )
     return -1;
 
-  JsonArray arry = response.createNestedArray("result");
+//  JsonArray arry = response.createNestedArray("result");
+  JsonArray arry = response["result"].to<JsonArray>();
   File file;
   for( int i = 0 ; file = base.openNextFile(); i++ ){
     arry[i] = (char*)file.name();
