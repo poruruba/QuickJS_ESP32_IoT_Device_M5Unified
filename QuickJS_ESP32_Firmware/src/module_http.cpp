@@ -7,6 +7,11 @@
 #include "module_utils.h"
 #include "config_utils.h"
 #include <mbedtls/md.h>
+#include <ESPAsyncWebServer.h>
+#include <AsyncJson.h>
+#include "quickjs.h"
+#include "quickjs_esp32.h"
+#include "module_http.h"
 
 #define HTTP_RESP_SHIFT   0
 #define HTTP_RESP_NONE    0x0
@@ -21,6 +26,11 @@
 #define HTTP_METHOD_POST_URLENCODE 0x2
 #define HTTP_METHOD_POST_FORMDATA  0x3
 #define HTTP_METHOD_MASK           0x07
+
+static JSContext *g_ctx = NULL;
+static JSValue g_callback_func = JS_UNDEFINED;
+static AsyncWebServerRequestPtr g_requestPtr;
+static char *g_callback_message = NULL;
 
 static const char *aws4_request = "aws4_request";
 static const char *signedHeaderNamesBase = "host;x-amz-content-sha256;x-amz-date";
@@ -325,6 +335,17 @@ static JSValue http_setAwsCredential(JSContext *ctx, JSValueConst jsThis, int ar
   return JS_UNDEFINED;
 }
 
+static JSValue http_setCustomCallback(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
+{
+  if( g_callback_func != JS_UNDEFINED )
+    JS_FreeValue(g_ctx, g_callback_func);
+
+  g_ctx = ctx;
+  g_callback_func = JS_DupValue(ctx, argv[0]);
+
+  return JS_UNDEFINED;
+}
+
 static JSValue http_fetch(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
 {
   if( argc <= 1 )
@@ -374,6 +395,10 @@ static const JSCFunctionListEntry http_funcs[] = {
     JSCFunctionListEntry{"getHttpBridgeServer", 0, JS_DEF_CFUNC, 0, {
                            func : {0, JS_CFUNC_generic, http_getHttpBridgeServer}
                          }},
+    JSCFunctionListEntry{"setCustomCallback", 0, JS_DEF_CFUNC, 0, {
+                          func : {1, JS_CFUNC_generic, http_setCustomCallback}
+                        }},
+
     JSCFunctionListEntry{
         "resp_none", 0, JS_DEF_PROP_INT32, 0, {
           i32 : (HTTP_RESP_NONE << HTTP_RESP_SHIFT)
@@ -424,11 +449,44 @@ JSModuleDef *addModule_http(JSContext *ctx, JSValue global)
   return mod;
 }
 
+void loopModule_http(void)
+{
+  if( g_ctx != NULL ){
+    if( http_isPauseRequest() ){
+      if (auto request = g_requestPtr.lock()) {
+        JSValue obj = JS_NewString(g_ctx, g_callback_message);
+        ESP32QuickJS *qjs = (ESP32QuickJS *)JS_GetContextOpaque(g_ctx);
+        JSValue ret = qjs->callJsFunc_with_arg(g_ctx, g_callback_func, g_callback_func, 1, &obj);
+        JS_FreeValue(g_ctx, obj);
+        if (!JS_IsException(ret)) {
+          const char *message = JS_ToCString(g_ctx, ret);
+          http_sendResponseText( message);
+          JS_FreeCString(g_ctx, message);
+        }else{
+          http_sendResponseError("unknown");
+        }
+        JS_FreeValue(g_ctx, ret);
+      }
+    }
+  }
+}
+
+void endModule_http(void)
+{
+  if( g_callback_func != JS_UNDEFINED ){
+    JS_FreeValue(g_ctx, g_callback_func);
+    g_callback_func = JS_UNDEFINED;
+  }
+  g_ctx = NULL;
+
+  http_delegateRequest(NULL, NULL);
+}
+
 JsModuleEntry http_module = {
   NULL,
   addModule_http,
-  NULL,
-  NULL
+  loopModule_http,
+  endModule_http
 };
 
 
@@ -581,4 +639,67 @@ static AwsAuthorizationResult makeAwsAuthorization(const char *method, const cha
   // Serial.printf("authorization=%s\n", amzResult.authorization);
 
   return amzResult;
+}
+
+long http_delegateRequest(AsyncWebServerRequest *request, const char *message)
+{
+  http_sendResponseText(NULL);
+
+  if( request != NULL ){
+    g_callback_message = (char*)malloc(strlen(message) + 1);
+    strcpy(g_callback_message, message);
+    g_requestPtr = request->pause();
+  }
+
+  return 0;
+}
+
+bool http_isPauseRequest(void)
+{
+  if( auto requst = g_requestPtr.lock())
+    return true;
+  else
+    return false;
+}
+
+long http_sendResponseText(const char *message)
+{
+  if( g_callback_message != NULL ){
+    free(g_callback_message);
+    g_callback_message = NULL;
+  }
+
+  if (auto request = g_requestPtr.lock()) {
+    AsyncJsonResponse *response = new AsyncJsonResponse(false);
+    const JsonObject& responseResult = response->getRoot();
+    responseResult["status"] = "OK";
+    responseResult["endpoint"] = (char*)HTTP_WAITING_ENDPOINT;
+    responseResult["result"] = (char*)message;
+    response->setLength();
+    request->send(response);
+    return 0;  
+  }else{
+    return -1;
+  }
+}
+
+long http_sendResponseError(const char *message)
+{
+  if( g_callback_message != NULL ){
+    free(g_callback_message);
+    g_callback_message = NULL;
+  }
+
+  if (auto request = g_requestPtr.lock()) {
+    AsyncJsonResponse *response = new AsyncJsonResponse(false);
+    const JsonObject& responseResult = response->getRoot();
+    responseResult["status"] = "NG";
+    responseResult["endpoint"] = (char*)HTTP_WAITING_ENDPOINT;
+    responseResult["message"] = (char*)message;
+    response->setLength();
+    request->send(response);
+    return 0;  
+  }else{
+    return -1;
+  }
 }

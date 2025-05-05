@@ -15,6 +15,7 @@
 #include <ESPAsyncWebServer.h>
 #include <AsyncJson.h>
 
+#include "module_http.h"
 #include "endpoint_esp32.h"
 #include "endpoint_gpio.h"
 #include "endpoint_wire.h"
@@ -106,11 +107,20 @@ long packet_initialize(void)
     bool sem = xSemaphoreTake(binSem, portMAX_DELAY);
     const JsonObject& jsonObj = json.as<JsonObject>();
     const char *endpoint = jsonObj["endpoint"];
-    AsyncJsonResponse *response = new AsyncJsonResponse(false, PACKET_JSON_DOCUMENT_SIZE);
+    const JsonObject& params = jsonObj["params"];
+
+    if( strcmp(endpoint, HTTP_WAITING_ENDPOINT) == 0 ){
+      if( sem )
+        xSemaphoreGive(binSem);
+      http_delegateRequest(request, (const char*)params["message"]);
+      return;
+    }
+
+//    AsyncJsonResponse *response = new AsyncJsonResponse(false, PACKET_JSON_DOCUMENT_SIZE);
+    AsyncJsonResponse *response = new AsyncJsonResponse(false);
     const JsonObject& responseResult = response->getRoot();
     responseResult["status"] = "OK";
     responseResult["endpoint"] = (char*)endpoint;
-    const JsonObject& params = jsonObj["params"];
     long ret = packet_execute(endpoint, params, responseResult);
     if( ret != 0 ){
       responseResult.clear();
@@ -125,10 +135,12 @@ long packet_initialize(void)
   });
   server.addHandler(handler);
 
+/*  
   AsyncCallbackJsonWebHandler *handler_putText = new AsyncCallbackJsonWebHandler("/webcall_putText", [](AsyncWebServerRequest *request, JsonVariant &json) {
     bool sem = xSemaphoreTake(binSem, portMAX_DELAY);
     const JsonObject& jsonObj = json.as<JsonObject>();
-    AsyncJsonResponse *response = new AsyncJsonResponse(false, PACKET_JSON_DOCUMENT_SIZE);
+//    AsyncJsonResponse *response = new AsyncJsonResponse(false, PACKET_JSON_DOCUMENT_SIZE);
+    AsyncJsonResponse *response = new AsyncJsonResponse(false);
     const JsonObject& responseResult = response->getRoot();
     responseResult["status"] = "OK";
     long ret = webcall_putText(jsonObj);
@@ -143,6 +155,7 @@ long packet_initialize(void)
       xSemaphoreGive(binSem);
   });
   server.addHandler(handler_putText);
+*/
 
   DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
   DefaultHeaders::Instance().addHeader("Access-Control-Allow-Headers", "*");

@@ -110,6 +110,10 @@ class Arduino{
   async getMacAddress(){
     return this.webapi_request("/getMacAddress", {} );
   }
+  
+  async customCall(message){
+    return this.webapi_request("/http-customCall", message );
+  }
 
   async webapi_request(endpoint, body) {
     var params = {

@@ -108,6 +108,10 @@ class Arduino{
     return this.webapi_request("/getMacAddress", {} );
   }
 
+  async customCall(message){
+    return this.webapi_request("/http-customCall", message );
+  }
+
   bufferToBase64(buf) {
     if( buf instanceof ArrayBuffer )
         buf = new Uint8Array(buf);
