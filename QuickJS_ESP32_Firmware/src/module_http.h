@@ -6,8 +6,6 @@
 
 extern JsModuleEntry http_module;
 
-#define HTTP_WAITING_ENDPOINT "/http_customCall"
-
 long http_delegateRequest(AsyncWebServerRequest *request, const char *message);
 bool http_isPauseRequest(void);
 long http_sendResponseText(const char *message);

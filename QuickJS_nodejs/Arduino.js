@@ -112,7 +112,7 @@ class Arduino{
   }
   
   async customCall(message){
-    return this.webapi_request("/http-customCall", message );
+    return this.customcall_request( message );
   }
 
   async webapi_request(endpoint, body) {
@@ -126,6 +126,18 @@ class Arduino{
     if(json.status != "OK" )
       throw "status not OK";
     return json.result;
+  }
+
+  async customcall_request(message) {
+    var params = {
+      messabe: message
+    };
+    console.log(params);
+    var json = await this.do_post(this.base_url + '/customcall_post', params);
+    console.log(json);
+    if(json.status != "OK" )
+      throw "status not OK";
+    return json.message;
   }
 
   async do_post(url, body) {

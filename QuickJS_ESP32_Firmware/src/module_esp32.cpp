@@ -201,18 +201,6 @@ static JSValue esp32_get_deviceModel(JSContext *ctx, JSValueConst jsThis, int ar
   return JS_NewUint32(ctx, model);
 }
 
-static JSValue esp32_check_putText(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
-{
-  if( g_fileloading != FILE_LOADING_TEXT ){
-    return JS_NULL;
-  }
-
-  JSValue value = JS_NewString(ctx, g_download_buffer);
-  g_fileloading = FILE_LOADING_NONE;
-
-  return value;
-}
-
 static JSValue esp32_syslog(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
 {
   const char *message = JS_ToCString(ctx, argv[0]);
@@ -495,9 +483,6 @@ static const JSCFunctionListEntry esp32_funcs[] = {
                          }},
     JSCFunctionListEntry{"getDeviceModel", 0, JS_DEF_CFUNC, 0, {
                            func : {0, JS_CFUNC_generic, esp32_get_deviceModel}
-                         }},
-    JSCFunctionListEntry{"checkPutText", 0, JS_DEF_CFUNC, 0, {
-                           func : {0, JS_CFUNC_generic, esp32_check_putText}
                          }},
     JSCFunctionListEntry{"syslog", 0, JS_DEF_CFUNC, 0, {
                            func : {1, JS_CFUNC_generic, esp32_syslog}

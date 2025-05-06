@@ -89,13 +89,6 @@ class Arduino{
     return this.webapi_request("/code-delete", { fname: fname} );
   }
 
-  async putText(text){
-    var params = {
-      text: text
-    };
-    return this.webapi_request("/putText", params );
-  }
-
   async console_log(msg){
     await this.webapi_request('/console-log', {msg: msg});
   }
@@ -109,7 +102,7 @@ class Arduino{
   }
 
   async customCall(message){
-    return this.webapi_request("/http-customCall", message );
+    return this.customcall_request(message);
   }
 
   bufferToBase64(buf) {
@@ -140,6 +133,18 @@ class Arduino{
     if(json.status != "OK" )
       throw "status not OK";
     return json.result;
+  }
+
+  async customcall_request(message) {
+    var params = {
+      message: message
+    };
+    console.log(params);
+    var json = await this.do_post(this.base_url + "/customcall_post", params);
+    console.log(json);
+    if(json.status != "OK" )
+      throw "status not OK";
+    return json.message;
   }
 
   async do_post(url, body) {

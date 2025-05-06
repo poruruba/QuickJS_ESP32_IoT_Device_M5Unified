@@ -108,11 +108,16 @@ long packet_initialize(void)
     const JsonObject& jsonObj = json.as<JsonObject>();
     const char *endpoint = jsonObj["endpoint"];
     const JsonObject& params = jsonObj["params"];
-
-    if( strcmp(endpoint, HTTP_WAITING_ENDPOINT) == 0 ){
+    if( endpoint == NULL || params.isNull()){
+      AsyncJsonResponse *response = new AsyncJsonResponse(false);
+      const JsonObject& responseResult = response->getRoot();
+      responseResult["status"] = "NG";
+      responseResult["endpoint"] = (char*)endpoint;
+      responseResult["message"] = "invalid format";
+      response->setLength();
+      request->send(response);
       if( sem )
         xSemaphoreGive(binSem);
-      http_delegateRequest(request, (const char*)params["message"]);
       return;
     }
 
@@ -135,27 +140,22 @@ long packet_initialize(void)
   });
   server.addHandler(handler);
 
-/*  
-  AsyncCallbackJsonWebHandler *handler_putText = new AsyncCallbackJsonWebHandler("/webcall_putText", [](AsyncWebServerRequest *request, JsonVariant &json) {
-    bool sem = xSemaphoreTake(binSem, portMAX_DELAY);
+
+  AsyncCallbackJsonWebHandler *handler_customCall = new AsyncCallbackJsonWebHandler("/customcall_post", [](AsyncWebServerRequest *request, JsonVariant &json) {
     const JsonObject& jsonObj = json.as<JsonObject>();
 //    AsyncJsonResponse *response = new AsyncJsonResponse(false, PACKET_JSON_DOCUMENT_SIZE);
-    AsyncJsonResponse *response = new AsyncJsonResponse(false);
-    const JsonObject& responseResult = response->getRoot();
-    responseResult["status"] = "OK";
-    long ret = webcall_putText(jsonObj);
-    if( ret != 0 ){
-      responseResult.clear();
-      responseResult["status"] = "NG";
-      responseResult["message"] = "unknown";
-    }
-    response->setLength();
-    request->send(response);
-    if( sem )
-      xSemaphoreGive(binSem);
+    http_delegateRequest(request, (const char*)jsonObj["message"]);
   });
-  server.addHandler(handler_putText);
-*/
+  server.addHandler(handler_customCall);
+
+  server.on("/customcall_get", HTTP_GET, [](AsyncWebServerRequest* request){
+    const char *message = NULL;
+    const AsyncWebParameter *p = request->getParam("message");
+    if( p != NULL )
+      message = p->value().c_str();
+    http_delegateRequest(request, message);
+  });
+
 
   DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
   DefaultHeaders::Instance().addHeader("Access-Control-Allow-Headers", "*");

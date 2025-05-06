@@ -161,6 +161,22 @@ static JSValue esp32_wire_read(JSContext *ctx, JSValueConst jsThis,
   }
 }
 
+static JSValue esp32_wire_end(JSContext *ctx, JSValueConst jsThis,
+  int argc, JSValueConst *argv, int magic)
+{
+  TwoWire *wire;
+  if (magic == 0)
+  wire = &Wire;
+  else if (magic == 1)
+  wire = &Wire1;
+  else
+  return JS_EXCEPTION;
+
+  bool ret = wire->end();
+
+  return JS_NewBool(ctx, ret);
+}
+
 static const JSCFunctionListEntry wire_funcs[] = {
     JSCFunctionListEntry{
         "begin", 0, JS_DEF_CFUNC, 0, {
@@ -189,6 +205,10 @@ static const JSCFunctionListEntry wire_funcs[] = {
     JSCFunctionListEntry{
         "read", 0, JS_DEF_CFUNC, 0, {
           func : {1, JS_CFUNC_generic_magic, {generic_magic : esp32_wire_read}}
+        }},
+    JSCFunctionListEntry{
+        "end", 0, JS_DEF_CFUNC, 0, {
+          func : {0, JS_CFUNC_generic_magic, {generic_magic : esp32_wire_end}}
         }},
 };
 
@@ -220,6 +240,10 @@ static const JSCFunctionListEntry wire1_funcs[] = {
     JSCFunctionListEntry{
         "read", 0, JS_DEF_CFUNC, 1, {
           func : {1, JS_CFUNC_generic_magic, {generic_magic : esp32_wire_read}}
+        }},
+    JSCFunctionListEntry{
+        "end", 0, JS_DEF_CFUNC, 1, {
+          func : {0, JS_CFUNC_generic_magic, {generic_magic : esp32_wire_end}}
         }},
 };
 

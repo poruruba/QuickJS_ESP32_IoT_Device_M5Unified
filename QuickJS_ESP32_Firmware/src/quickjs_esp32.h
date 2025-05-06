@@ -468,7 +468,7 @@ class ESP32QuickJS {
   {
     if( rt == NULL )
       return false;
-    if( !(g_fileloading == FILE_LOADING_NONE || g_fileloading == FILE_LOADING_TEXT) )
+    if( !(g_fileloading == FILE_LOADING_NONE) )
       return false;
 
     // async
