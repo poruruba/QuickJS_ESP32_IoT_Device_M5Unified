@@ -712,6 +712,7 @@ long http_sendResponseError(const char *message)
     responseResult["message"] = (char*)message;
     response->setLength();
     request->send(response);
+    g_requestPtr.reset();
     return 0;  
   }else{
     return -1;
