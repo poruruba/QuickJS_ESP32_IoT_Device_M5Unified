@@ -92,13 +92,6 @@ class Arduino{
     return this.webapi_request("/code-delete", { fname: fname} );
   }
 
-  async putText(text){
-    var params = {
-      text: text
-    };
-    return this.webapi_request("/putText", params );
-  }
-  
   async console_log(msg){
     await this.webapi_request('/console-log', {msg: msg});
   }
