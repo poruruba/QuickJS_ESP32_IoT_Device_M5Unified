@@ -130,7 +130,7 @@ class Arduino{
 
   async customcall_request(message) {
     var params = {
-      messabe: message
+      message: message
     };
     console.log(params);
     var json = await this.do_post(this.base_url + '/customcall_post', params);
