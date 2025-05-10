@@ -29,7 +29,7 @@ static void espnow_OnDataSend(const uint8_t *mac_addr, esp_now_send_status_t sta
   g_send_cb_fire = true;
 }
 
-static void espnow_OnDataRecv(const uint8_t *mac_addr, const uint8_t *recvData, int len) {
+static void espnow_OnDataRecv(const esp_now_recv_info_t *info, const uint8_t *recvData, int len) {
   if( gp_recv_data != NULL ){
     free(gp_recv_data);
     gp_recv_data = NULL;
@@ -41,7 +41,7 @@ static void espnow_OnDataRecv(const uint8_t *mac_addr, const uint8_t *recvData, 
   
   memmove(gp_recv_data, recvData, len);
   gp_recv_data[len] = '\0';
-  memmove(g_recv_macaddress, mac_addr, 6);
+  memmove(g_recv_macaddress, info->src_addr, 6);
   g_recv_cb_fire = true;
 }
 
