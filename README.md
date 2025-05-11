@@ -73,7 +73,7 @@ https://poruruba.github.io/EspWebDownloader/quickjs_esp32_firmware/
 - 2025-4-23
   - スリープモード機能を追加
 - 2025-5-6
-  - カスタムコール機能を追加
+  - カスタムコールバック機能を追加
 
 
 ## 誤記訂正
