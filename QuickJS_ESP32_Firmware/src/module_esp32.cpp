@@ -82,6 +82,16 @@ long syslog_changeServer(const char *host, uint16_t port)
   return 0;
 }
 
+extern "C" {
+  uint8_t temprature_sens_read(); 
+}
+
+static JSValue esp32_readTemperature(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
+{
+  uint8_t temp = temperatureRead();
+  return JS_NewUint32(ctx, temp);
+}
+
 static JSValue esp32_sleep_getWakeupCause(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
 {
   return JS_NewInt32(ctx, g_sleepReason);
@@ -98,6 +108,7 @@ static JSValue esp32_sleep_startSleepTimer(JSContext *ctx, JSValueConst jsThis, 
   return JS_UNDEFINED;
 }
 
+/*
 static JSValue esp32_sleep_startSleepExt1(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
 {
   int64_t mask;
@@ -110,6 +121,7 @@ static JSValue esp32_sleep_startSleepExt1(JSContext *ctx, JSValueConst jsThis, i
   
   return JS_UNDEFINED;
 }
+*/
 
 static JSValue esp32_reboot(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
 {
@@ -523,8 +535,13 @@ static const JSCFunctionListEntry esp32_funcs[] = {
     JSCFunctionListEntry{"startSleepTimer", 0, JS_DEF_CFUNC, 0, {
                            func : {1, JS_CFUNC_generic, esp32_sleep_startSleepTimer}
                          }},
+/*                 
     JSCFunctionListEntry{"startSleepExt1", 0, JS_DEF_CFUNC, 0, {
                            func : {2, JS_CFUNC_generic, esp32_sleep_startSleepExt1}
+                         }},
+*/
+    JSCFunctionListEntry{"readTemperature", 0, JS_DEF_CFUNC, 0, {
+                           func : {2, JS_CFUNC_generic, esp32_readTemperature}
                          }},
     JSCFunctionListEntry{
         "MODEL_OTHER", 0, JS_DEF_PROP_INT32, 0, {
@@ -718,10 +735,12 @@ static const JSCFunctionListEntry esp32_funcs[] = {
       "MODE_ANY_HIGH", 0, JS_DEF_PROP_INT32, 0, {
         i32 : ESP_EXT1_WAKEUP_ANY_HIGH
       }},
+/*      
     JSCFunctionListEntry{
       "MODE_ALL_LOW", 0, JS_DEF_PROP_INT32, 0, {
         i32 : ESP_EXT1_WAKEUP_ALL_LOW
       }},
+*/
 };
 
 JSModuleDef *addModule_esp32(JSContext *ctx, JSValue global)

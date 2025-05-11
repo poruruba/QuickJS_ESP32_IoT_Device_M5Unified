@@ -29,6 +29,7 @@ static void espnow_OnDataSend(const uint8_t *mac_addr, esp_now_send_status_t sta
   g_send_cb_fire = true;
 }
 
+#if defined(ARDUINO_ESP32C6_DEV)
 static void espnow_OnDataRecv(const esp_now_recv_info_t *info, const uint8_t *recvData, int len) {
   if( gp_recv_data != NULL ){
     free(gp_recv_data);
@@ -44,6 +45,23 @@ static void espnow_OnDataRecv(const esp_now_recv_info_t *info, const uint8_t *re
   memmove(g_recv_macaddress, info->src_addr, 6);
   g_recv_cb_fire = true;
 }
+#else
+static void espnow_OnDataRecv(const uint8_t *mac_addr, const uint8_t *recvData, int len) {
+  if( gp_recv_data != NULL ){
+    free(gp_recv_data);
+    gp_recv_data = NULL;
+  }
+
+  gp_recv_data = (char*)malloc(len + 1);
+  if(gp_recv_data == NULL )
+    return;
+  
+  memmove(gp_recv_data, recvData, len);
+  gp_recv_data[len] = '\0';
+  memmove(g_recv_macaddress, mac_addr, 6);
+  g_recv_cb_fire = true;
+}
+#endif
 
 static JSValue espnow_send(JSContext *ctx, JSValueConst jsThis,
                                       int argc, JSValueConst *argv)
