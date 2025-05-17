@@ -86,7 +86,6 @@ var vue_options = {
         prefs_key: "",
         prefs_value: "",
 
-        esp32_putText_input: null,
         esp32_millis_result: null,
 
         esp32_console_message: "",
@@ -437,14 +436,6 @@ var vue_options = {
         esp32_stop: async function(){
             try{
                 await this.arduino.stop();
-            }catch(error){
-                console.error(error);
-                alert(error);
-            }
-        },
-        esp32_putText: async function(){
-            try{
-                await this.arduino.putText(this.esp32_putText_input);
             }catch(error){
                 console.error(error);
                 alert(error);
