@@ -8,6 +8,7 @@ extern JsModuleEntry http_module;
 
 long http_delegateRequest(AsyncWebServerRequest *request, const char *message);
 bool http_isPauseRequest(void);
+bool http_isWaitRequest(void);
 long http_sendResponseText(const char *message);
 long http_sendResponseError(const char *message);
 

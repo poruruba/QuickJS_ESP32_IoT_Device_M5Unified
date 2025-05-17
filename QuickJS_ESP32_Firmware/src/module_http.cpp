@@ -452,8 +452,8 @@ JSModuleDef *addModule_http(JSContext *ctx, JSValue global)
 
 void loopModule_http(void)
 {
-  if( g_ctx != NULL ){
-    if( http_isPauseRequest() ){
+  if( http_isPauseRequest() ){
+    if( http_isWaitRequest() ){
       JSValue objs[2];
       objs[0] = JS_NewString(g_ctx, g_callback_message);
       objs[1] = JS_NewString(g_ctx, g_request_method);
@@ -469,6 +469,8 @@ void loopModule_http(void)
         http_sendResponseError("unknown");
       }
       JS_FreeValue(g_ctx, ret);
+    }else{
+      http_sendResponseError("not ready");
     }
   }
 }
@@ -659,6 +661,11 @@ long http_delegateRequest(AsyncWebServerRequest *request, const char *message)
   }
 
   return 0;
+}
+
+bool http_isWaitRequest(void)
+{
+  return ( g_callback_func != JS_UNDEFINED );
 }
 
 bool http_isPauseRequest(void)

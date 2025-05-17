@@ -145,6 +145,9 @@ long packet_initialize(void)
     const JsonObject& jsonObj = json.as<JsonObject>();
 //    AsyncJsonResponse *response = new AsyncJsonResponse(false, PACKET_JSON_DOCUMENT_SIZE);
     http_delegateRequest(request, (const char*)jsonObj["message"]);
+    if( !http_isWaitRequest() ){
+      http_sendResponseError("not ready");
+    }
   });
   server.addHandler(handler_customCall);
 
@@ -154,6 +157,9 @@ long packet_initialize(void)
     if( p != NULL )
       message = p->value().c_str();
     http_delegateRequest(request, message);
+    if( !http_isWaitRequest() ){
+      http_sendResponseError("not ready");
+    }
   });
 
 

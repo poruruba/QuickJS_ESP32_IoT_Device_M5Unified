@@ -22,6 +22,8 @@ var vue_options = {
         ipaddress: "",
         macaddress: "",
         exec_mode: "code",
+        text_request: "",
+        text_response: "",
 
         syslog_host: "",
         syslog_port: 514,
@@ -706,6 +708,17 @@ var vue_options = {
             try{
                 await this.arduino.code_delete(this.target_module);
                 alert("削除しました。");
+            }catch(error){
+                console.error(error);
+                alert(error);
+            }
+        },
+
+        do_customcall: async function(){
+            try{
+                this.text_response = "";
+                var result = await this.arduino.customcall_request(this.text_request);
+                this.text_response = result;
             }catch(error){
                 console.error(error);
                 alert(error);

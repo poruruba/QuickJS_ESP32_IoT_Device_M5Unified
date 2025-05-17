@@ -113,6 +113,11 @@
           </select>
         </span>
         <textarea class="form-control" rows="20" v-model="input_text" v-on:keydown="catch_tabKey($event)"></textarea>
+        <hr>
+        <label>request message</label> <button class="btn btn-primary" v-on:click="do_customcall">送信</button>
+        <textarea class="form-control" rows="2" v-model="text_request" v-on:keydown="catch_tabKey($event)"></textarea>
+        <label>response message</label>
+        <textarea class="form-control" rows="2" v-model="text_response" v-on:keydown="catch_tabKey($event)" readonly></textarea>
 
         <modal-dialog size="lg" id="quickjs_js_dialog">
           <div slot="content">
