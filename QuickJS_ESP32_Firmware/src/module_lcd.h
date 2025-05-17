@@ -7,19 +7,7 @@
 
 extern JsModuleEntry lcd_module;
 
-#define FUNC_TYPE_WIDTH 1
-#define FUNC_TYPE_HEIGHT 2
-#define FUNC_TYPE_DEPTH 3
-#define FUNC_TYPE_FONTHEIGHT 4
-
-#define FUNC_TYPE_DRAWRECT  0
-#define FUNC_TYPE_FILLRECT  1
-#define FUNC_TYPE_DRAWROUNDRECT  2
-#define FUNC_TYPE_FILLROUNDRECT  3
-#define FUNC_TYPE_DRAWCIRCLE  4
-#define FUNC_TYPE_FILLCIRCLE  5
-
-long module_lcd_setFont(uint16_t size);
+long module_lcd_setFont(uint16_t size, int magic);
 
 #endif
 

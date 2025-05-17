@@ -33,7 +33,7 @@ long endp_lcd_setFont(JsonObject& request, JsonObject& response, int magic)
 {
   int32_t size = request["size"];
 
-  module_lcd_setFont(size);
+  module_lcd_setFont(size, 0);
 
   return 0;
 }
@@ -100,14 +100,14 @@ long endp_lcd_drawRect(JsonObject& request, JsonObject& response, int magic)
   int32_t h = request["h"];
   int32_t color = request["color"] || -1;
   if( color >= 0 ){
-    if( magic == FUNC_TYPE_DRAWRECT)
+    if( magic == ENDPOINT_TYPE_DRAWRECT)
       M5.Display.drawRect(x, y, w, h, (uint32_t)color);
-    else if( magic == FUNC_TYPE_FILLRECT)
+    else if( magic == ENDPOINT_TYPE_FILLRECT)
       M5.Display.fillRect(x, y, w, h, (uint32_t)color);
   }else{
-    if( magic == FUNC_TYPE_DRAWRECT)
+    if( magic == ENDPOINT_TYPE_DRAWRECT)
       M5.Display.drawRect(x, y, w, h);
-    else if( magic == FUNC_TYPE_FILLRECT)
+    else if( magic == ENDPOINT_TYPE_FILLRECT)
       M5.Display.fillRect(x, y, w, h);
   }
 
@@ -123,14 +123,14 @@ long endp_lcd_drawRoundRect(JsonObject& request, JsonObject& response, int magic
   int32_t r = request["r"];
   int32_t color = request["color"] || -1;
   if( color >= 0 ){
-    if( magic == FUNC_TYPE_DRAWROUNDRECT)
+    if( magic == ENDPOINT_TYPE_DRAWROUNDRECT)
       M5.Display.drawRoundRect(x, y, w, h, r, (uint32_t)color);
-    else if( magic == FUNC_TYPE_FILLROUNDRECT)
+    else if( magic == ENDPOINT_TYPE_FILLROUNDRECT)
       M5.Display.fillRoundRect(x, y, w, h, r, (uint32_t)color);
   }else{
-    if( magic == FUNC_TYPE_DRAWROUNDRECT)
+    if( magic == ENDPOINT_TYPE_DRAWROUNDRECT)
       M5.Display.drawRoundRect(x, y, w, h, r);
-    else if( magic == FUNC_TYPE_FILLROUNDRECT)
+    else if( magic == ENDPOINT_TYPE_FILLROUNDRECT)
       M5.Display.fillRoundRect(x, y, w, h, r);
   }
 
@@ -144,14 +144,14 @@ long endp_lcd_drawCircle(JsonObject& request, JsonObject& response, int magic)
   int32_t r = request["r"];
   int32_t color = request["color"] || -1;
   if( color >= 0 ){
-    if( magic == FUNC_TYPE_DRAWCIRCLE)
+    if( magic == ENDPOINT_TYPE_DRAWCIRCLE)
       M5.Display.drawCircle(x, y, r, (uint32_t)color);
-    else if( magic == FUNC_TYPE_FILLCIRCLE)
+    else if( magic == ENDPOINT_TYPE_FILLCIRCLE)
       M5.Display.fillCircle(x, y, r, (uint32_t)color);
   }else{
-    if( magic == FUNC_TYPE_DRAWCIRCLE)
+    if( magic == ENDPOINT_TYPE_DRAWCIRCLE)
       M5.Display.drawCircle(x, y, r);
-    else if( magic == FUNC_TYPE_FILLCIRCLE)
+    else if( magic == ENDPOINT_TYPE_FILLCIRCLE)
       M5.Display.fillCircle(x, y, r);
   }
 
@@ -248,10 +248,10 @@ long endp_lcd_getMetric(JsonObject& request, JsonObject& response, int magic)
   int32_t value = 0;
 
   switch(magic){
-    case FUNC_TYPE_WIDTH: value = M5.Display.width(); break;
-    case FUNC_TYPE_HEIGHT: value = M5.Display.height(); break;
-    case FUNC_TYPE_DEPTH: value = M5.Display.getColorDepth(); break;
-    case FUNC_TYPE_FONTHEIGHT: value = M5.Display.fontHeight(); break;
+    case ENDPOINT_TYPE_WIDTH: value = M5.Display.width(); break;
+    case ENDPOINT_TYPE_HEIGHT: value = M5.Display.height(); break;
+    case ENDPOINT_TYPE_DEPTH: value = M5.Display.getColorDepth(); break;
+    case ENDPOINT_TYPE_FONTHEIGHT: value = M5.Display.fontHeight(); break;
   }
 
   response["result"] = value;
@@ -268,12 +268,12 @@ EndpointEntry lcd_table[] = {
   EndpointEntry{ endp_lcd_setTextDatum, "/lcd-setTextDatum", -1 },
   EndpointEntry{ endp_lcd_drawPixel, "/lcd-drawPixel", -1 },
   EndpointEntry{ endp_lcd_drawLine, "/lcd-drawLine", -1 },
-  EndpointEntry{ endp_lcd_drawRect, "/lcd-drawRect", FUNC_TYPE_DRAWRECT },
-  EndpointEntry{ endp_lcd_drawRect, "/lcd-fillRect", FUNC_TYPE_FILLRECT },
-  EndpointEntry{ endp_lcd_drawRoundRect, "/lcd-drawRoundRect", FUNC_TYPE_DRAWROUNDRECT },
-  EndpointEntry{ endp_lcd_drawRoundRect, "/lcd-fillRoundRect", FUNC_TYPE_FILLROUNDRECT },
-  EndpointEntry{ endp_lcd_drawCircle, "/lcd-drawCircle", FUNC_TYPE_DRAWCIRCLE },
-  EndpointEntry{ endp_lcd_drawCircle, "/lcd-fillCircle", FUNC_TYPE_FILLCIRCLE },
+  EndpointEntry{ endp_lcd_drawRect, "/lcd-drawRect", ENDPOINT_TYPE_DRAWRECT },
+  EndpointEntry{ endp_lcd_drawRect, "/lcd-fillRect", ENDPOINT_TYPE_FILLRECT },
+  EndpointEntry{ endp_lcd_drawRoundRect, "/lcd-drawRoundRect", ENDPOINT_TYPE_DRAWROUNDRECT },
+  EndpointEntry{ endp_lcd_drawRoundRect, "/lcd-fillRoundRect", ENDPOINT_TYPE_FILLROUNDRECT },
+  EndpointEntry{ endp_lcd_drawCircle, "/lcd-drawCircle", ENDPOINT_TYPE_DRAWCIRCLE },
+  EndpointEntry{ endp_lcd_drawCircle, "/lcd-fillCircle", ENDPOINT_TYPE_FILLCIRCLE },
   EndpointEntry{ endp_lcd_setCursor, "/lcd-setCursor", -1 },
   EndpointEntry{ endp_lcd_getCursor, "/lcd-getCursor", -1 },
   EndpointEntry{ endp_lcd_textWidth, "/lcd-textWidth", -1 },
@@ -283,10 +283,10 @@ EndpointEntry lcd_table[] = {
 #ifdef _SD_ENABLE_
   EndpointEntry{ endp_lcd_drawImageFile, "/lcd-drawImageFile", -1 },
 #endif
-  EndpointEntry{ endp_lcd_getMetric, "/lcd-width", FUNC_TYPE_WIDTH },
-  EndpointEntry{ endp_lcd_getMetric, "/lcd-height", FUNC_TYPE_HEIGHT },
-  EndpointEntry{ endp_lcd_getMetric, "/lcd-getColorDepth", FUNC_TYPE_DEPTH },
-  EndpointEntry{ endp_lcd_getMetric, "/lcd-fontHeight", FUNC_TYPE_FONTHEIGHT },
+  EndpointEntry{ endp_lcd_getMetric, "/lcd-width", ENDPOINT_TYPE_WIDTH },
+  EndpointEntry{ endp_lcd_getMetric, "/lcd-height", ENDPOINT_TYPE_HEIGHT },
+  EndpointEntry{ endp_lcd_getMetric, "/lcd-getColorDepth", ENDPOINT_TYPE_DEPTH },
+  EndpointEntry{ endp_lcd_getMetric, "/lcd-fontHeight", ENDPOINT_TYPE_FONTHEIGHT },
 };
 
 const int num_of_lcd_entry = sizeof(lcd_table) / sizeof(EndpointEntry);

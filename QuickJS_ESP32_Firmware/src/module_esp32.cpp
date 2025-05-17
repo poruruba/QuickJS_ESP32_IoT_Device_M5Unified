@@ -1,10 +1,20 @@
 #include <Arduino.h>
+
+//#include <M5AtomDisplay.h>
+//#include <M5ModuleDisplay.h>
+//#include <M5ModuleRCA.h>
+//#include <M5UnitGLASS.h>
+//#include <M5UnitGLASS2.h>
+//#include <M5UnitMiniOLED.h>
+//#include <M5UnitOLED.h>
+//#include <M5UnitLCD.h>
+//#include <M5UnitRCA.h>
+
+#include <M5Unified.h>
 #include <ArduinoJson.h>
 #include <WiFi.h>
 #include <Syslog.h>
-#include "main_config.h"
 #include <ESP32Ping.h>
-#include <M5Unified.h>
 
 #include "main_config.h"
 #include "quickjs.h"
@@ -60,6 +70,8 @@ static WiFiUDP syslog_udp;
 static Syslog g_syslog(syslog_udp);
 static char *p_syslog_host = NULL;
 static char *p_syslog_appName = NULL;
+int g_external_display = -1;
+int g_external_display_type = -1;
 
 long syslog_send(uint16_t pri, const char *p_message)
 {
@@ -807,6 +819,38 @@ long esp32_initialize(void)
   M5.begin(cfg);
 
   delay(500);
+
+  int display_count = M5.getDisplayCount();
+  Serial.printf("[display_count=%d]\n", display_count);
+
+#if defined ( __M5GFX_M5MODULEDISPLAY__ )
+  g_external_display = M5.getDisplayIndex(m5::board_t::board_M5ModuleDisplay);
+  g_external_display_type = m5::board_t::board_M5ModuleDisplay;
+#elif defined ( __M5GFX_M5ATOMDISPLAY__ )
+  g_external_display = M5.getDisplayIndex(m5::board_t::board_M5AtomDisplay);
+  g_external_display_type = m5::board_t::board_M5AtomDisplay;
+#elif defined ( __M5GFX_M5MODULERCA__ )
+  g_external_display = M5.getDisplayIndex(m5::board_t::board_M5ModuleRCA);
+  g_external_display_type = m5::board_t::board_M5ModuleRCA;
+#elif defined ( __M5GFX_M5UNITGLASS__ )
+  g_external_display = M5.getDisplayIndex(m5::board_t::board_M5UnitGLASS);
+  g_external_display_type = m5::board_t::board_M5UnitGLASS;
+#elif defined ( __M5GFX_M5UNITGLASS2__ )
+  g_external_display = M5.getDisplayIndex(m5::board_t::board_M5UnitGLASS2);
+  g_external_display_type = m5::board_t::board_M5UnitGLASS2;
+#elif defined ( __M5GFX_M5UNITOLED__ )
+  g_external_display = M5.getDisplayIndex(m5::board_t::board_M5UnitOLED);
+  g_external_display_type = m5::board_t::board_M5UnitOLED;
+#elif defined ( __M5GFX_M5UNITMINIOLED__ )
+  g_external_display = M5.getDisplayIndex(m5::board_t::board_M5UnitMiniOLED);
+  g_external_display_type = m5::board_t::board_M5UnitMiniOLED;
+#elif defined ( __M5GFX_M5UNITLCD__ )
+  g_external_display = M5.getDisplayIndex(m5::board_t::board_M5UnitLCD);
+  g_external_display_type = m5::board_t::board_M5UnitLCD;
+#elif defined ( __M5GFX_M5UNITRCA__ )
+  g_external_display = M5.getDisplayIndex(m5::board_t::board_M5UnitRCA);
+  g_external_display_type = m5::board_t::board_M5UnitRCA;
+#endif
 
   Serial.println("[initializing]");
 

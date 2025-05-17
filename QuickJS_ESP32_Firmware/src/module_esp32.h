@@ -6,6 +6,9 @@
 extern JsModuleEntry esp32_module;
 extern JsModuleEntry console_module;
 
+extern int g_external_display;
+extern int g_external_display_type;
+
 long esp32_initialize(void);
 void esp32_update(void);
 
