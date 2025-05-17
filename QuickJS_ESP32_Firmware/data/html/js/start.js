@@ -24,6 +24,7 @@ var vue_options = {
         exec_mode: "code",
         text_request: "",
         text_response: "",
+        device_model: "",
 
         syslog_host: "",
         syslog_port: 514,
@@ -97,6 +98,49 @@ var vue_options = {
         workspace: null,
     },
     computed: {
+        device_model_string: function(){
+            var model;
+            switch(this.device_model){
+                case 0: model = "MODEL_OTHER"; break;
+                case 1: model = "MODEL_M5Core2"; break;
+                case 2: model = "MODEL_M5Core"; break;
+                case 3: model = "MODEL_M5Fire"; break;
+                case 4: model = "MODEL_M5StickCPlus"; break;
+                case 5: model = "MODEL_M5CoreInk"; break;
+                case 6: model = "MODEL_M5Paper"; break;
+                case 7: model = "MODEL_M5Tough"; break;
+                case 8: model = "MODEL_M5StickC"; break;
+                case 9: model = "MODEL_M5Atom"; break;
+                case 10: model = "MODEL_M5StampC3"; break;
+                case 11: model = "MODEL_M5StampC3U"; break;
+                case 12: model = "MODEL_M5StampS3"; break;
+                case 13: model = "MODEL_M5Stack"; break;
+                case 14: model = "MODEL_M5StickCPlus2"; break;
+                case 15: model = "MODEL_M5Station"; break;
+                case 16: model = "MODEL_M5CoreS3"; break;
+                case 17: model = "MODEL_M5AtomS3"; break;
+                case 18: model = "MODEL_M5Dial"; break;
+                case 19: model = "MODEL_M5DinMeter"; break;
+                case 20: model = "MODEL_M5Cardputer"; break;
+                case 21: model = "MODEL_M5AirQ"; break;
+                case 22: model = "MODEL_M5VAMeter"; break;
+                case 23: model = "MODEL_M5CoreS3SE"; break;
+                case 24: model = "MODEL_M5AtomS3R"; break;
+                case 25: model = "MODEL_M5AtomPsram"; break;
+                case 26: model = "MODEL_M5AtomU"; break;
+                case 27: model = "MODEL_M5Camera"; break;
+                case 28: model = "MODEL_M5TimerCam"; break;
+                case 29: model = "MODEL_M5StampPico"; break;
+                case 30: model = "MODEL_M5AtomS3Lite"; break;
+                case 31: model = "MODEL_M5AtomS3U"; break;
+                case 32: model = "MODEL_M5Capsule"; break;
+                case 33: model = "MODEL_M5NanoC6"; break;
+                case 34: model = "MODEL_M5AtomLite"; break;
+                case 35: model = "MODEL_M5AtomEcho"; break;
+                default: model = "Unknown";
+            }
+            return model;
+        }
     },
     methods: {
         // Prefs
@@ -432,6 +476,16 @@ var vue_options = {
         },
         to2h(d){
             return ("00" + d.toString(16)).slice(-2);
+        },
+        esp32_get_device_model: async function(){
+            try{
+                var result = await this.arduino.getDeviceModel();
+                console.log(result);
+                this.device_model = result;
+            }catch(error){
+                console.error(error);
+                alert(error);
+            }
         },
 
         // Wire

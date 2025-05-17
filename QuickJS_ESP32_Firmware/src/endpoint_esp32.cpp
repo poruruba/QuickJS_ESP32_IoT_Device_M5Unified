@@ -85,6 +85,14 @@ long endp_getMacAddress(JsonObject& request, JsonObject& response, int magic)
   return 0;
 }
 
+long endp_getDeviceModel(JsonObject& request, JsonObject& response, int magic)
+{
+  uint32_t model = esp32_getDeviceModel();
+  response["result"] = model;
+
+  return 0;
+}
+
 long endp_get_code_config(JsonObject& request, JsonObject& response, int magic)
 {
   long autoupdate = read_config_long(CONFIG_INDEX_AUTOUPDATE, 0);
@@ -217,6 +225,7 @@ EndpointEntry esp32_table[] = {
   EndpointEntry{ endp_getStatus, "/getStatus", 0 },
   EndpointEntry{ endp_getIpAddress, "/getIpAddress", 0 },
   EndpointEntry{ endp_getMacAddress, "/getMacAddress", 0 },
+  EndpointEntry{ endp_getDeviceModel, "/getDeviceModel", 0 },
   EndpointEntry{ endp_setSyslogServer, "/setSyslogServer", 0 },
   EndpointEntry{ endp_getSyslogServer, "/getSyslogServer", 0 },
   EndpointEntry{ endp_get_code_config, "/get-code-config", 0 },

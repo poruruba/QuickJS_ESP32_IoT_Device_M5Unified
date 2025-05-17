@@ -11,6 +11,7 @@ extern int g_external_display_type;
 
 long esp32_initialize(void);
 void esp32_update(void);
+uint32_t esp32_getDeviceModel(void);
 
 long syslog_send(uint16_t pri, const char *p_message);
 long syslog_changeServer(const char *host, uint16_t port);

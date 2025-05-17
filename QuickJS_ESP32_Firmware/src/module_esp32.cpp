@@ -181,9 +181,9 @@ static JSValue esp32_get_macaddress(JSContext *ctx, JSValueConst jsThis, int arg
   return jsArray;
 }
 
-static JSValue esp32_get_deviceModel(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
+uint32_t esp32_getDeviceModel(void)
 {
-  uint8_t model;
+  uint32_t model;
   m5::board_t boad = M5.getBoard();
   switch(boad){
     case lgfx::board_t::board_M5Stack: model = MODEL_M5Stack; break;
@@ -222,6 +222,12 @@ static JSValue esp32_get_deviceModel(JSContext *ctx, JSValueConst jsThis, int ar
     default: model = MODEL_OTHER; break;
   }
 
+  return model;
+}
+
+static JSValue esp32_get_deviceModel(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
+{
+  uint32_t model = esp32_getDeviceModel();
   return JS_NewUint32(ctx, model);
 }
 

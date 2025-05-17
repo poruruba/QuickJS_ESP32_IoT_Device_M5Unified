@@ -101,6 +101,10 @@ class Arduino{
     return this.webapi_request("/getMacAddress", {} );
   }
 
+  async getDeviceModel(){
+    return this.webapi_request("/getDeviceModel", {} );
+  }
+
   async customCall(message){
     return this.customcall_request( message );
   }

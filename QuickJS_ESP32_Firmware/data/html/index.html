@@ -271,7 +271,7 @@
         <label>value</label>
         <input type="text" class="form-control" v-model="prefs_value">
 
-        <h1>esp32</h1>
+        <h1>Esp32</h1>
         <button class="btn btn-default btn-sm" v-on:click="esp32_millis">millis</button> {{esp32_millis_result}}<br>
         <button class="btn btn-default btn-sm" v-on:click="esp32_console_log">console.log</button><br>
         <input type="text" class="form-control" v-model="esp32_console_message">
@@ -283,6 +283,8 @@
         <button class="btn btn-default btn-sm" v-on:click="esp32_stop">stop</button><br>
         <button class="btn btn-default btn-sm" v-on:click="esp32_putText">putText</button>
         <input type="text" class="form-control" v-model="esp32_putText_input">
+
+        <button class="btn btn-default btn-sm" v-on:click="esp32_get_device_model">getDeviceModel</button> {{device_model_string}}<br>
         <div class="form-inline">
           <button class="btn btn-default btn-sm" v-on:click="esp32_get_ipaddress_macaddress">IpAddress&nbsp;&amp;&nbsp;MacAddress</button>
           <label>IpAddress</label> <input type="text" class="form-control" v-model="ipaddress" readonly>
