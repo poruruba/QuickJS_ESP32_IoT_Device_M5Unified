@@ -188,6 +188,45 @@ static JSValue esp32_lcd_draw_image_url(JSContext *ctx, JSValueConst jsThis, int
   return JS_NewBool(ctx, ret);
 }
 
+static JSValue esp32_lcd_draw_image(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv, int magic)
+{
+  if( magic == 1 && g_external_display == -1 )
+    return JS_EXCEPTION;
+
+  uint8_t *p_buffer;
+  uint8_t unit_size;
+  uint32_t unit_num;
+  JSValue vbuffer = getTypedArrayBuffer(ctx, argv[0], (void**)&p_buffer, &unit_size, &unit_num);
+  if( JS_IsNull(vbuffer) )
+    return JS_EXCEPTION;
+  if( unit_size != 1 ){
+    JS_FreeValue(ctx, vbuffer);
+    return JS_EXCEPTION;
+  }
+
+  int32_t x = 0, y = 0;
+  if( argc >= 2 )
+    JS_ToInt32(ctx, &x, argv[1]);
+  if( argc >= 3 )
+    JS_ToInt32(ctx, &y, argv[2]);
+
+  bool ret = false;
+  if( p_buffer[0] == 0xff && p_buffer[1] == 0xd8 ){
+    if( magic == 1 )
+      ret = M5.Displays(g_external_display).drawJpg(p_buffer, unit_num, x, y);
+    else
+      ret = M5.Display.drawJpg(p_buffer, unit_num, x, y);
+  }else if (p_buffer[0] == 0x89 && p_buffer[1] == 0x50 && p_buffer[2] == 0x4e && p_buffer[3] == 0x47 ){
+    if( magic == 1 )
+      ret = M5.Displays(g_external_display).drawPng(p_buffer, unit_num, x, y);
+    else
+      ret = M5.Display.drawPng(p_buffer, unit_num, x, y);
+  }
+  JS_FreeValue(ctx, vbuffer);
+
+  return JS_NewBool(ctx, ret);
+}
+
 static JSValue esp32_lcd_print(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv, int magic)
 {
   if( magic == 1 && g_external_display == -1 )
@@ -740,28 +779,28 @@ static JSValue esp32_lcd_pushRotateZoom(JSContext *ctx, JSValueConst jsThis, int
 
 static const JSCFunctionListEntry lcd_funcs[] = {
     JSCFunctionListEntry{"setRotation", 0, JS_DEF_CFUNC, 0, {
-                           func : {1, JS_CFUNC_generic, {generic_magic : esp32_lcd_setRotation }}
+                           func : {1, JS_CFUNC_generic_magic, {generic_magic : esp32_lcd_setRotation }}
                          }},
     JSCFunctionListEntry{"setBrightness", 0, JS_DEF_CFUNC, 0, {
-                           func : {1, JS_CFUNC_generic, {generic_magic : esp32_lcd_setBrigthness}}
+                           func : {1, JS_CFUNC_generic_magic, {generic_magic : esp32_lcd_setBrigthness}}
                          }},
     JSCFunctionListEntry{"setFont", 0, JS_DEF_CFUNC, 0, {
-                           func : {1, JS_CFUNC_generic, {generic_magic : esp32_lcd_setFont}}
+                           func : {1, JS_CFUNC_generic_magic, {generic_magic : esp32_lcd_setFont}}
                          }},
     JSCFunctionListEntry{"setTextColor", 0, JS_DEF_CFUNC, 0, {
-                           func : {2, JS_CFUNC_generic, {generic_magic : esp32_lcd_setTextColor}}
+                           func : {2, JS_CFUNC_generic_magic, {generic_magic : esp32_lcd_setTextColor}}
                          }},
     JSCFunctionListEntry{"setTextSize", 0, JS_DEF_CFUNC, 0, {
-                           func : {2, JS_CFUNC_generic, {generic_magic : esp32_lcd_setTextSize}}
+                           func : {2, JS_CFUNC_generic_magic, {generic_magic : esp32_lcd_setTextSize}}
                          }},
     JSCFunctionListEntry{"setTextDatum", 0, JS_DEF_CFUNC, 0, {
-                           func : {1, JS_CFUNC_generic, {generic_magic : esp32_lcd_setTextDatum}}
+                           func : {1, JS_CFUNC_generic_magic, {generic_magic : esp32_lcd_setTextDatum}}
                          }},
     JSCFunctionListEntry{"drawPixel", 0, JS_DEF_CFUNC, 0, {
-                           func : {3, JS_CFUNC_generic, {generic_magic : esp32_lcd_drawPixel}}
+                           func : {3, JS_CFUNC_generic_magic, {generic_magic : esp32_lcd_drawPixel}}
                          }},
     JSCFunctionListEntry{"drawLine", 0, JS_DEF_CFUNC, 0, {
-                           func : {5, JS_CFUNC_generic, {generic_magic : esp32_lcd_drawLine}}
+                           func : {5, JS_CFUNC_generic_magic, {generic_magic : esp32_lcd_drawLine}}
                          }},
     JSCFunctionListEntry{"drawCircle", 0, JS_DEF_CFUNC, 0, {
                            func : {4, JS_CFUNC_generic_magic, {generic_magic : esp32_lcd_drawCircle}}
@@ -782,13 +821,13 @@ static const JSCFunctionListEntry lcd_funcs[] = {
                            func : {6, JS_CFUNC_generic_magic, {generic_magic : esp32_lcd_fillRoundRect}}
                          }},
     JSCFunctionListEntry{"setCursor", 0, JS_DEF_CFUNC, 0, {
-                           func : {2, JS_CFUNC_generic, {generic_magic : esp32_lcd_setCursor}}
+                           func : {2, JS_CFUNC_generic_magic, {generic_magic : esp32_lcd_setCursor}}
                          }},
     JSCFunctionListEntry{"getCursor", 0, JS_DEF_CFUNC, 0, {
-                           func : {0, JS_CFUNC_generic, {generic_magic : esp32_lcd_getCursor}}
+                           func : {0, JS_CFUNC_generic_magic, {generic_magic : esp32_lcd_getCursor}}
                          }},
     JSCFunctionListEntry{"textWidth", 0, JS_DEF_CFUNC, 0, {
-                           func : {1, JS_CFUNC_generic, {generic_magic : esp32_lcd_textWidth}}
+                           func : {1, JS_CFUNC_generic_magic, {generic_magic : esp32_lcd_textWidth}}
                          }},
     JSCFunctionListEntry{"print", 0, JS_DEF_CFUNC, 0, {
                            func : {1, JS_CFUNC_generic_magic, {generic_magic : esp32_lcd_print}}
@@ -797,15 +836,18 @@ static const JSCFunctionListEntry lcd_funcs[] = {
                            func : {1, JS_CFUNC_generic_magic, {generic_magic : esp32_lcd_println}}
                          }},
     JSCFunctionListEntry{"fillScreen", 0, JS_DEF_CFUNC, 0, {
-                           func : {1, JS_CFUNC_generic, {generic_magic : esp32_lcd_fillScreen}}
+                           func : {1, JS_CFUNC_generic_magic, {generic_magic : esp32_lcd_fillScreen}}
                          }},
 #ifdef _SD_ENABLE_
     JSCFunctionListEntry{"drawImageFile", 0, JS_DEF_CFUNC, 0, {
-                           func : {3, JS_CFUNC_generic, {generic_magic : esp32_lcd_draw_image_file}}
+                           func : {3, JS_CFUNC_generic_magic, {generic_magic : esp32_lcd_draw_image_file}}
                          }},
 #endif
     JSCFunctionListEntry{"drawImageUrl", 0, JS_DEF_CFUNC, 0, {
-                           func : {3, JS_CFUNC_generic, {generic_magic : esp32_lcd_draw_image_url}}
+                           func : {3, JS_CFUNC_generic_magic, {generic_magic : esp32_lcd_draw_image_url}}
+                         }},
+    JSCFunctionListEntry{"drawImage", 0, JS_DEF_CFUNC, 0, {
+                           func : {3, JS_CFUNC_generic_magic, {generic_magic : esp32_lcd_draw_image}}
                          }},
     JSCFunctionListEntry{"width", 0, JS_DEF_CFUNC, 0, {
                            func : {0, JS_CFUNC_generic_magic, {generic_magic : esp32_lcd_width}}
@@ -891,28 +933,28 @@ static const JSCFunctionListEntry lcd_funcs[] = {
 
 static const JSCFunctionListEntry lcd_funcs2[] = {
     JSCFunctionListEntry{"setRotation", 0, JS_DEF_CFUNC, 1, {
-                           func : {1, JS_CFUNC_generic, {generic_magic : esp32_lcd_setRotation }}
+                           func : {1, JS_CFUNC_generic_magic, {generic_magic : esp32_lcd_setRotation }}
                          }},
     JSCFunctionListEntry{"setBrightness", 0, JS_DEF_CFUNC, 1, {
-                           func : {1, JS_CFUNC_generic, {generic_magic : esp32_lcd_setBrigthness}}
+                           func : {1, JS_CFUNC_generic_magic, {generic_magic : esp32_lcd_setBrigthness}}
                          }},
     JSCFunctionListEntry{"setFont", 0, JS_DEF_CFUNC, 1, {
-                           func : {1, JS_CFUNC_generic, {generic_magic : esp32_lcd_setFont}}
+                           func : {1, JS_CFUNC_generic_magic, {generic_magic : esp32_lcd_setFont}}
                          }},
     JSCFunctionListEntry{"setTextColor", 0, JS_DEF_CFUNC, 1, {
-                           func : {2, JS_CFUNC_generic, {generic_magic : esp32_lcd_setTextColor}}
+                           func : {2, JS_CFUNC_generic_magic, {generic_magic : esp32_lcd_setTextColor}}
                          }},
     JSCFunctionListEntry{"setTextSize", 0, JS_DEF_CFUNC, 1, {
-                           func : {2, JS_CFUNC_generic, {generic_magic : esp32_lcd_setTextSize}}
+                           func : {2, JS_CFUNC_generic_magic, {generic_magic : esp32_lcd_setTextSize}}
                          }},
     JSCFunctionListEntry{"setTextDatum", 0, JS_DEF_CFUNC, 1, {
-                           func : {1, JS_CFUNC_generic, {generic_magic : esp32_lcd_setTextDatum}}
+                           func : {1, JS_CFUNC_generic_magic, {generic_magic : esp32_lcd_setTextDatum}}
                          }},
     JSCFunctionListEntry{"drawPixel", 0, JS_DEF_CFUNC, 1, {
-                           func : {3, JS_CFUNC_generic, {generic_magic : esp32_lcd_drawPixel}}
+                           func : {3, JS_CFUNC_generic_magic, {generic_magic : esp32_lcd_drawPixel}}
                          }},
     JSCFunctionListEntry{"drawLine", 0, JS_DEF_CFUNC, 1, {
-                           func : {5, JS_CFUNC_generic, {generic_magic : esp32_lcd_drawLine}}
+                           func : {5, JS_CFUNC_generic_magic, {generic_magic : esp32_lcd_drawLine}}
                          }},
     JSCFunctionListEntry{"drawCircle", 0, JS_DEF_CFUNC, 1, {
                            func : {4, JS_CFUNC_generic_magic, {generic_magic : esp32_lcd_drawCircle}}
@@ -933,13 +975,13 @@ static const JSCFunctionListEntry lcd_funcs2[] = {
                            func : {6, JS_CFUNC_generic_magic, {generic_magic : esp32_lcd_fillRoundRect}}
                          }},
     JSCFunctionListEntry{"setCursor", 0, JS_DEF_CFUNC, 1, {
-                           func : {2, JS_CFUNC_generic, {generic_magic : esp32_lcd_setCursor}}
+                           func : {2, JS_CFUNC_generic_magic, {generic_magic : esp32_lcd_setCursor}}
                          }},
     JSCFunctionListEntry{"getCursor", 0, JS_DEF_CFUNC, 1, {
-                           func : {0, JS_CFUNC_generic, {generic_magic : esp32_lcd_getCursor}}
+                           func : {0, JS_CFUNC_generic_magic, {generic_magic : esp32_lcd_getCursor}}
                          }},
     JSCFunctionListEntry{"textWidth", 0, JS_DEF_CFUNC, 1, {
-                           func : {1, JS_CFUNC_generic, {generic_magic : esp32_lcd_textWidth}}
+                           func : {1, JS_CFUNC_generic_magic, {generic_magic : esp32_lcd_textWidth}}
                          }},
     JSCFunctionListEntry{"print", 0, JS_DEF_CFUNC, 1, {
                            func : {1, JS_CFUNC_generic_magic, {generic_magic : esp32_lcd_print}}
@@ -948,15 +990,18 @@ static const JSCFunctionListEntry lcd_funcs2[] = {
                            func : {1, JS_CFUNC_generic_magic, {generic_magic : esp32_lcd_println}}
                          }},
     JSCFunctionListEntry{"fillScreen", 0, JS_DEF_CFUNC, 1, {
-                           func : {1, JS_CFUNC_generic, {generic_magic : esp32_lcd_fillScreen}}
+                           func : {1, JS_CFUNC_generic_magic, {generic_magic : esp32_lcd_fillScreen}}
                          }},
 #ifdef _SD_ENABLE_
     JSCFunctionListEntry{"drawImageFile", 0, JS_DEF_CFUNC, 1, {
-                           func : {3, JS_CFUNC_generic, {generic_magic : esp32_lcd_draw_image_file}}
+                           func : {3, JS_CFUNC_generic_magic, {generic_magic : esp32_lcd_draw_image_file}}
                          }},
 #endif
     JSCFunctionListEntry{"drawImageUrl", 0, JS_DEF_CFUNC, 1, {
-                           func : {3, JS_CFUNC_generic, {generic_magic : esp32_lcd_draw_image_url}}
+                           func : {3, JS_CFUNC_generic_magic, {generic_magic : esp32_lcd_draw_image_url}}
+                         }},
+    JSCFunctionListEntry{"drawImage", 0, JS_DEF_CFUNC, 1, {
+                           func : {3, JS_CFUNC_generic_magic, {generic_magic : esp32_lcd_draw_image}}
                          }},
     JSCFunctionListEntry{"width", 0, JS_DEF_CFUNC, 1, {
                            func : {0, JS_CFUNC_generic_magic, {generic_magic : esp32_lcd_width}}
@@ -971,7 +1016,7 @@ static const JSCFunctionListEntry lcd_funcs2[] = {
                            func : {0, JS_CFUNC_generic_magic, {generic_magic : esp32_lcd_fontHeight}}
                          }},
     JSCFunctionListEntry{"displayType", 0, JS_DEF_CFUNC, 0, {
-                           func : {0, JS_CFUNC_generic_magic, esp32_lcd_displayType}
+                           func : {0, JS_CFUNC_generic, esp32_lcd_displayType}
                          }},
     JSCFunctionListEntry{
         "top_left", 0, JS_DEF_PROP_INT32, 0, {

@@ -326,6 +326,9 @@ static JSValue esp32_camera_setParameter(JSContext *ctx, JSValueConst jsThis, in
 
 static JSValue esp32_camera_getParameter(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
 {
+  if( !isInitialized )
+    return JS_EXCEPTION;
+    
   JSValue params = JS_NewObject(ctx);
   sensor_t * s = esp_camera_sensor_get();
   JS_SetPropertyStr(ctx, params, "framesize", JS_NewInt32(ctx, s->status.framesize));

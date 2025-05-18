@@ -58,9 +58,6 @@
 #elif defined(ARDUINO_ESP32C3U_DEV)
 #include <M5Unified.h>
 #define MDNS_NAME "QuickJS_ESP32_M5StampC3U" // mDNSサービスホスト名
-#elif defined(ARDUINO_ESP32C6_DEV)
-#include <M5Unified.h>
-#define MDNS_NAME "QuickJS_ESP32_C6" // mDNSサービスホスト名
 #elif defined(ARDUINO_M5Stack_ATOMS3)
 #include <M5Unified.h>
 #define _LCD_ENABLE_
