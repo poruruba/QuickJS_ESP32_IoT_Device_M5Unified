@@ -76,6 +76,8 @@ https://poruruba.github.io/EspWebDownloader/quickjs_esp32_firmware/
   - カスタムコールバック機能を追加
 - 2025-5-17
   - 外部ディスプレイのサポートを追加
+- 2025-8-2
+  - Websocketクライアント機能を追加
 
 
 ## 誤記訂正
