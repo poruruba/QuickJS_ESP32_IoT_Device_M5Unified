@@ -18,7 +18,6 @@ static char *g_payload = NULL;
 
 void onWebsocketsEvent(WStype_t type, uint8_t * payload, size_t length)
 {
-  Serial.printf("WebSocket Event: %d\n", type);
   if( g_ctx == NULL )
     return;
 
