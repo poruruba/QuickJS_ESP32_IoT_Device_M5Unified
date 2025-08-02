@@ -6,12 +6,12 @@
 static JSValue esp32_uart_begin(JSContext *ctx, JSValueConst jsThis, int argc,
                                JSValueConst *argv, int magic)
 {
-  uint32_t baud, port_rx, port_tx;
+  uint32_t baud, pin_rx, pin_tx;
   JS_ToUint32(ctx, &baud, argv[0]);
-  JS_ToUint32(ctx, &port_rx, argv[1]);
-  JS_ToUint32(ctx, &port_tx, argv[2]);
+  JS_ToUint32(ctx, &pin_rx, argv[1]);
+  JS_ToUint32(ctx, &pin_tx, argv[2]);
 
-  Serial1.begin(baud, SERIAL_8N1, port_rx, port_tx);
+  Serial1.begin(baud, SERIAL_8N1, pin_rx, pin_tx);
 
   return JS_UNDEFINED;
 }
@@ -105,6 +105,7 @@ static JSValue esp32_uart_setTimeout(JSContext *ctx, JSValueConst jsThis, int ar
 {
   uint32_t tmout;
 
+  JS_ToUint32(ctx, &tmout, argv[0]);
   Serial1.setTimeout(tmout);
 
   return JS_UNDEFINED;
