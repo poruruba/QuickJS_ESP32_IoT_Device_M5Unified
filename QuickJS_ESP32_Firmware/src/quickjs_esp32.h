@@ -92,6 +92,9 @@
 #ifdef _WEBSOCKET_ENABLE_
 #include "module_websocket.h"
 #endif
+#ifdef _WEBSOCKET_CLIENT_ENABLE_
+#include "module_websocket_client.h"
+#endif
 
 static JsModuleEntry module_entries[] = {
   esp32_module,
@@ -169,6 +172,9 @@ static JsModuleEntry module_entries[] = {
 #endif
 #ifdef _WEBSOCKET_ENABLE_
   websocket_module,
+#endif
+#ifdef _WEBSOCKET_CLIENT_ENABLE_
+  websocket_client_module,
 #endif
   utils_module
 };
