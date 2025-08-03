@@ -28,7 +28,7 @@ void onWebsocketEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, Aw
     return;
 
   if(type == WS_EVT_CONNECT){
-    Serial.printf("ws[%s][%u] connect\n", server->url(), client->id());
+//    Serial.printf("ws[%s][%u] connect\n", server->url(), client->id());
 //    client->ping();
 
     client_list.push_back(client);
@@ -36,7 +36,7 @@ void onWebsocketEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, Aw
   } else
 
   if(type == WS_EVT_DISCONNECT){
-    Serial.printf("ws[%s][%u] disconnect: %u\n", server->url(), client->id());
+//    Serial.printf("ws[%s][%u] disconnect: %u\n", server->url(), client->id());
 
     for (auto itr = client_list.begin(); itr != client_list.end(); itr++){
       if( (*itr) == client ){
@@ -49,7 +49,7 @@ void onWebsocketEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, Aw
   } else
 
   if(type == WS_EVT_ERROR){
-    Serial.printf("ws[%s][%u] error(%u): %s\n", server->url(), client->id(), *((uint16_t*)arg), (char*)data);
+//    Serial.printf("ws[%s][%u] error(%u): %s\n", server->url(), client->id(), *((uint16_t*)arg), (char*)data);
   } else
 
   if(type == WS_EVT_DATA){
@@ -113,6 +113,19 @@ static JSValue websocket_send(JSContext *ctx, JSValueConst jsThis, int argc, JSV
   return JS_UNDEFINED;
 }
 
+static JSValue websocket_getClientIdList(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
+{
+  JSValue jsArray = JS_NewArray(ctx);
+  int index = 0;
+  for (auto itr = client_list.begin(); itr != client_list.end(); itr++){
+    AsyncWebSocketClient *client = (*itr);
+    JS_SetPropertyUint32(ctx, jsArray, index, JS_NewUint32(ctx, client->id()));
+    index++;
+  }
+
+  return jsArray;
+}
+
 static JSValue websocket_close(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
 {
   uint32_t client_id;
@@ -138,6 +151,9 @@ static const JSCFunctionListEntry websocket_funcs[] = {
                          }},
     JSCFunctionListEntry{"send", 0, JS_DEF_CFUNC, 0, {
                            func : {2, JS_CFUNC_generic, websocket_send}
+                         }},
+    JSCFunctionListEntry{"getClientIdList", 0, JS_DEF_CFUNC, 0, {
+                           func : {0, JS_CFUNC_generic, websocket_getClientIdList}
                          }},
     JSCFunctionListEntry{"close", 0, JS_DEF_CFUNC, 0, {
                            func : {1, JS_CFUNC_generic, websocket_close}
