@@ -7,9 +7,10 @@
 #include "module_type.h"
 #include "module_websocket_client.h"
 #include "quickjs_esp32.h"
-#include <WebSocketsClient.h>
+#include <ArduinoWebsockets.h>
 
-static WebSocketsClient wsc;
+using namespace websockets;
+static WebsocketsClient wsc;
 
 typedef enum {
   WSCB_NONE,
@@ -23,45 +24,40 @@ static JSValue g_callback_func = JS_UNDEFINED;
 static WSCB_TYPE g_type = WSCB_NONE;
 static char *g_payload = NULL;
 
-void onWebsocketsEvent(WStype_t type, uint8_t * payload, size_t length)
-{
-  if( g_ctx == NULL )
+void onMessageCallback(WebsocketsMessage message) {
+  if( g_payload != NULL ){
+    free(g_payload);
+    g_payload = NULL;
+  }
+  if( !message.isText() )
     return;
 
-  switch(type){
-    case WStype_CONNECTED:
+  const char *payload = message.c_str();
+  g_payload = (char *)malloc(strlen(payload) + 1);
+  if( g_payload == NULL )
+    return;
+  strcpy(g_payload, (char*)payload);
+  g_type = WSCB_TEXT;
+}
+
+void onEventsCallback(WebsocketsEvent event, String data) {
+    if(event == WebsocketsEvent::ConnectionOpened) {
       if( g_payload != NULL ){
         free(g_payload);
         g_payload = NULL;
       }
       g_type = WSCB_CONNECTED;
-      break;
-    case WStype_DISCONNECTED:
+    } else if(event == WebsocketsEvent::ConnectionClosed) {
       if( g_payload != NULL ){
         free(g_payload);
         g_payload = NULL;
       }
       g_type = WSCB_DISCONNECTED;
-      break;
-    case WStype_TEXT:
-      if( g_payload != NULL ){
-        free(g_payload);
-        g_payload = NULL;
-      }
-      g_payload = (char *)malloc(strlen((char*)payload) + 1);
-      if( g_payload == NULL )
-        return;
-      strcpy(g_payload, (char*)payload);
-      g_type = WSCB_TEXT;
-      break;
-    case WStype_ERROR:
-    case WStype_BIN:
-    case WStype_FRAGMENT_TEXT_START:
-    case WStype_FRAGMENT_BIN_START:
-    case WStype_FRAGMENT:
-    case WStype_FRAGMENT_FIN:
-      break;
-  }
+    } else if(event == WebsocketsEvent::GotPing) {
+//        Serial.println("Got a Ping!");
+    } else if(event == WebsocketsEvent::GotPong) {
+//        Serial.println("Got a Pong!");
+    }
 }
 
 static JSValue websocket_client_setCallback(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
@@ -77,11 +73,11 @@ static JSValue websocket_client_setCallback(JSContext *ctx, JSValueConst jsThis,
 
 static JSValue websocket_client_send(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
 {
-  if( !wsc.isConnected() )
+  if( !wsc.available() )
     return JS_EXCEPTION;
 
   const char* p_payload = JS_ToCString(ctx, argv[0]);
-  bool ret = wsc.sendTXT(p_payload);
+  bool ret = wsc.send(p_payload);
   JS_FreeCString(ctx, p_payload);
 
   return JS_NewBool(ctx, ret);
@@ -89,7 +85,7 @@ static JSValue websocket_client_send(JSContext *ctx, JSValueConst jsThis, int ar
 
 static JSValue websocket_client_connect(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
 {
-  if( wsc.isConnected() )
+  if( wsc.available() )
     return JS_EXCEPTION;
 
   const char* p_host = JS_ToCString(ctx, argv[0]);
@@ -97,18 +93,18 @@ static JSValue websocket_client_connect(JSContext *ctx, JSValueConst jsThis, int
   JS_ToUint32(ctx, &port, argv[1]);
   const char* p_path = JS_ToCString(ctx, argv[2]);
 
-  wsc.begin(p_host, port, p_path);
-  wsc.setReconnectInterval(0);
+  bool ret = wsc.connect(p_host, port, p_path);
 
   JS_FreeCString(ctx, p_host);
   JS_FreeCString(ctx, p_path);
 
-  return JS_UNDEFINED;
+  return JS_NewBool(ctx, ret);
 }
 
 static JSValue websocket_client_disconnect(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
 {
-  wsc.disconnect();
+  wsc.close();
+
   g_type = WSCB_NONE;
   if( g_payload != NULL ){
     free(g_payload);
@@ -120,7 +116,7 @@ static JSValue websocket_client_disconnect(JSContext *ctx, JSValueConst jsThis, 
 
 static JSValue websocket_client_is_connected(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
 {
-  return JS_NewBool(ctx, wsc.isConnected());
+  return JS_NewBool(ctx, wsc.available());
 }
 
 static const JSCFunctionListEntry websocket_client_funcs[] = {
@@ -160,7 +156,9 @@ JSModuleDef *addModule_websocket_client(JSContext *ctx, JSValue global)
 
 long initialize_websocket_client(void)
 {
-  wsc.onEvent(onWebsocketsEvent);
+  wsc.onMessage(onMessageCallback);
+  wsc.onEvent(onEventsCallback);
+  
   return 0;
 }
 
@@ -172,8 +170,8 @@ void endModule_websocket_client(void)
   }
   g_ctx = NULL;
 
-  wsc.disconnect();
-  wsc.begin(NULL, 0, NULL);
+  wsc.close();
+
   g_type = WSCB_NONE;
   if( g_payload != NULL ){
     free(g_payload);
@@ -183,34 +181,34 @@ void endModule_websocket_client(void)
 
 void loopModule_websocket_client(void)
 {
-  wsc.loop();
+  wsc.poll();
 
   if( g_ctx != NULL ){
     if( g_type != WSCB_NONE){
-        JSValue objs[2];
-        if( g_type == WSCB_CONNECTED ){
-          objs[0] = JS_NewString(g_ctx, "connected");
-          objs[1] = JS_UNDEFINED;
-        }else if( g_type == WSCB_DISCONNECTED ){
-          objs[0] = JS_NewString(g_ctx, "disconnected");
-          objs[1] = JS_UNDEFINED;
-        }else if( g_type == WSCB_TEXT ){
-          objs[0] = JS_NewString(g_ctx, "text");
-          objs[1] = JS_NewString(g_ctx, g_payload);
-        }else{
-          return;
-        }
-        g_type = WSCB_NONE;
-        if( g_payload != NULL ){
-          free(g_payload);
-          g_payload = NULL;
-        }
+      JSValue objs[2];
+      if( g_type == WSCB_CONNECTED ){
+        objs[0] = JS_NewString(g_ctx, "connected");
+        objs[1] = JS_UNDEFINED;
+      }else if( g_type == WSCB_DISCONNECTED ){
+        objs[0] = JS_NewString(g_ctx, "disconnected");
+        objs[1] = JS_UNDEFINED;
+      }else if( g_type == WSCB_TEXT ){
+        objs[0] = JS_NewString(g_ctx, "text");
+        objs[1] = JS_NewString(g_ctx, g_payload);
+      }else{
+        return;
+      }
+      g_type = WSCB_NONE;
+      if( g_payload != NULL ){
+        free(g_payload);
+        g_payload = NULL;
+      }
 
-        ESP32QuickJS *qjs = (ESP32QuickJS *)JS_GetContextOpaque(g_ctx);
-        JSValue ret = qjs->callJsFunc_with_arg(g_ctx, g_callback_func, g_callback_func, 2, objs);
-        JS_FreeValue(g_ctx, objs[0]);
-        JS_FreeValue(g_ctx, objs[1]);
-        JS_FreeValue(g_ctx, ret);
+      ESP32QuickJS *qjs = (ESP32QuickJS *)JS_GetContextOpaque(g_ctx);
+      JSValue ret = qjs->callJsFunc_with_arg(g_ctx, g_callback_func, g_callback_func, 2, objs);
+      JS_FreeValue(g_ctx, objs[0]);
+      JS_FreeValue(g_ctx, objs[1]);
+      JS_FreeValue(g_ctx, ret);
     }
   }
 }
