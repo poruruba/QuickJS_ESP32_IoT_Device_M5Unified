@@ -28,6 +28,7 @@ var vue_options = {
 
         syslog_host: "",
         syslog_port: 514,
+        httpbridge_url: "",
 
         rtc_date: {},
         rtc_time: {},
