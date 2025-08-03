@@ -103,7 +103,7 @@
 #define PACKET_JSON_DOCUMENT_SIZE  DEFAULT_BUFFER_SIZE
 #define FILE_BUFFER_SIZE DEFAULT_BUFFER_SIZE
 
-#define NUM_BTN_FUNC 4
+#define NUM_BTN_FUNC 8
 
 //#define ENABLE_STATIC_WEB_PAGE
 #define STATIC_REDIRECT_PAGE  "https://poruruba.github.io/QuickJS_ESP32_IoT_Device_M5Unified/QuickJS_ESP32_Firmware/data/html/"

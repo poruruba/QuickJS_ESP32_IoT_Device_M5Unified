@@ -294,6 +294,13 @@
           <label>port</label> <input type="number" class="form-control" v-model.number="syslog_port">
           <button class="btn btn-default btn-sm" v-on:click="esp32_getSyslogServer">取得</button>
           <button class="btn btn-default btn-sm" v-on:click="esp32_setSyslogServer">設定</button>
+        </div>
+        <div>
+          <label>httpbridge</label>
+          <label>url</label> <input type="text" class="form-control" v-model="httpbridge_url">
+          <button class="btn btn-default btn-sm" v-on:click="esp32_getHttpBridgeServer">取得</button>
+          <button class="btn btn-default btn-sm" v-on:click="esp32_setHttpBridgeServer">設定</button>
+        </div>
       </div>
     
     </div>

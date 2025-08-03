@@ -8,9 +8,9 @@
 #define INPUT_BUTTON_B    2
 #define INPUT_BUTTON_C    3
 #define INPUT_BUTTON_PWR  4
-#define INPUT_BUTTON_X    0x81
-#define INPUT_BUTTON_Y    0x82
-#define INPUT_BUTTON_Z    0x83
+#define INPUT_BUTTON_X    5
+#define INPUT_BUTTON_Y    6
+#define INPUT_BUTTON_Z    7
 
 #define FUNC_TYPE_IS_PRESSED        0
 #define FUNC_TYPE_IS_RELEASED       1

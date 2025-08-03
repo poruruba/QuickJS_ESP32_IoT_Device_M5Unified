@@ -385,6 +385,23 @@ var vue_options = {
                 alert(error);
             }
         },
+        esp32_getHttpBridgeServer: async function(){
+            try{
+                var result = await this.arduino.getHttpBridgeServer();
+                this.httpbridge_url = result.url;
+            }catch(error){
+                console.error(error);
+                alert(error);
+            }
+        },
+        esp32_setHttpBridgeServer: async function(){
+            try{
+                await this.arduino.setHttpBridgeServer(this.httpbridge_url);
+            }catch(error){
+                console.error(error);
+                alert(error);
+            }
+        },
         esp32_console_log: async function(){
             try{
                 await this.arduino.console.log(this.esp32_console_message);

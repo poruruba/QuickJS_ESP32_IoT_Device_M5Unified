@@ -97,11 +97,12 @@ static JSValue websocket_send(JSContext *ctx, JSValueConst jsThis, int argc, JSV
   JS_ToUint32(ctx, &client_id, argv[0]);
   const char* p_payload = JS_ToCString(ctx, argv[1]);
 
+  bool ret;
   bool found = false;
   for (auto itr = client_list.begin(); itr != client_list.end(); itr++){
     AsyncWebSocketClient *client = (*itr);
     if( client->id() == client_id ){
-      client->text(p_payload);
+      ret = client->text(p_payload);
       found = true;
       break;
     }
@@ -110,7 +111,7 @@ static JSValue websocket_send(JSContext *ctx, JSValueConst jsThis, int argc, JSV
   if( !found )
     return JS_EXCEPTION;
 
-  return JS_UNDEFINED;
+  return JS_NewBool(ctx, ret);
 }
 
 static JSValue websocket_getClientIdList(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
@@ -133,7 +134,9 @@ static JSValue websocket_close(JSContext *ctx, JSValueConst jsThis, int argc, JS
 
   bool found = false;
   for (auto itr = client_list.begin(); itr != client_list.end(); itr++){
-    if( (*itr)->id() == client_id ){
+    AsyncWebSocketClient *client = (*itr);
+    if( client->id() == client_id ){
+      client->close();
       client_list.erase(itr);
       found = true;
       break;

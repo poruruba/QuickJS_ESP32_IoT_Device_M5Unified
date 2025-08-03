@@ -48,6 +48,29 @@ long endp_getSyslogServer(JsonObject& request, JsonObject& response, int magic)
   return 0;
 }
 
+long endp_setHttpBridgeServer(JsonObject& request, JsonObject& response, int magic)
+{
+  const char* url = request["url"];
+  if( url == NULL )
+    return -1;
+
+  long ret;  
+  ret = write_config_string(CONFIG_FNAME_BRIDGE, url);
+  if( ret != 0 )
+    return -1;
+
+  return 0;
+}
+
+long endp_getHttpBridgeServer(JsonObject& request, JsonObject& response, int magic)
+{
+  String url = read_config_string(CONFIG_FNAME_BRIDGE);
+
+  response["result"]["url"] = (char*)url.c_str();
+
+  return 0;
+}
+
 long endp_update(JsonObject& request, JsonObject& response, int magic)
 {
   g_download_buffer[0] = '\0';
@@ -228,6 +251,8 @@ EndpointEntry esp32_table[] = {
   EndpointEntry{ endp_getDeviceModel, "/getDeviceModel", 0 },
   EndpointEntry{ endp_setSyslogServer, "/setSyslogServer", 0 },
   EndpointEntry{ endp_getSyslogServer, "/getSyslogServer", 0 },
+  EndpointEntry{ endp_setHttpBridgeServer, "/setHttpBridgeServer", 0 },
+  EndpointEntry{ endp_getHttpBridgeServer, "/getHttpBridgeServer", 0 },
   EndpointEntry{ endp_get_code_config, "/get-code-config", 0 },
   EndpointEntry{ endp_code_upload, "/code-upload", 0 },
   EndpointEntry{ endp_code_download, "/code-download", 0 },

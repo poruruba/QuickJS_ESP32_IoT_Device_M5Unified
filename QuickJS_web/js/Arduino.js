@@ -56,6 +56,14 @@ class Arduino{
     return this.webapi_request("/getSyslogServer", {});
   }
 
+  async setHttpBridgeServer(url){
+    return this.webapi_request("/setHttpBridgeServer", { url: url });
+  }
+
+  async getHttpBridgeServer(){
+    return this.webapi_request("/getHttpBridgeServer", {});
+  }
+
   async code_upload(code, fname){
     if( fname )
       await this.webapi_request("/code-upload", { code: code, fname: fname } );
