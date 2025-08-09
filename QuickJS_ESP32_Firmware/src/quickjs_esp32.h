@@ -56,6 +56,9 @@
 #ifdef _UNIT_IMUPRO_ENABLE_
 #include "module_unit_imupro.h"
 #endif
+#ifdef _UNIT_BYTEBUTTON_ENABLE_
+#include "module_unit_bytebutton.h"
+#endif
 #ifdef _HTTP_ENABLE_
 #include "module_http.h"
 #endif
@@ -136,6 +139,9 @@ static JsModuleEntry module_entries[] = {
 #endif
 #ifdef _UNIT_IMUPRO_ENABLE_
   unit_imupro_module,
+#endif
+#ifdef _UNIT_BYTEBUTTON_ENABLE_
+  unit_bytebutton_module,
 #endif
 #ifdef _HTTP_ENABLE_
   http_module,

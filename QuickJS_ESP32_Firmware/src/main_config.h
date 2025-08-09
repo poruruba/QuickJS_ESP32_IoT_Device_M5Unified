@@ -12,6 +12,7 @@
 #define _UNIT_ANGLE8_ENABLE_
 #define _UNIT_ENVPRO_ENABLE_
 #define _UNIT_IMUPRO_ENABLE_
+#define _UNIT_BYTEBUTTON_ENABLE_
 #endif
 #define _HTTP_ENABLE_
 #define _MQTT_ENABLE_

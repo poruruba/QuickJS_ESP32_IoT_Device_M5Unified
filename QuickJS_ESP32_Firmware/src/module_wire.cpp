@@ -32,6 +32,27 @@ static JSValue esp32_wire_begin(JSContext *ctx, JSValueConst jsThis,
   return JS_NewBool(ctx, ret);
 }
 
+static JSValue esp32_wire_setClock(JSContext *ctx, JSValueConst jsThis,
+                                      int argc, JSValueConst *argv, int magic)
+{
+  TwoWire *wire;
+  if (magic == 0){
+    wire = &Wire;
+  }else if (magic == 1){
+    Wire1.end();
+    wire = &Wire1;
+  }else{
+    return JS_EXCEPTION;
+  }
+
+  uint32_t frequency;
+  JS_ToUint32(ctx, &frequency, argv[0]);
+  
+  bool ret = wire->setClock(frequency);
+
+  return JS_NewBool(ctx, ret);
+}
+
 static JSValue esp32_wire_requestFrom(JSContext *ctx, JSValueConst jsThis,
                                       int argc, JSValueConst *argv, int magic)
 {
@@ -180,7 +201,11 @@ static JSValue esp32_wire_end(JSContext *ctx, JSValueConst jsThis,
 static const JSCFunctionListEntry wire_funcs[] = {
     JSCFunctionListEntry{
         "begin", 0, JS_DEF_CFUNC, 0, {
-          func : {2, JS_CFUNC_generic_magic, {generic_magic : esp32_wire_begin}}
+          func : {3, JS_CFUNC_generic_magic, {generic_magic : esp32_wire_begin}}
+        }},
+    JSCFunctionListEntry{
+        "setClock", 0, JS_DEF_CFUNC, 0, {
+          func : {1, JS_CFUNC_generic_magic, {generic_magic : esp32_wire_setClock}}
         }},
     JSCFunctionListEntry{
         "requestFrom", 0, JS_DEF_CFUNC, 0, {
