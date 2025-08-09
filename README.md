@@ -78,7 +78,8 @@ https://poruruba.github.io/EspWebDownloader/quickjs_esp32_firmware/
   - 外部ディスプレイのサポートを追加
 - 2025-8-2
   - Websocketクライアント機能を追加
-
+- 2025-8-9
+  - Byteボタンユニットを追加
 
 ## 誤記訂正
 - 2022-03-31
