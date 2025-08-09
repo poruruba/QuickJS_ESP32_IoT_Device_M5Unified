@@ -14,9 +14,10 @@ static const uint8_t buttonId = 0x47;
 static JSValue unit_bytebutton_begin(JSContext *ctx, JSValueConst jsThis,
                                       int argc, JSValueConst *argv)
 {
-  bool ret = unitbyte.begin(&Wire, buttonId);
+  if( !unitbyte.begin(&Wire, buttonId) )
+    return JS_EXCEPTION;
 
-  return JS_NewBool(ctx, ret);
+  return JS_UNDEFINED;
 }
 
 static JSValue unit_bytebutton_setFlashWriteBack(JSContext *ctx, JSValueConst jsThis,
