@@ -89,28 +89,21 @@ static void disconnect()
 void myNotifyHandler(NimBLERemoteCharacteristic* pChar, uint8_t* data, size_t length, bool isNotify) {
 //  Serial.print("Notify received: ");
   
-  BLE_NOTIFY_INFO* p_info = (BLE_NOTIFY_INFO*)malloc(sizeof(BLE_NOTIFY_INFO));
-  if( p_info == NULL )
-    return;
+  BLE_NOTIFY_INFO info;
     
-  p_info->p_uuid = strdup(pChar->getUUID().toString().c_str());
-  if( p_info->p_uuid == NULL ){
-    free(p_info);
+  info.p_uuid = strdup(pChar->getUUID().toString().c_str());
+  if( info.p_uuid == NULL )
+    return;
+  info.p_data = (uint8_t*)malloc(length);
+  if( info.p_data == NULL ){
+    free(info.p_uuid);
     return;
   }
-  p_info->p_data = (uint8_t*)malloc(length);
-  if( p_info->p_data == NULL ){
-    free(p_info->p_uuid);
-    free(p_info);
-    return;
-  }
+  memmove(info.p_data, data, length);
+  info.length = length;
+  info.isNotify = isNotify;
 
-  memmove(p_info->p_data, data, length);
-  p_info->length = length;
-  p_info->isNotify = isNotify;
-
-  g_notify_list.push_back(*p_info);
-  free(p_info);
+  g_notify_list.push_back(info);
 }
 
 class MyScanCallbacks: public NimBLEScanCallbacks
