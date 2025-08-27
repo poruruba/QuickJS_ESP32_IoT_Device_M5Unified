@@ -6,10 +6,13 @@
 #include "main_config.h"
 #include "quickjs_esp32.h"
 #include "config_utils.h"
+
+#ifndef _WIFI_DISABLE_
 #include "wifi_utils.h"
 
 #include "endpoint_types.h"
 #include "endpoint_packet.h"
+#endif
 
 extern const char jscode_default[] asm("_binary_rom_default_js_start");
 extern const char jscode_epilogue[] asm("_binary_rom_epilogue_js_start");
@@ -27,6 +30,12 @@ static long m5_connect(void);
 static long start_qjs(void);
 static char* load_jscode(void);
 static long load_all_modules(void);
+
+static long import_jscode(void);
+
+extern "C" void* lwip_hook_ip6_input(void* pbuf, void* netif) {
+  return pbuf;  // 単純に通過させるだけのダミー処理
+}
 
 void setup()
 {
@@ -70,6 +79,7 @@ void setup()
   binSem = xSemaphoreCreateBinary();
   xSemaphoreGive(binSem);
 
+#ifndef _WIFI_DISABLE_
   ret = packet_initialize();
   if( ret != 0 )
     Serial.println("packet_initialize error");
@@ -77,6 +87,7 @@ void setup()
   ret = packet_open();
   if( ret != 0 )
     Serial.println("packet_open error");
+#endif
 
   long conf = read_config_long(CONFIG_INDEX_AUTOUPDATE, 0);
   g_autoupdate = (conf != 0) ? true : false;
@@ -138,7 +149,73 @@ void loop()
     }
   }
 
+  long ret = import_jscode();
+  if(ret == 0 ){
+    save_jscode(g_download_buffer);
+    g_fileloading = FILE_LOADING_RESTART;
+  }
+
   delay(1);
+}
+
+static long import_jscode(void)
+{
+  if(Serial.available() <= 0) 
+    return -1;
+
+  String collected = "";
+  unsigned long startTime = millis();
+  String firstLine = Serial.readStringUntil('\n');
+  firstLine.trim();
+
+  if( firstLine == "___ProgramRead___"){
+    read_jscode(g_download_buffer, sizeof(g_download_buffer));
+    Serial.println("---from here---");
+    Serial.println(g_download_buffer);
+    Serial.println("---to here---");
+    return -1;
+  }else
+  if (firstLine != "___ProgramStart___") {
+    Serial.println("Invalid start marker");
+    return -1;
+  }
+
+  Serial.println("---Program started--- (Cancel:Ctrl-D)");
+  startTime = millis();
+
+  while (true) {
+    if (millis() - startTime > SERIAL_TIMEOUT1) {
+      Serial.println("Timeout: Incomplete input");
+      return -1;
+    }
+
+    if (Serial.available() > 0) {
+      char c = Serial.peek();
+      if (c == 0x04) {  // Ctrl-D
+        Serial.read();
+        Serial.println("Canceled");
+        return -1;
+      }
+
+      String line = Serial.readStringUntil('\n');
+      line.trim();
+
+      if (line == "___ProgramEnd___") {
+        Serial.println("---Program ended---\n\n");
+        Serial.println("---from here---");
+        Serial.println(collected);
+        Serial.println("---to here---\n");
+        strcpy(g_download_buffer, collected.c_str());
+        return 0;
+      }
+
+      Serial.println(line);
+      collected += line;
+      collected += "\n";
+
+      startTime = millis();
+    }
+  }
 }
 
 static long start_qjs(void)
@@ -313,13 +390,15 @@ static long load_all_modules(void)
 
 static long m5_connect(void)
 {
+#ifndef _WIFI_DISABLE_
   long ret = wifi_try_connect(false);
   if( ret != 0 )
     return 0;
-
+    
   configTzTime("JST-9", "ntp.nict.jp", "ntp.jst.mfeed.ad.jp");
   time_t t = time(nullptr) + 1; // Advance one second.
   while (t > time(nullptr));  /// Synchronization in seconds
+#endif
 
   return 0;
 }

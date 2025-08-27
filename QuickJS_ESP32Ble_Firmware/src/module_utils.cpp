@@ -7,7 +7,9 @@
 #include "main_config.h"
 #include "module_type.h"
 #include "module_utils.h"
+#ifndef _WIFI_DISABLE_
 #include "wifi_utils.h"
+#endif
 
 unsigned long b64_encode_length(unsigned long input_length)
 {
@@ -714,6 +716,7 @@ JsModuleEntry utils_module = {
   NULL
 };
 
+#ifndef _WIFI_DISABLE_
 long http_get(String url, String *response)
 {
   Serial.println(url);
@@ -926,6 +929,7 @@ long http_get_json(String url, JsonDocument * doc)
 
   return 0;
 }
+#endif
 
 JSValue getTypedArrayBuffer(JSContext *ctx, JSValue value, void** pp_buffer, uint8_t *p_unit_size, uint32_t *p_unit_num)
 {
