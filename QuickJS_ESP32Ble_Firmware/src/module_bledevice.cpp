@@ -14,9 +14,10 @@ static NimBLEAdvertising *g_pAdvertising = NULL;
 static NimBLEScan *g_pScan = NULL;
 static NimBLEClient *g_pClient = NULL;
 
-#define BLEBEACON_RUNNING_NONE  0
+#define BLEBEACON_RUNNING_NONE      0
 #define BLEBEACON_RUNNING_ADVERTISE 1
 #define BLEBEACON_RUNNING_SCAN      2
+
 static int isRunning = BLEBEACON_RUNNING_NONE;
 
 typedef struct{
@@ -146,9 +147,6 @@ static JSValue bledevice_connect(JSContext *ctx, JSValueConst jsThis, int argc, 
     NimBLEDevice::deleteClient(g_pClient);
     g_pClient = NULL;
   }
-
-  NimBLEDevice::setSecurityAuth(true, false, false);  // bondingのみ
-  NimBLEDevice::setSecurityIOCap(BLE_HS_IO_NO_INPUT_OUTPUT);  // Just Works
 
   bool result = pClient->connect(address);
   if( result ){
@@ -870,7 +868,6 @@ static const JSCFunctionListEntry bledevice_funcs[] = {
         "setSecurity", 0, JS_DEF_CFUNC, 0, {
           func : {4, JS_CFUNC_generic, bledevice_setSecurity}
         }},
-
     JSCFunctionListEntry{
         "ADV_NONCONN_IND", 0, JS_DEF_PROP_INT32, 0, {
           i32 : BLE_GAP_CONN_MODE_NON
@@ -993,6 +990,7 @@ void loopModule_blecentral(void){
         JS_FreeValue(g_ctx, ret);
     }
   }
+
   if( g_scanCompleted && g_callback_func != JS_UNDEFINED ){
     NimBLEScanResults results = g_pScan->getResults();
     JSValue array = JS_NewArray(g_ctx);
@@ -1018,6 +1016,8 @@ void loopModule_blecentral(void){
 
       JS_SetPropertyUint32(g_ctx, array, i, item);
     }
+    g_pScan->clearResults();
+
     ESP32QuickJS *qjs = (ESP32QuickJS *)JS_GetContextOpaque(g_ctx);
     JSValue ret = qjs->callJsFunc_with_arg(g_ctx, g_callback_func, g_callback_func, 1, &array);
     JS_FreeValue(g_ctx, array);

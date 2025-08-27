@@ -51,6 +51,19 @@ static JSValue esp32_uart_write(JSContext *ctx, JSValueConst jsThis,
   }
 }
 
+static JSValue esp32_uart_writeString(JSContext *ctx, JSValueConst jsThis,
+                                int argc, JSValueConst *argv, int magic)
+{
+  const char *p_str = JS_ToCString(ctx, argv[0]);
+  if( p_str == NULL )
+    return JS_EXCEPTION;
+
+  size_t ret = Serial1.write(p_str);
+  JS_FreeCString(ctx, p_str);
+
+  return JS_NewInt32(ctx, ret);
+}
+
 static JSValue esp32_uart_read(JSContext *ctx, JSValueConst jsThis,
                                int argc, JSValueConst *argv, int magic)
 {
@@ -74,6 +87,13 @@ static JSValue esp32_uart_read(JSContext *ctx, JSValueConst jsThis,
   }else{
     return JS_NewInt32(ctx, Serial1.read());
   }
+}
+
+static JSValue esp32_uart_readLine(JSContext *ctx, JSValueConst jsThis,
+                               int argc, JSValueConst *argv, int magic)
+{
+  String line = Serial.readStringUntil('\n');
+  return JS_NewString(ctx, line.c_str());
 }
 
 static JSValue esp32_uart_end(JSContext *ctx, JSValueConst jsThis,
@@ -124,6 +144,12 @@ static const JSCFunctionListEntry uart_funcs[] = {
     JSCFunctionListEntry{"read", 0, JS_DEF_CFUNC, 0, {
                           func : {1, JS_CFUNC_generic_magic, {generic_magic : esp32_uart_read}}
                          }},
+    JSCFunctionListEntry{"readLine", 0, JS_DEF_CFUNC, 0, {
+                          func : {0, JS_CFUNC_generic_magic, {generic_magic : esp32_uart_readLine}}
+                         }},
+    JSCFunctionListEntry{"writeString", 0, JS_DEF_CFUNC, 0, {
+                          func : {1, JS_CFUNC_generic_magic, {generic_magic : esp32_uart_writeString}}
+                        }},
     JSCFunctionListEntry{"end", 0, JS_DEF_CFUNC, 0, {
                           func : {0, JS_CFUNC_generic_magic, {generic_magic : esp32_uart_end}}
                         }},
