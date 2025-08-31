@@ -7,9 +7,7 @@
 #include "main_config.h"
 #include "module_type.h"
 #include "module_utils.h"
-#ifndef _WIFI_DISABLE_
 #include "wifi_utils.h"
-#endif
 
 unsigned long b64_encode_length(unsigned long input_length)
 {
@@ -716,7 +714,6 @@ JsModuleEntry utils_module = {
   NULL
 };
 
-#ifndef _WIFI_DISABLE_
 long http_get(String url, String *response)
 {
   Serial.println(url);
@@ -929,7 +926,6 @@ long http_get_json(String url, JsonDocument * doc)
 
   return 0;
 }
-#endif
 
 JSValue getTypedArrayBuffer(JSContext *ctx, JSValue value, void** pp_buffer, uint8_t *p_unit_size, uint32_t *p_unit_num)
 {
@@ -975,4 +971,32 @@ long getNumberArray(JSContext *ctx, JSValue value, int32_t **pp_buffer, uint32_t
   *p_length = length;
 
   return 0;
+}
+
+JSValue create_Uint8Array(JSContext *ctx, const uint8_t *p_buffer, uint32_t len)
+{
+    JSValue array_buffer = JS_NewArrayBufferCopy(ctx, p_buffer, len);
+    JSValue global_obj = JS_GetGlobalObject(ctx);
+    JSValue ctor = JS_GetPropertyStr(ctx, global_obj, "Uint8Array");
+    JSValue args[1] = { array_buffer };
+    JSValue uint8_array = JS_CallConstructor(ctx, ctor, 1, args);
+    JS_FreeValue(ctx, ctor);
+    JS_FreeValue(ctx, global_obj);
+    JS_FreeValue(ctx, array_buffer);
+
+    return uint8_array;
+}
+
+JSValue from_Uint8Array(JSContext *ctx, JSValue value, uint8_t** pp_buffer, uint32_t *p_num)
+{
+  uint8_t unit_size;
+  JSValue vbuffer = getTypedArrayBuffer(ctx, value, (void**)pp_buffer, &unit_size, p_num);
+  if( vbuffer == JS_NULL )
+    return JS_EXCEPTION;
+  if( unit_size != 1 ){
+    JS_FreeValue(ctx, vbuffer);
+    return JS_EXCEPTION;
+  }
+
+  return vbuffer;
 }

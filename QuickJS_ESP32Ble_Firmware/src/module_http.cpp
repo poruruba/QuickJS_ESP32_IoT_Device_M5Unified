@@ -343,11 +343,11 @@ static JSValue http_setCustomCallback(JSContext *ctx, JSValueConst jsThis, int a
 {
   if( g_callback_func != JS_UNDEFINED )
     JS_FreeValue(g_ctx, g_callback_func);
+    
+   g_ctx = ctx;
+   g_callback_func = JS_DupValue(ctx, argv[0]);
 
-  g_ctx = ctx;
-  g_callback_func = JS_DupValue(ctx, argv[0]);
-
-  return JS_UNDEFINED;
+   return JS_UNDEFINED;
 }
 #endif
 

@@ -3,7 +3,8 @@
 
 #include <Arduino.h>
 
-#define _WIFI_DISABLE_
+#define _WEBSERV_DISABLE_
+//#define _HTTP_CUSTOMCALL_
 
 #if 0
 #define _UNIT_COLOR_ENABLE_
@@ -16,16 +17,18 @@
 #define _UNIT_IMUPRO_ENABLE_
 #define _UNIT_BYTEBUTTON_ENABLE_
 #define _ESPNOW_ENABLE_
-#define _HTTP_ENABLE_
-#define _MQTT_ENABLE_
 #define _WEBSOCKET_ENABLE_
 #define _WEBSOCKET_CLIENT_ENABLE_
-#endif
-#define _ENV_ENABLE_
-#define _CRYPTO_ENABLE_
+#define _HTTP_ENABLE_
 #define _IR_ENABLE_
+#define _ENV_ENABLE_
 #define _LEDC_ENABLE_
-#define _BLEDEVICE_ENABLE_
+#define _CRYPTO_ENABLE_
+#define _BLEPERIPHERAL_ENABLE_
+#endif
+#define _WEBSOCKET_CLIENT_ENABLE_
+#define _MQTT_ENABLE_
+#define _BLECENTRAL_ENABLE_
 
 #if defined(ARDUINO_M5Stack_ATOM)
 #include <M5Unified.h>
@@ -36,8 +39,8 @@
 #include <M5Unified.h>
 #define _LCD_ENABLE_
 #define _RTC_ENABLE_
-#define _IMU_ENABLE_
-#define _AUDIO_ENABLE_
+//#define _IMU_ENABLE_
+//#define _AUDIO_ENABLE_
 #define MDNS_NAME "QuickJS_ESP32_M5StickC" // mDNSサービスホスト名
 #elif defined(ARDUINO_M5STACK_FIRE)
 #define M5STACK_MPU6886

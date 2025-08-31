@@ -14,20 +14,18 @@
 #include <ArduinoJson.h>
 #include "main_config.h"
 
-#ifndef _WIFI_DISABLE_
 #include <WiFi.h>
 #include <Syslog.h>
 #include <ESP32Ping.h>
-#endif
 
 #include "quickjs.h"
 #include "quickjs_esp32.h"
 #include "module_type.h"
 #include "module_esp32.h"
 #include "config_utils.h"
-
-#ifndef _WIFI_DISABLE_
 #include "wifi_utils.h"
+
+#ifndef _WEBSERV_DISABLE_
 #include "endpoint_packet.h"
 #endif
 
@@ -71,17 +69,14 @@
 #define MODEL_M5AtomLite    34
 #define MODEL_M5AtomEcho    35
 
-#ifndef _WIFI_DISABLE_
 static WiFiUDP syslog_udp;
 static Syslog g_syslog(syslog_udp);
 static char *p_syslog_host = NULL;
 static char *p_syslog_appName = NULL;
-#endif
 
 int g_external_display = -1;
 int g_external_display_type = -1;
 
-#ifndef _WIFI_DISABLE_
 long syslog_send(uint16_t pri, const char *p_message)
 {
   bool ret = g_syslog.log(pri, p_message);
@@ -102,7 +97,6 @@ long syslog_changeServer(const char *host, uint16_t port)
 
   return 0;
 }
-#endif
 
 extern "C" {
   uint8_t temprature_sens_read(); 
@@ -175,7 +169,6 @@ static JSValue esp32_update(JSContext *ctx, JSValueConst jsThis, int argc, JSVal
   return JS_UNDEFINED;
 }
 
-#ifndef _WIFI_DISABLE_
 static JSValue esp32_get_ipaddress(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
 {
   return JS_NewUint32(ctx, get_ip_address());
@@ -191,7 +184,6 @@ static JSValue esp32_get_macaddress(JSContext *ctx, JSValueConst jsThis, int arg
 
   return jsArray;
 }
-#endif
 
 uint32_t esp32_getDeviceModel(void)
 {
@@ -243,7 +235,6 @@ static JSValue esp32_get_deviceModel(JSContext *ctx, JSValueConst jsThis, int ar
   return JS_NewUint32(ctx, model);
 }
 
-#ifndef _WIFI_DISABLE_
 static JSValue esp32_syslog(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
 {
   const char *message = JS_ToCString(ctx, argv[0]);
@@ -348,7 +339,6 @@ static JSValue esp32_getSyslogServer(JSContext *ctx, JSValueConst jsThis, int ar
   
   return obj;
 }
-#endif
 
 static JSValue esp32_getMemoryUsage(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
 {
@@ -385,7 +375,6 @@ static JSValue esp32_getDatetime(JSContext *ctx, JSValueConst jsThis, int argc, 
   return obj;
 }
 
-#ifndef _WIFI_DISABLE_
 static JSValue esp32_ping(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
 {
   const char *host = JS_ToCString(ctx, argv[0]);
@@ -411,9 +400,11 @@ static JSValue esp32_wifi_connect(JSContext *ctx, JSValueConst jsThis, int argc,
   if( ret != 0 )
     return JS_EXCEPTION;
 
+#ifndef _WEBSERV_DISABLE_
   ret = packet_open();
   if( ret != 0 )
     return JS_EXCEPTION;
+#endif
 
   return JS_NewInt32(ctx, ret);
 }
@@ -423,7 +414,9 @@ static JSValue esp32_wifi_disconnect(JSContext *ctx, JSValueConst jsThis, int ar
   if( !wifi_is_connected() )
     return JS_EXCEPTION;
 
+#ifndef _WEBSERV_DISABLE_
   packet_close();
+#endif
 
   long ret = wifi_disconnect();
 
@@ -436,7 +429,6 @@ static JSValue esp32_wifi_is_connected(JSContext *ctx, JSValueConst jsThis, int 
 
   return JS_NewBool(ctx, ret);
 }
-#endif
 
 static JSValue esp32_console_log(JSContext *ctx, JSValueConst jsThis, int argc,
                             JSValueConst *argv, int magic) {
@@ -521,18 +513,15 @@ static const JSCFunctionListEntry esp32_funcs[] = {
     JSCFunctionListEntry{"update", 0, JS_DEF_CFUNC, 0, {
                            func : {0, JS_CFUNC_generic, esp32_update}
                          }},
-#ifndef _WIFI_DISABLE_
     JSCFunctionListEntry{"getIpAddress", 0, JS_DEF_CFUNC, 0, {
                            func : {0, JS_CFUNC_generic, esp32_get_ipaddress}
                          }},
     JSCFunctionListEntry{"getMacAddress", 0, JS_DEF_CFUNC, 0, {
                            func : {0, JS_CFUNC_generic, esp32_get_macaddress}
                          }},
-#endif
     JSCFunctionListEntry{"getDeviceModel", 0, JS_DEF_CFUNC, 0, {
                            func : {0, JS_CFUNC_generic, esp32_get_deviceModel}
                          }},
-#ifndef _WIFI_DISABLE_
     JSCFunctionListEntry{"syslog", 0, JS_DEF_CFUNC, 0, {
                            func : {1, JS_CFUNC_generic, esp32_syslog}
                          }},
@@ -548,14 +537,12 @@ static const JSCFunctionListEntry esp32_funcs[] = {
     JSCFunctionListEntry{"getSyslogServer", 0, JS_DEF_CFUNC, 0, {
                            func : {0, JS_CFUNC_generic, esp32_getSyslogServer}
                          }},
-#endif
     JSCFunctionListEntry{"getMemoryUsage", 0, JS_DEF_CFUNC, 0, {
                            func : {0, JS_CFUNC_generic, esp32_getMemoryUsage}
                          }},
     JSCFunctionListEntry{"getDatetime", 0, JS_DEF_CFUNC, 0, {
                            func : {0, JS_CFUNC_generic, esp32_getDatetime}
                          }},
-#ifndef _WIFI_DISABLE_
     JSCFunctionListEntry{"ping", 0, JS_DEF_CFUNC, 0, {
                            func : {1, JS_CFUNC_generic, esp32_ping}
                          }},
@@ -568,7 +555,6 @@ static const JSCFunctionListEntry esp32_funcs[] = {
     JSCFunctionListEntry{"wifiIsConnected", 0, JS_DEF_CFUNC, 0, {
                            func : {0, JS_CFUNC_generic, esp32_wifi_is_connected}
                          }},
-#endif
     JSCFunctionListEntry{"getWakupCause", 0, JS_DEF_CFUNC, 0, {
                            func : {0, JS_CFUNC_generic, esp32_sleep_getWakeupCause}
                          }},
@@ -728,8 +714,6 @@ static const JSCFunctionListEntry esp32_funcs[] = {
           i32 : MODEL_M5AtomEcho
         }},
     JSCFunctionListEntry{
-#ifndef _WIFI_DISABLE_
-    JSCFunctionListEntry{
         "SYSLOG_PRIORITY_EMERG", 0, JS_DEF_PROP_INT32, 0, {
           i32 : LOG_EMERG
         }},
@@ -761,7 +745,7 @@ static const JSCFunctionListEntry esp32_funcs[] = {
       "SYSLOG_PRIORITY_DEBUG", 0, JS_DEF_PROP_INT32, 0, {
         i32 : LOG_DEBUG
       }},
-#endif
+    JSCFunctionListEntry{
       "WAKEUP_UNDEFINED", 0, JS_DEF_PROP_INT32, 0, {
         i32 : ESP_SLEEP_WAKEUP_UNDEFINED
       }},
@@ -812,7 +796,6 @@ JSModuleDef *addModule_esp32(JSContext *ctx, JSValue global)
 
 long initialize_esp32(void)
 {
-#ifndef _WIFI_DISABLE_
   g_syslog.appName(MDNS_SERVICE);
   g_syslog.deviceHostname(MDNS_NAME);
   g_syslog.defaultPriority(LOG_INFO | LOG_USER);
@@ -824,7 +807,6 @@ long initialize_esp32(void)
     String port = server.substring(delim + 1);
     syslog_changeServer(host.c_str(), port.toInt());
   }
-#endif
 
   return 0;
 }

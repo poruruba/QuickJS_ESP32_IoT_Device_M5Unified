@@ -6,10 +6,9 @@
 #include "main_config.h"
 #include "quickjs_esp32.h"
 #include "config_utils.h"
-
-#ifndef _WIFI_DISABLE_
 #include "wifi_utils.h"
 
+#ifndef _WEBSERV_DISABLE_
 #include "endpoint_types.h"
 #include "endpoint_packet.h"
 #endif
@@ -32,10 +31,6 @@ static char* load_jscode(void);
 static long load_all_modules(void);
 
 static long import_jscode(void);
-
-extern "C" void* lwip_hook_ip6_input(void* pbuf, void* netif) {
-  return pbuf;  // 単純に通過させるだけのダミー処理
-}
 
 void setup()
 {
@@ -79,7 +74,7 @@ void setup()
   binSem = xSemaphoreCreateBinary();
   xSemaphoreGive(binSem);
 
-#ifndef _WIFI_DISABLE_
+#ifndef _WEBSERV_DISABLE_
   ret = packet_initialize();
   if( ret != 0 )
     Serial.println("packet_initialize error");
@@ -163,19 +158,20 @@ static long import_jscode(void)
   if(Serial.available() <= 0) 
     return -1;
 
+  Serial.println("\nEnter Command");
   String collected = "";
   unsigned long startTime = millis();
   String firstLine = Serial.readStringUntil('\n');
   firstLine.trim();
 
-  if( firstLine == "___ProgramRead___"){
+  if( firstLine == "//___ProgramRead___"){
     read_jscode(g_download_buffer, sizeof(g_download_buffer));
     Serial.println("---from here---");
     Serial.println(g_download_buffer);
     Serial.println("---to here---");
     return -1;
   }else
-  if (firstLine != "___ProgramStart___") {
+  if (firstLine != "//___ProgramStart___") {
     Serial.println("Invalid start marker");
     return -1;
   }
@@ -200,8 +196,8 @@ static long import_jscode(void)
       String line = Serial.readStringUntil('\n');
       line.trim();
 
-      if (line == "___ProgramEnd___") {
-        Serial.println("---Program ended---\n\n");
+      if (line == "//___ProgramEnd___") {
+        Serial.println("---Program ended---\n");
         Serial.println("---from here---");
         Serial.println(collected);
         Serial.println("---to here---\n");
@@ -390,7 +386,6 @@ static long load_all_modules(void)
 
 static long m5_connect(void)
 {
-#ifndef _WIFI_DISABLE_
   long ret = wifi_try_connect(false);
   if( ret != 0 )
     return 0;
@@ -398,7 +393,6 @@ static long m5_connect(void)
   configTzTime("JST-9", "ntp.nict.jp", "ntp.jst.mfeed.ad.jp");
   time_t t = time(nullptr) + 1; // Advance one second.
   while (t > time(nullptr));  /// Synchronization in seconds
-#endif
 
   return 0;
 }

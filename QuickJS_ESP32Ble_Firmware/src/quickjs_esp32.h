@@ -98,8 +98,11 @@
 #ifdef _WEBSOCKET_CLIENT_ENABLE_
 #include "module_websocket_client.h"
 #endif
-#ifdef _BLEDEVICE_ENABLE_
-#include "module_bledevice.h" 
+#ifdef _BLECENTRAL_ENABLE_
+#include "module_blecentral.h" 
+#endif
+#ifdef _BLEPERIPHERAL_ENABLE_
+#include "module_bleperipheral.h" 
 #endif
 
 static JsModuleEntry module_entries[] = {
@@ -185,8 +188,11 @@ static JsModuleEntry module_entries[] = {
 #ifdef _WEBSOCKET_CLIENT_ENABLE_
   websocket_client_module,
 #endif
-#ifdef _BLEDEVICE_ENABLE_
-  bledevice_module,
+#ifdef _BLECENTRAL_ENABLE_
+  blecentral_module,
+#endif
+#ifdef _BLEPERIPHERAL_ENABLE_
+  bleperipheral_module,
 #endif
   utils_module
 };

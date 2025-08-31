@@ -151,7 +151,6 @@ static JSValue esp32_lcd_draw_image_file(JSContext *ctx, JSValueConst jsThis, in
 }
 #endif
 
-#ifndef _WIFI_DISABLE_
 static JSValue esp32_lcd_draw_image_url(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv, int magic)
 {
   if( magic == 1 && g_external_display == -1 )
@@ -188,7 +187,6 @@ static JSValue esp32_lcd_draw_image_url(JSContext *ctx, JSValueConst jsThis, int
 
   return JS_NewBool(ctx, ret);
 }
-#endif
 
 static JSValue esp32_lcd_draw_image(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv, int magic)
 {
@@ -865,11 +863,9 @@ static const JSCFunctionListEntry lcd_funcs[] = {
                            func : {3, JS_CFUNC_generic_magic, {generic_magic : esp32_lcd_draw_image_file}}
                          }},
 #endif
-#ifndef _WIFI_DISABLE_
     JSCFunctionListEntry{"drawImageUrl", 0, JS_DEF_CFUNC, 0, {
                            func : {3, JS_CFUNC_generic_magic, {generic_magic : esp32_lcd_draw_image_url}}
                          }},
-#endif
     JSCFunctionListEntry{"drawImage", 0, JS_DEF_CFUNC, 0, {
                            func : {10, JS_CFUNC_generic_magic, {generic_magic : esp32_lcd_draw_image}}
                          }},
@@ -1021,11 +1017,9 @@ static const JSCFunctionListEntry lcd_funcs2[] = {
                            func : {3, JS_CFUNC_generic_magic, {generic_magic : esp32_lcd_draw_image_file}}
                          }},
 #endif
-#ifndef _WIFI_DISABLE_
     JSCFunctionListEntry{"drawImageUrl", 0, JS_DEF_CFUNC, 1, {
                            func : {3, JS_CFUNC_generic_magic, {generic_magic : esp32_lcd_draw_image_url}}
                          }},
-#endif
     JSCFunctionListEntry{"drawImage", 0, JS_DEF_CFUNC, 1, {
                            func : {10, JS_CFUNC_generic_magic, {generic_magic : esp32_lcd_draw_image}}
                          }},

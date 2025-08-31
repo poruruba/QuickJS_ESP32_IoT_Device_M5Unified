@@ -3,7 +3,8 @@
 
 #include <Arduino.h>
 
-//#define _WIFI_DISABLE_
+//#define _WEBSERV_DISABLE_
+#define _HTTP_CUSTOMCALL_
 
 #if 0
 #define _UNIT_COLOR_ENABLE_
