@@ -81,6 +81,18 @@ static void notFound(AsyncWebServerRequest *request)
   }
 }
 
+static AsyncJsonResponse* makeErrorResponse(const char *message, const char *endpoint){
+  AsyncJsonResponse *response = new AsyncJsonResponse(false);
+  const JsonObject& responseResult = response->getRoot();
+  responseResult["status"] = "NG";
+  if( endpoint != NULL )
+    responseResult["endpoint"] = (char*)endpoint;
+  if( message != NULL )
+  responseResult["message"] = (char*)message;
+  response->setLength();
+  return response;
+}
+
 long packet_initialize(void)
 {
   packet_appendEntry(esp32_table, num_of_esp32_entry);
@@ -109,12 +121,7 @@ long packet_initialize(void)
     const char *endpoint = jsonObj["endpoint"];
     const JsonObject& params = jsonObj["params"];
     if( endpoint == NULL || params.isNull()){
-      AsyncJsonResponse *response = new AsyncJsonResponse(false);
-      const JsonObject& responseResult = response->getRoot();
-      responseResult["status"] = "NG";
-      responseResult["endpoint"] = (char*)endpoint;
-      responseResult["message"] = "invalid format";
-      response->setLength();
+      AsyncJsonResponse *response = makeErrorResponse("invalid format", endpoint);
       request->send(response);
       if( sem )
         xSemaphoreGive(binSem);
@@ -140,28 +147,29 @@ long packet_initialize(void)
   });
   server.addHandler(handler);
 
-
+#ifdef _HTTP_CUSTOMCALL_
   AsyncCallbackJsonWebHandler *handler_customCall = new AsyncCallbackJsonWebHandler("/customcall_post", [](AsyncWebServerRequest *request, JsonVariant &json) {
     const JsonObject& jsonObj = json.as<JsonObject>();
 //    AsyncJsonResponse *response = new AsyncJsonResponse(false, PACKET_JSON_DOCUMENT_SIZE);
-    http_delegateRequest(request, (const char*)jsonObj["message"]);
     if( !http_isWaitRequest() ){
-      http_sendResponseError("not ready");
+      AsyncJsonResponse *response = makeErrorResponse("not waiting", "/customcall");
+      request->send(response);
+      return;
     }
+    http_delegateRequest(request, (const char*)jsonObj["message"]);
   });
   server.addHandler(handler_customCall);
 
   server.on("/customcall_get", HTTP_GET, [](AsyncWebServerRequest* request){
-    const char *message = NULL;
     const AsyncWebParameter *p = request->getParam("message");
-    if( p != NULL )
-      message = p->value().c_str();
-    http_delegateRequest(request, message);
     if( !http_isWaitRequest() ){
-      http_sendResponseError("not ready");
+      AsyncJsonResponse *response = makeErrorResponse("not waiting", "/customcall");
+      request->send(response);
+      return;
     }
+    http_delegateRequest(request, (p != NULL) ? p->value().c_str() : "/customcall");
   });
-
+#endif
 
   DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
   DefaultHeaders::Instance().addHeader("Access-Control-Allow-Headers", "*");

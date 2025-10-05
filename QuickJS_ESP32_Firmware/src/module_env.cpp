@@ -2,32 +2,34 @@
 #include "main_config.h"
 
 #ifdef _ENV_ENABLE_
-
 #include "quickjs.h"
 #include "module_env.h"
 
+#ifdef ENV_MODULE_SHT30
 #include "SHT3X.h"
-#include "DHT12.h"
-
-static DHT12 dht12;
 static SHT3X sht30;
+#endif
+#ifdef ENV_MODULE_DHT12
+#include "DHT12.h"
+static DHT12 dht12;
+#endif
 
-static JSValue env_dht12_readTemperature(JSContext *ctx, JSValueConst jsThis,
-                                      int argc, JSValueConst *argv)
+#ifdef ENV_MODULE_DHT12
+static JSValue env_dht12_readTemperature(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
 {
   float tmp = dht12.readTemperature();
   return JS_NewFloat64(ctx, tmp);
 }
 
-static JSValue env_dht12_readHumidity(JSContext *ctx, JSValueConst jsThis,
-                                      int argc, JSValueConst *argv)
+static JSValue env_dht12_readHumidity(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
 {
   float hum = dht12.readHumidity();
   return JS_NewFloat64(ctx, hum);
 }
+#endif
 
-static JSValue env_sht30_get(JSContext *ctx, JSValueConst jsThis,
-                                     int argc, JSValueConst *argv)
+#ifdef ENV_MODULE_SHT30
+static JSValue env_sht30_get(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
 {
   if(sht30.get() != 0)
     return JS_EXCEPTION;
@@ -38,8 +40,10 @@ static JSValue env_sht30_get(JSContext *ctx, JSValueConst jsThis,
   JS_SetPropertyStr(ctx, obj, "humidity", JS_NewFloat64(ctx, sht30.humidity));
   return obj;
 }
+#endif
 
 static const JSCFunctionListEntry env_funcs[] = {
+#ifdef ENV_MODULE_DHT12
     JSCFunctionListEntry{
         "dht12_readTemperature", 0, JS_DEF_CFUNC, 0, {
           func : {0, JS_CFUNC_generic, env_dht12_readTemperature}
@@ -48,10 +52,13 @@ static const JSCFunctionListEntry env_funcs[] = {
         "dht12_readHumidity", 0, JS_DEF_CFUNC, 0, {
           func : {0, JS_CFUNC_generic, env_dht12_readHumidity}
         }},
+#endif
+#ifdef ENV_MODULE_SHT30
     JSCFunctionListEntry{
         "sht30_get", 0, JS_DEF_CFUNC, 0, {
           func : {0, JS_CFUNC_generic, env_sht30_get}
         }},
+#endif
 };
 
 JSModuleDef *addModule_env(JSContext *ctx, JSValue global)

@@ -30,9 +30,17 @@
 #include <AsyncJson.h>
 static JSContext *g_ctx = NULL;
 static JSValue g_callback_func = JS_UNDEFINED;
-static AsyncWebServerRequestPtr g_requestPtr;
-static char *g_callback_message = NULL;
-static char *g_request_method = NULL;
+
+typedef struct{
+  char* message;
+  char* method;
+  AsyncWebServerRequestPtr requestPtr;
+} CUSTOMCALL_EVENT_INFO;
+static std::vector<CUSTOMCALL_EVENT_INFO> g_event_list;
+#define MAX_CUSTOMCALL_EVENT  4
+
+static long http_sendResponseText(CUSTOMCALL_EVENT_INFO info, const char *message);
+static long http_sendResponseError(CUSTOMCALL_EVENT_INFO info, const char *error);
 #endif
 
 static const char *aws4_request = "aws4_request";
@@ -459,25 +467,33 @@ JSModuleDef *addModule_http(JSContext *ctx, JSValue global)
 void loopModule_http(void)
 {
 #ifdef _HTTP_CUSTOMCALL_
-  if( http_isPauseRequest() ){
-    if( http_isWaitRequest() ){
+  if( http_isWaitRequest() ){
+    while(g_event_list.size() > 0){
+      CUSTOMCALL_EVENT_INFO info = (CUSTOMCALL_EVENT_INFO)g_event_list.front();
+
       JSValue objs[2];
-      objs[0] = JS_NewString(g_ctx, g_callback_message);
-      objs[1] = JS_NewString(g_ctx, g_request_method);
+      objs[0] = (info.message != NULL ) ? JS_NewString(g_ctx, info.message) : JS_UNDEFINED;
+      objs[1] = JS_NewString(g_ctx, info.method);
+
       ESP32QuickJS *qjs = (ESP32QuickJS *)JS_GetContextOpaque(g_ctx);
       JSValue ret = qjs->callJsFunc_with_arg(g_ctx, g_callback_func, g_callback_func, 2, objs);
-      JS_FreeValue(g_ctx, objs[0]);
+
+      if( objs[0] != JS_UNDEFINED )
+        JS_FreeValue(g_ctx, objs[0]);
       JS_FreeValue(g_ctx, objs[1]);
       if (!JS_IsException(ret)) {
-        const char *message = JS_ToCString(g_ctx, ret);
-        http_sendResponseText( message );
-        JS_FreeCString(g_ctx, message);
+        if( ret != JS_UNDEFINED ){
+          const char *message = JS_ToCString(g_ctx, ret);
+          http_sendResponseText(info, message);
+          JS_FreeCString(g_ctx, message);
+        }else{
+          http_sendResponseText(info, NULL);
+        }
       }else{
-        http_sendResponseError("unknown");
+        http_sendResponseError(info,"unknown");
       }
       JS_FreeValue(g_ctx, ret);
-    }else{
-      http_sendResponseError("not ready");
+      g_event_list.erase(g_event_list.begin());
     }
   }
 #endif
@@ -486,13 +502,21 @@ void loopModule_http(void)
 void endModule_http(void)
 {
 #ifdef _HTTP_CUSTOMCALL_
+  while(g_event_list.size() > 0){
+    CUSTOMCALL_EVENT_INFO info = (CUSTOMCALL_EVENT_INFO)g_event_list.front();
+    if( info.method != NULL)
+      free(info.method);
+    if( info.message != NULL)
+      free(info.message);
+    info.requestPtr.reset();
+    g_event_list.erase(g_event_list.begin());
+  }
+
   if( g_callback_func != JS_UNDEFINED ){
     JS_FreeValue(g_ctx, g_callback_func);
     g_callback_func = JS_UNDEFINED;
   }
   g_ctx = NULL;
-
-  http_delegateRequest(NULL, NULL);
 #endif
 }
 
@@ -502,6 +526,86 @@ JsModuleEntry http_module = {
   loopModule_http,
   endModule_http
 };
+
+#ifdef _HTTP_CUSTOMCALL_
+long http_delegateRequest(AsyncWebServerRequest *request, const char *message)
+{
+  if( g_event_list.size() >= MAX_CUSTOMCALL_EVENT ){
+      CUSTOMCALL_EVENT_INFO info = (CUSTOMCALL_EVENT_INFO)g_event_list.front();
+      http_sendResponseError(info, "too many requests");
+      g_event_list.erase(g_event_list.begin());
+  }
+
+  CUSTOMCALL_EVENT_INFO info;  
+  info.message = strdup(message);
+  const char *method = request->methodToString();
+  info.method = strdup(method);
+
+  info.requestPtr = request->pause();
+
+  g_event_list.push_back(info);
+
+  return 0;
+}
+
+bool http_isWaitRequest(void)
+{
+  return ( g_callback_func != JS_UNDEFINED );
+}
+
+static AsyncJsonResponse* makeResponse(const char *status, const char *message, const char *endpoint){
+  AsyncJsonResponse *response = new AsyncJsonResponse(false);
+  const JsonObject& responseResult = response->getRoot();
+  responseResult["status"] = status;
+  if( endpoint != NULL )
+    responseResult["endpoint"] = (char*)endpoint;
+  if( message != NULL )
+    responseResult["message"] = (char*)message;
+  response->setLength();
+  return response;
+}
+
+static long http_sendResponseText(CUSTOMCALL_EVENT_INFO info, const char *message)
+{
+  if( info.method != NULL)
+    free(info.method);
+
+  if (auto request = info.requestPtr.lock()) {
+    AsyncJsonResponse *response = makeResponse("OK", message, "/customcall" );
+    response->setLength();
+    request->send(response);
+    info.requestPtr.reset();
+
+    if( info.message != NULL)
+      free(info.message);
+    return 0;  
+  }else{
+    if( info.message != NULL)
+      free(info.message);
+    return -1;
+  }
+}
+
+static long http_sendResponseError(CUSTOMCALL_EVENT_INFO info, const char *error)
+{
+  if( info.method != NULL)
+    free(info.method);
+
+  if (auto request = info.requestPtr.lock()) {
+    AsyncJsonResponse *response = makeResponse("NG", error, "/customcall");
+    request->send(response);
+    info.requestPtr.reset();
+
+    if( info.message != NULL)
+      free(info.message);
+    return 0;  
+  }else{
+    if( info.message != NULL)
+      free(info.message);
+    return -1;
+  }
+}
+#endif
 
 static long hmacCreate(const uint8_t *p_key, int key_len, const uint8_t *p_input, int input_len, uint8_t *p_result)
 {
@@ -653,86 +757,3 @@ static AwsAuthorizationResult makeAwsAuthorization(const char *method, const cha
 
   return amzResult;
 }
-
-#ifdef _HTTP_CUSTOMCALL_
-long http_delegateRequest(AsyncWebServerRequest *request, const char *message)
-{
-  http_sendResponseText(NULL);
-
-  if( request != NULL ){
-    g_callback_message = (char*)malloc(strlen(message) + 1);
-    strcpy(g_callback_message, message);
-
-    const char *method = request->methodToString();
-    g_request_method = (char*)malloc(strlen(method) + 1);
-    strcpy(g_request_method, method);
-
-    g_requestPtr = request->pause();
-  }
-
-  return 0;
-}
-
-bool http_isWaitRequest(void)
-{
-  return ( g_callback_func != JS_UNDEFINED );
-}
-
-bool http_isPauseRequest(void)
-{
-  if( auto requst = g_requestPtr.lock())
-    return true;
-  else
-    return false;
-}
-
-long http_sendResponseText(const char *message)
-{
-  if( g_callback_message != NULL ){
-    free(g_callback_message);
-    g_callback_message = NULL;
-  }
-  if( g_request_method != NULL ){
-    free(g_request_method);
-    g_request_method = NULL;
-  }
-
-  if (auto request = g_requestPtr.lock()) {
-    AsyncJsonResponse *response = new AsyncJsonResponse(false);
-    const JsonObject& responseResult = response->getRoot();
-    responseResult["status"] = "OK";
-    responseResult["message"] = (char*)message;
-    response->setLength();
-    request->send(response);
-    g_requestPtr.reset();
-    return 0;  
-  }else{
-    return -1;
-  }
-}
-
-long http_sendResponseError(const char *message)
-{
-  if( g_callback_message != NULL ){
-    free(g_callback_message);
-    g_callback_message = NULL;
-  }
-  if( g_request_method != NULL ){
-    free(g_request_method);
-    g_request_method = NULL;
-  }
-
-  if (auto request = g_requestPtr.lock()) {
-    AsyncJsonResponse *response = new AsyncJsonResponse(false);
-    const JsonObject& responseResult = response->getRoot();
-    responseResult["status"] = "NG";
-    responseResult["message"] = (char*)message;
-    response->setLength();
-    request->send(response);
-    g_requestPtr.reset();
-    return 0;  
-  }else{
-    return -1;
-  }
-}
-#endif

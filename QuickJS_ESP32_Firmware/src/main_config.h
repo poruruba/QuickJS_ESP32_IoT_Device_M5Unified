@@ -16,8 +16,11 @@
 #define _UNIT_ENVPRO_ENABLE_
 #define _UNIT_IMUPRO_ENABLE_
 #define _UNIT_BYTEBUTTON_ENABLE_
+#define _UNIT_AUDIOPLAYER_ENABLE_
+#define _UNIT_STEP16_ENABLE_
 #define _ESPNOW_ENABLE_
 #endif
+
 #define _HTTP_ENABLE_
 #define _MQTT_ENABLE_
 #define _WEBSOCKET_ENABLE_

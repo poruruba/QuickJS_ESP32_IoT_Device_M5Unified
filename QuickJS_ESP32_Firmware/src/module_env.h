@@ -3,6 +3,9 @@
 
 #include "module_type.h"
 
+#define ENV_MODULE_SHT30
+#define ENV_MODULE_DHT12
+
 extern JsModuleEntry env_module;
 
 #endif

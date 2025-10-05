@@ -59,6 +59,12 @@
 #ifdef _UNIT_BYTEBUTTON_ENABLE_
 #include "module_unit_bytebutton.h"
 #endif
+#ifdef _UNIT_AUDIOPLAYER_ENABLE_
+#include "module_unit_audioplayer.h"
+#endif
+#ifdef _UNIT_STEP16_ENABLE_
+#include "module_unit_step16.h"
+#endif
 #ifdef _HTTP_ENABLE_
 #include "module_http.h"
 #endif
@@ -142,6 +148,12 @@ static JsModuleEntry module_entries[] = {
 #endif
 #ifdef _UNIT_BYTEBUTTON_ENABLE_
   unit_bytebutton_module,
+#endif
+#ifdef _UNIT_AUDIOPLAYER_ENABLE_
+  unit_audioplayer_module,
+#endif
+#ifdef _UNIT_STEP16_ENABLE_
+  unit_step16_module,
 #endif
 #ifdef _HTTP_ENABLE_
   http_module,
