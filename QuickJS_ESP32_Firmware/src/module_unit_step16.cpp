@@ -120,7 +120,7 @@ static JSValue unit_step16_setRgb(JSContext *ctx, JSValueConst jsThis, int argc,
   if( !ret )
     return JS_EXCEPTION;
 
-  return JS_NewUint32(ctx, ret);
+  return JS_NewBool(ctx, ret);
 }
 
 static JSValue unit_step16_getRgb(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
@@ -150,9 +150,9 @@ static JSValue unit_step16_saveToFlash(JSContext *ctx, JSValueConst jsThis, int 
 
 static JSValue unit_step16_setDefaultConfig(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
 {
-  uint8_t ret = step16.setDefaultConfig();
+  bool ret = step16.setDefaultConfig();
 
-  return JS_NewUint32(ctx, ret);
+  return JS_NewBool(ctx, ret);
 }
 
 static const JSCFunctionListEntry unit_step16_funcs[] = {
@@ -219,6 +219,14 @@ static const JSCFunctionListEntry unit_step16_funcs[] = {
     JSCFunctionListEntry{
         "setDefaultConfig", 0, JS_DEF_CFUNC, 0, {
           func : {0, JS_CFUNC_generic, unit_step16_setDefaultConfig}
+        }},
+    JSCFunctionListEntry{
+        "SWITCH_COUNTERCLOCKWISE", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : UNIT_STEP16_SWITCH_COUNTERCLOCKWISE
+        }},
+    JSCFunctionListEntry{
+        "SWITCH_CLOCKWISE", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : UNIT_STEP16_SWITCH_CLOCKWISE
         }},
     JSCFunctionListEntry{
         "SAVE_CONFIG_LED", 0, JS_DEF_PROP_INT32, 0, {
