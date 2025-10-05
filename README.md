@@ -80,6 +80,8 @@ https://poruruba.github.io/EspWebDownloader/quickjs_esp32_firmware/
   - Websocketクライアント機能を追加
 - 2025-8-9
   - Byteボタンユニットを追加
+- 2025-10-5
+  - AudioPlayerユニット、STEP16ユニットを追加
 
 ## 誤記訂正
 - 2022-03-31
