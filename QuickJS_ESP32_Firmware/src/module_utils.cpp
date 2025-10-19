@@ -8,6 +8,7 @@
 #include "module_type.h"
 #include "module_utils.h"
 #include "wifi_utils.h"
+#include "lib_base32.h"
 
 unsigned long b64_encode_length(unsigned long input_length)
 {
@@ -469,6 +470,45 @@ static JSValue utils_base64(JSContext *ctx, JSValueConst jsThis, int argc, JSVal
   return JS_EXCEPTION;
 }
 
+static JSValue utils_base32(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv, int magic)
+{
+  if( magic == 0 ){
+    uint8_t *p_buffer;
+    uint8_t unit_size;
+    uint32_t unit_num;
+    JSValue vbuffer = getTypedArrayBuffer(ctx, argv[0], (void**)&p_buffer, &unit_size, &unit_num);
+    if( JS_IsNull(vbuffer) )
+      return JS_EXCEPTION;
+    if( unit_size != 1 ){
+      JS_FreeValue(ctx, vbuffer);
+      return JS_EXCEPTION;
+    }
+    String str = base32_encode(p_buffer, unit_num);
+    JS_FreeValue(ctx, vbuffer);
+    JSValue value = JS_NewString(ctx, str.c_str());
+
+    return value;
+  }else if( magic == 1 ){
+    const char *b32 = JS_ToCString(ctx, argv[0]);
+    if( b32 == NULL )
+      return JS_EXCEPTION;
+    unsigned long length = base32_decodedLength(b32);
+    unsigned char *buffer = (unsigned char *)malloc(length);
+    if( buffer == NULL ){
+      JS_FreeCString(ctx, b32);
+      return JS_EXCEPTION;
+    }
+    base32_decode(b32, buffer, length);
+    JS_FreeCString(ctx, b32);
+    JSValue value = JS_NewArrayBufferCopy(ctx, buffer, length);
+    free(buffer);
+
+    return value;
+  }
+
+  return JS_EXCEPTION;
+}
+
 static JSValue utils_rgb2number(JSContext *ctx, JSValueConst jsThis,
                                      int argc, JSValueConst *argv)
 {
@@ -664,6 +704,12 @@ static const JSCFunctionListEntry utils_funcs[] = {
                          }},
     JSCFunctionListEntry{"base64Decode", 0, JS_DEF_CFUNC, 1, {
                            func : {1, JS_CFUNC_generic_magic, {generic_magic : utils_base64}}
+                         }},
+    JSCFunctionListEntry{"base32Encode", 0, JS_DEF_CFUNC, 0, {
+                           func : {1, JS_CFUNC_generic_magic, {generic_magic : utils_base32}}
+                         }},
+    JSCFunctionListEntry{"base32Decode", 0, JS_DEF_CFUNC, 1, {
+                           func : {1, JS_CFUNC_generic_magic, {generic_magic : utils_base32}}
                          }},
     JSCFunctionListEntry{"rgb2Number", 0, JS_DEF_CFUNC, 0, {
                           func : {1, JS_CFUNC_generic, utils_rgb2number}

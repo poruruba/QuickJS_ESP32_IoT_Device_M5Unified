@@ -12,15 +12,16 @@ static bool isBegan = false;
 
 static JSValue unit_audioplayer_begin(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
 {
-  uint32_t tx, rx;
-  JS_ToUint32(ctx, &tx, argv[0]);
-  JS_ToUint32(ctx, &rx, argv[1]);
+  uint32_t pin_tx, pin_rx;
+  JS_ToUint32(ctx, &pin_tx, argv[0]);
+  JS_ToUint32(ctx, &pin_rx, argv[1]);
 
   if( isBegan ){
     audioplayer.endAudio();
+    Serial1.end();
     isBegan = false;
   }
-  bool ret = audioplayer.begin(&Serial1, tx, rx);
+  bool ret = audioplayer.begin(&Serial1, pin_tx, pin_rx);
   if( ret )
     isBegan = true;
 
@@ -31,6 +32,7 @@ static JSValue unit_audioplayer_end(JSContext *ctx, JSValueConst jsThis, int arg
 {
   if( isBegan ){
     audioplayer.endAudio();
+    Serial1.end();
     isBegan = false;
   }
 
@@ -241,6 +243,7 @@ void endModule_unit_audioplayer(void)
 {
   if( isBegan ){
     audioplayer.endAudio();
+    Serial1.end();
     isBegan = false;
   }
 }

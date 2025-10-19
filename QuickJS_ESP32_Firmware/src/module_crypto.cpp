@@ -8,26 +8,96 @@
 
 #include "quickjs.h"
 #include "module_crypto.h"
+#include "lib_hmac.h"
+#include <time.h>
+#include "TOTP.h"
+#include "module_utils.h"
 
-static JSValue crypto_hmacCreate(JSContext *ctx, JSValueConst jsThis,
-                                      int argc, JSValueConst *argv)
+static JSValue crypto_totpGenerate(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
+{
+  uint8_t *p_buffer;
+  uint8_t unit_size;
+  uint32_t unit_num;
+  JSValue vbuffer = getTypedArrayBuffer(ctx, argv[0], (void**)&p_buffer, &unit_size, &unit_num);
+  if( JS_IsNull(vbuffer) ){
+    return JS_EXCEPTION;
+  }
+  if( unit_size != 1 ){
+    JS_FreeValue(ctx, vbuffer);
+    return JS_EXCEPTION;
+  }
+
+  time_t now = time(nullptr);
+  if( now < 946652400 ){
+    JS_FreeValue(ctx, vbuffer);
+    return JS_EXCEPTION;
+  }
+  
+  TOTP* totp = new TOTP(p_buffer, unit_num);
+  char *code = totp->getCode(now);
+  JS_FreeValue(ctx, vbuffer);
+
+  JSValue value = JS_NewString(ctx, code);
+  delete totp;
+
+  return value;
+}
+
+static JSValue crypto_totpVerify(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
+{
+  uint8_t *p_buffer;
+  uint8_t unit_size;
+  uint32_t unit_num;
+  JSValue vbuffer = getTypedArrayBuffer(ctx, argv[0], (void**)&p_buffer, &unit_size, &unit_num);
+  if( JS_IsNull(vbuffer) ){
+    return JS_EXCEPTION;
+  }
+  if( unit_size != 1 ){
+    JS_FreeValue(ctx, vbuffer);
+    return JS_EXCEPTION;
+  }
+
+  const char *p_code = JS_ToCString(ctx, argv[1]);
+  if( p_code == NULL ){
+    JS_FreeValue(ctx, vbuffer);
+    return JS_EXCEPTION;
+  }  
+
+  time_t now = time(nullptr);
+  if( now < 946652400 ){
+    JS_FreeValue(ctx, vbuffer);
+    JS_FreeCString(ctx, p_code);
+    return JS_EXCEPTION;
+  }
+
+  TOTP* totp = new TOTP(p_buffer, unit_num);
+  char *code = totp->getCode(now);
+  JS_FreeValue(ctx, vbuffer);
+
+  bool result = (strcmp(code, p_code) == 0);
+  JS_FreeCString(ctx, p_code);
+  delete totp;
+
+  return JS_NewBool(ctx, result);
+}
+
+static JSValue crypto_hmacCreate(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
 {
   uint32_t type;
   JS_ToUint32(ctx, &type, argv[0]);
-  if( type != 1 && type != 5 && type != 256 )
+  
+  if( type != HMAC_TYPE_SHA1 && type != HMAC_TYPE_MD5 && type != HMAC_TYPE_SHA256 )
     return JS_EXCEPTION;
   
   int output_len;
-  mbedtls_md_type_t md_type;
-  if( type == 1 ){
+  if( type == HMAC_TYPE_SHA1 ){
     output_len = 20;
-    md_type = MBEDTLS_MD_SHA1;
-  }else if( type == 5 ){
+  }else if( type == HMAC_TYPE_MD5 ){
     output_len = 16;
-    md_type = MBEDTLS_MD_MD5;
-  }else if( type == 256 ){
+  }else if( type == HMAC_TYPE_SHA256 ){
     output_len = 32;
-    md_type = MBEDTLS_MD_SHA256;
+  }else{
+    return JS_EXCEPTION;
   }
 
   const char *p_key = JS_ToCString(ctx, argv[1]);
@@ -40,15 +110,7 @@ static JSValue crypto_hmacCreate(JSContext *ctx, JSValueConst jsThis,
   }
 
   uint8_t hmacResult[32];
-  mbedtls_md_context_t context;
-  
-  mbedtls_md_init(&context);
-  mbedtls_md_setup(&context, mbedtls_md_info_from_type(md_type), 1);
-  mbedtls_md_hmac_starts(&context, (const unsigned char*)p_key, strlen(p_key));
-  mbedtls_md_hmac_update(&context, (const unsigned char*)p_input, strlen(p_input));
-  mbedtls_md_hmac_finish(&context, hmacResult); // 32 bytes
-  mbedtls_md_free(&context);
-
+  hmac_calculate(type, (const unsigned char*)p_key, strlen(p_key), (const unsigned char*)p_input, strlen(p_input), hmacResult);
   JS_FreeCString(ctx, p_key);
   JS_FreeCString(ctx, p_input);
 
@@ -259,6 +321,14 @@ static JSValue crypto_mdCreate(JSContext *ctx, JSValueConst jsThis,
 
 static const JSCFunctionListEntry crypto_funcs[] = {
     JSCFunctionListEntry{
+        "totpGenerate", 0, JS_DEF_CFUNC, 0, {
+          func : {1, JS_CFUNC_generic, crypto_totpGenerate}
+        }},
+    JSCFunctionListEntry{
+        "totpVerify", 0, JS_DEF_CFUNC, 0, {
+          func : {2, JS_CFUNC_generic, crypto_totpVerify}
+        }},  
+    JSCFunctionListEntry{
         "hmacCreate", 0, JS_DEF_CFUNC, 0, {
           func : {3, JS_CFUNC_generic, crypto_hmacCreate}
         }},
@@ -292,15 +362,15 @@ static const JSCFunctionListEntry crypto_funcs[] = {
         }},
     JSCFunctionListEntry{
         "MD_MD5", 0, JS_DEF_PROP_INT32, 0, {
-          i32 : 5
+          i32 : HMAC_TYPE_MD5
         }}, 
     JSCFunctionListEntry{
         "MD_SHA1", 0, JS_DEF_PROP_INT32, 0, {
-          i32 : 1
+          i32 : HMAC_TYPE_SHA1
         }},        
     JSCFunctionListEntry{
         "MD_SHA256", 0, JS_DEF_PROP_INT32, 0, {
-          i32 : 256
+          i32 : HMAC_TYPE_SHA256
         }},        
 };
 
