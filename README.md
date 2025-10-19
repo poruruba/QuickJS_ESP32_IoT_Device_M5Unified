@@ -82,6 +82,8 @@ https://poruruba.github.io/EspWebDownloader/quickjs_esp32_firmware/
   - Byteボタンユニットを追加
 - 2025-10-5
   - AudioPlayerユニット、STEP16ユニットを追加
+- 2025-10-19
+  - TOTP, Base32を追加
 
 ## 誤記訂正
 - 2022-03-31
