@@ -13,8 +13,8 @@ static bool isBegan = false;
 static JSValue unit_audioplayer_begin(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
 {
   uint32_t pin_tx, pin_rx;
-  JS_ToUint32(ctx, &pin_tx, argv[0]);
-  JS_ToUint32(ctx, &pin_rx, argv[1]);
+  JS_ToUint32(ctx, &pin_rx, argv[0]);
+  JS_ToUint32(ctx, &pin_tx, argv[1]);
 
   if( isBegan ){
     audioplayer.endAudio();
