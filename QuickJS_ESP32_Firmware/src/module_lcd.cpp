@@ -18,6 +18,27 @@ static LGFX_Sprite* sprites[NUM_OF_SPRITE];
 
 #define FONT_COLOR TFT_WHITE
 
+static JSValue esp32_lcd_clear(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv, int magic)
+{
+  if( magic == 1 && g_external_display == -1 )
+    return JS_EXCEPTION;
+
+  if( argc >= 1 ){
+    int32_t color;
+    JS_ToInt32(ctx, &color, argv[0]);
+    if( magic == 1 )
+      M5.Displays(g_external_display).clear(color);
+    else
+      M5.Display.clear(color);
+  }else{
+    if( magic == 1 )
+      M5.Displays(g_external_display).clear();
+    else
+      M5.Display.clear();
+  }
+  return JS_UNDEFINED;
+}
+
 static JSValue esp32_lcd_setRotation(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv, int magic)
 {
   if( magic == 1 && g_external_display == -1 )
@@ -778,6 +799,9 @@ static JSValue esp32_lcd_pushRotateZoom(JSContext *ctx, JSValueConst jsThis, int
 }
 
 static const JSCFunctionListEntry lcd_funcs[] = {
+    JSCFunctionListEntry{"clear", 0, JS_DEF_CFUNC, 0, {
+                           func : {1, JS_CFUNC_generic_magic, {generic_magic : esp32_lcd_clear }}
+                         }},
     JSCFunctionListEntry{"setRotation", 0, JS_DEF_CFUNC, 0, {
                            func : {1, JS_CFUNC_generic_magic, {generic_magic : esp32_lcd_setRotation }}
                          }},
@@ -932,6 +956,9 @@ static const JSCFunctionListEntry lcd_funcs[] = {
 };
 
 static const JSCFunctionListEntry lcd_funcs2[] = {
+    JSCFunctionListEntry{"clear", 0, JS_DEF_CFUNC, 1, {
+                           func : {1, JS_CFUNC_generic_magic, {generic_magic : esp32_lcd_clear }}
+                         }},
     JSCFunctionListEntry{"setRotation", 0, JS_DEF_CFUNC, 1, {
                            func : {1, JS_CFUNC_generic_magic, {generic_magic : esp32_lcd_setRotation }}
                          }},
