@@ -17,6 +17,7 @@
 #include <WiFi.h>
 #include <Syslog.h>
 #include <ESP32Ping.h>
+#include <time.h>
 
 #include "quickjs.h"
 #include "quickjs_esp32.h"
@@ -372,6 +373,12 @@ static JSValue esp32_getDatetime(JSContext *ctx, JSValueConst jsThis, int argc, 
   return obj;
 }
 
+static JSValue esp32_time(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
+{
+  time_t now = time(nullptr);
+  return JS_NewUint32(ctx, (uint32_t)now);
+}
+
 static JSValue esp32_ping(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
 {
   const char *host = JS_ToCString(ctx, argv[0]);
@@ -535,6 +542,9 @@ static const JSCFunctionListEntry esp32_funcs[] = {
                          }},
     JSCFunctionListEntry{"getDatetime", 0, JS_DEF_CFUNC, 0, {
                            func : {0, JS_CFUNC_generic, esp32_getDatetime}
+                         }},
+    JSCFunctionListEntry{"time", 0, JS_DEF_CFUNC, 0, {
+                           func : {0, JS_CFUNC_generic, esp32_time}
                          }},
     JSCFunctionListEntry{"ping", 0, JS_DEF_CFUNC, 0, {
                            func : {1, JS_CFUNC_generic, esp32_ping}
