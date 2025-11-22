@@ -13,6 +13,7 @@
 
 #define IR_DEFAULT_HZ 38
 
+static bool g_receiving = false;
 static IRsend *g_irsend = NULL;
 static IRrecv *g_irrecv = NULL;
 static decode_results results;
@@ -50,7 +51,11 @@ static JSValue esp32_ir_send(JSContext *ctx, JSValueConst jsThis, int argc,
   if( argc >= 2 )
     JS_ToUint32(ctx, &repeat, argv[1]);
 
+  if( g_receiving )
+    g_irrecv->disableIRIn();
   g_irsend->sendNEC(data, 32, repeat);
+  if( g_receiving )
+    g_irrecv->enableIRIn();
 
   return JS_UNDEFINED;
 }
@@ -72,7 +77,11 @@ static JSValue esp32_ir_sendRaw(JSContext *ctx, JSValueConst jsThis, int argc,
     return JS_EXCEPTION;
   }
 
+  if( g_receiving )
+    g_irrecv->disableIRIn();
   g_irsend->sendRaw(p_buffer, unit_num, IR_DEFAULT_HZ);
+  if( g_receiving )
+    g_irrecv->enableIRIn();
 
   JS_FreeValue(ctx, vbuffer);
 
@@ -93,6 +102,7 @@ static JSValue esp32_ir_recvBegin(JSContext *ctx, JSValueConst jsThis, int argc,
   g_irrecv = new IRrecv(pin);
   g_irrecv->enableIRIn();
   g_irrecv->disableIRIn();
+  g_receiving = false;
 
   return JS_UNDEFINED;
 }
@@ -105,6 +115,7 @@ static JSValue esp32_ir_recvStart(JSContext *ctx, JSValueConst jsThis, int argc,
   
   g_irrecv->enableIRIn();
   g_irrecv->resume();
+  g_receiving = true;
 
   return JS_UNDEFINED;
 }
@@ -116,6 +127,7 @@ static JSValue esp32_ir_recvStop(JSContext *ctx, JSValueConst jsThis, int argc,
     return JS_EXCEPTION;
 
   g_irrecv->disableIRIn();
+  g_receiving = false;
 
   return JS_UNDEFINED;
 }
@@ -131,7 +143,7 @@ static JSValue esp32_ir_checkRecv(JSContext *ctx, JSValueConst jsThis, int argc,
     JS_ToUint32(ctx, &type, argv[0]);
 
   if( g_irrecv->decode(&results) ){
-    if( (type == IR_TYPE_NEC && results.decode_type == NEC_LIKE) ||
+    if( (type == IR_TYPE_NEC && results.decode_type == NEC) ||
       (type == IR_TYPE_SONY && results.decode_type == SONY)
     ){
       uint64_t value = results.value;
@@ -144,6 +156,26 @@ static JSValue esp32_ir_checkRecv(JSContext *ctx, JSValueConst jsThis, int argc,
   }
 
   return JS_NewUint32(ctx, 0);
+}
+
+static JSValue esp32_ir_checkRecvTyped(JSContext *ctx, JSValueConst jsThis, int argc,
+                               JSValueConst *argv)
+{
+  if( g_irrecv == NULL )
+    return JS_EXCEPTION;
+
+  if( g_irrecv->decode(&results) ){
+    uint64_t value = results.value;
+    JSValue obj = JS_NewObject(ctx);
+    JS_SetPropertyStr(ctx, obj, "type", JS_NewUint32(ctx, results.decode_type));
+    JS_SetPropertyStr(ctx, obj, "value", JS_NewUint32(ctx, value));
+    JS_SetPropertyStr(ctx, obj, "value_high", JS_NewUint32(ctx, value >> 32));
+    JS_SetPropertyStr(ctx, obj, "bits", JS_NewUint32(ctx, results.bits));
+    g_irrecv->resume();
+    return obj;
+  }
+
+  return JS_UNDEFINED;
 }
 
 static JSValue esp32_ir_checkRecvRaw(JSContext *ctx, JSValueConst jsThis, int argc,
@@ -189,6 +221,9 @@ static const JSCFunctionListEntry ir_funcs[] = {
     JSCFunctionListEntry{"checkRecv", 0, JS_DEF_CFUNC, 0, {
                            func : {1, JS_CFUNC_generic, esp32_ir_checkRecv}
                          }},
+    JSCFunctionListEntry{"checkRecvTyped", 0, JS_DEF_CFUNC, 0, {
+                           func : {0, JS_CFUNC_generic, esp32_ir_checkRecvTyped}
+                         }},
     JSCFunctionListEntry{"checkRecvRaw", 0, JS_DEF_CFUNC, 0, {
                            func : {0, JS_CFUNC_generic, esp32_ir_checkRecvRaw}
                          }},
@@ -220,6 +255,7 @@ void endModule_ir(void){
     delete g_irrecv;
     g_irrecv = NULL;
   }
+  g_receiving = false;
 }
 
 JsModuleEntry ir_module = {
