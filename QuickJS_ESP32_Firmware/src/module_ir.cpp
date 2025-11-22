@@ -18,10 +18,6 @@ static IRsend *g_irsend = NULL;
 static IRrecv *g_irrecv = NULL;
 static decode_results results;
 
-#define IR_TYPE_RAW 0
-#define IR_TYPE_NEC 1
-#define IR_TYPE_SONY  2
-
 static JSValue esp32_ir_sendBegin(JSContext *ctx, JSValueConst jsThis, int argc,
                                JSValueConst *argv)
 {
@@ -138,14 +134,12 @@ static JSValue esp32_ir_checkRecv(JSContext *ctx, JSValueConst jsThis, int argc,
   if( g_irrecv == NULL )
     return JS_EXCEPTION;
 
-  uint32_t type = IR_TYPE_NEC;
+  uint32_t type = NEC;
   if( argc >= 1 )
     JS_ToUint32(ctx, &type, argv[0]);
 
   if( g_irrecv->decode(&results) ){
-    if( (type == IR_TYPE_NEC && results.decode_type == NEC) ||
-      (type == IR_TYPE_SONY && results.decode_type == SONY)
-    ){
+    if( results.decode_type == type ){
       uint64_t value = results.value;
       g_irrecv->resume();
       return JS_NewUint32(ctx, value);
