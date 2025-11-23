@@ -504,6 +504,23 @@ Blockly.Blocks['udp_checkrecv'] = {
   }
 };
 
+Blockly.Blocks['lcd_clear'] = {
+  init: function() {
+    this.appendDummyInput()
+        .appendField("Lcd.clear");
+    this.appendValueInput("color")
+        .setCheck("Number")
+        .setAlign(Blockly.ALIGN_RIGHT)
+        .appendField("color");
+    this.setInputsInline(true);
+    this.setPreviousStatement(true, null);
+    this.setNextStatement(true, null);
+    this.setColour(230);
+ this.setTooltip("");
+ this.setHelpUrl("");
+  }
+};
+
 Blockly.Blocks['lcd_setrotation'] = {
   init: function() {
     this.appendDummyInput()
@@ -1301,7 +1318,7 @@ Blockly.Blocks['ir_checkrecv'] = {
     this.appendDummyInput()
         .setAlign(Blockly.ALIGN_RIGHT)
         .appendField("type")
-        .appendField(new Blockly.FieldDropdown([["IR_TYPE_NEC","ir.IR_TYPE_NEC"], ["IR_TYPE_SONY","ir.IR_TYPE_SONY"]]), "type");
+        .appendField(new Blockly.FieldDropdown([["TYPE_NEC","ir.TYPE_NEC"], ["TYPE_SONY","ir.TYPE_SONY"]]), "type");
     this.setInputsInline(true);
     this.setOutput(true, "Number");
     this.setColour(230);

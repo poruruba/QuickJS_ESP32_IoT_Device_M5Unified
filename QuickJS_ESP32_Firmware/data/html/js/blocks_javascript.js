@@ -227,6 +227,13 @@ Blockly.JavaScript['udp_checkrecv'] = function(block) {
   return [code, Blockly.JavaScript.ORDER_FUNCTION_CALL];
 };
 
+Blockly.JavaScript['lcd_clear'] = function(block) {
+  var value_color = Blockly.JavaScript.valueToCode(block, 'color', Blockly.JavaScript.ORDER_ATOMIC);
+  // TODO: Assemble JavaScript into code variable.
+  var code = 'lcd.clear(' + value_color + ');\n';
+  return code;
+};
+
 Blockly.JavaScript['lcd_setrotation'] = function(block) {
   var value_rot = Blockly.JavaScript.valueToCode(block, 'rot', Blockly.JavaScript.ORDER_ATOMIC);
   // TODO: Assemble JavaScript into code variable.

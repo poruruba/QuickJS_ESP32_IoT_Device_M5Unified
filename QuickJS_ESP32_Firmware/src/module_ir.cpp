@@ -221,6 +221,14 @@ static const JSCFunctionListEntry ir_funcs[] = {
     JSCFunctionListEntry{"checkRecvRaw", 0, JS_DEF_CFUNC, 0, {
                            func : {0, JS_CFUNC_generic, esp32_ir_checkRecvRaw}
                          }},
+    JSCFunctionListEntry{
+        "TYPE_NEC", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : NEC
+        }},
+    JSCFunctionListEntry{
+        "TYPE_SONY", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : SONY
+        }},                                 
 };
 
 JSModuleDef *addModule_ir(JSContext *ctx, JSValue global)
