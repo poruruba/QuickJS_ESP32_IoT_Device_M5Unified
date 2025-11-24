@@ -847,14 +847,19 @@ var vue_options = {
         },
         createWorkspace: function(){
             this.hasWorkspace = true;
-            this.$nextTick(() =>{
-                var option = {
-                    toolbox: document.getElementById('toolbox'),
+            
+            this.$nextTick(async () =>{
+                const response = await fetch("blockly.xml");
+                const text = await response.text();
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(text, "text/xml");
+
+                this.workspace = Blockly.inject('#blocklyDiv', {
+                    toolbox: xmlDoc.documentElement,
                     trashcan: true,
                     zoom: { controls: true }
-                };
-                this.workspace = Blockly.inject('#blocklyDiv', option);
-            //        this.workspace.addChangeListener(Blockly.Events.disableOrphans);
+                });
+//              this.workspace.addChangeListener(Blockly.Events.disableOrphans);
             });
         },
         clearWorkspace: function(){
