@@ -100,6 +100,8 @@ https://poruruba.github.io/EspWebDownloader/quickjs_esp32_firmware/
   - Audioのdispose方法を修正
 - 2023-6-15
   - SPIFFSのFile.path()となるべきところをFile.name()としていたところを修正
+- 2025-11-24
+  - Blocklyの定義が間違っていたのを修正
 
 ## QuickJS_ESP32_IoT_Deviceからの移行時の注意事項
 以下の点で異なります。
