@@ -138,17 +138,6 @@ Blockly.Blocks['restart'] = {
   }
 };
 
-Blockly.Blocks['checkputtext'] = {
-  init: function() {
-    this.appendDummyInput()
-        .appendField("checkPutText");
-    this.setOutput(true, "Array");
-    this.setColour(230);
- this.setTooltip("");
- this.setHelpUrl("");
-  }
-};
-
 Blockly.Blocks['object_field'] = {
   init: function() {
     this.appendValueInput("value")
