@@ -404,9 +404,9 @@ static JSValue esp32_wifi_connect(JSContext *ctx, JSValueConst jsThis, int argc,
   if( ret != 0 )
     return JS_EXCEPTION;
 
-  ret = packet_open();
-  if( ret != 0 )
-    return JS_EXCEPTION;
+  // ret = packet_open();
+  // if( ret != 0 )
+  //   return JS_EXCEPTION;
 
   return JS_NewInt32(ctx, ret);
 }
@@ -426,6 +426,32 @@ static JSValue esp32_wifi_disconnect(JSContext *ctx, JSValueConst jsThis, int ar
 static JSValue esp32_wifi_is_connected(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
 {
   bool ret = wifi_is_connected();
+
+  return JS_NewBool(ctx, ret);
+}
+
+static JSValue esp32_web_start(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
+{
+  if( !wifi_is_connected() )
+    return JS_EXCEPTION;
+
+  long ret = packet_open();
+  
+  return JS_NewInt32(ctx, ret);
+}
+
+static JSValue esp32_web_stop(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
+{
+  if( !wifi_is_connected() )
+    return JS_EXCEPTION;
+
+  long ret = packet_close();
+  return JS_NewInt32(ctx, ret);
+}
+
+static JSValue esp32_web_is_running(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
+{
+  bool ret = packet_isRunning();
 
   return JS_NewBool(ctx, ret);
 }
@@ -557,6 +583,15 @@ static const JSCFunctionListEntry esp32_funcs[] = {
                          }},
     JSCFunctionListEntry{"wifiIsConnected", 0, JS_DEF_CFUNC, 0, {
                            func : {0, JS_CFUNC_generic, esp32_wifi_is_connected}
+                         }},
+    JSCFunctionListEntry{"webStart", 0, JS_DEF_CFUNC, 0, {
+                           func : {0, JS_CFUNC_generic, esp32_web_start}
+                         }},
+    JSCFunctionListEntry{"webStop", 0, JS_DEF_CFUNC, 0, {
+                           func : {0, JS_CFUNC_generic, esp32_web_stop}
+                         }},
+    JSCFunctionListEntry{"webIsRunning", 0, JS_DEF_CFUNC, 0, {
+                           func : {0, JS_CFUNC_generic, esp32_web_is_running}
                          }},
     JSCFunctionListEntry{"getWakupCause", 0, JS_DEF_CFUNC, 0, {
                            func : {0, JS_CFUNC_generic, esp32_sleep_getWakeupCause}

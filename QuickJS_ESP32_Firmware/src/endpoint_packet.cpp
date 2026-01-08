@@ -45,6 +45,7 @@ static AsyncWebSocket ws("/ws");
 #endif
 
 static std::unordered_map<std::string, EndpointEntry*> endpoint_list;
+static bool isRunning = false;
 
 void packet_appendEntry(EndpointEntry *tables, int num_of_entry)
 {
@@ -193,6 +194,9 @@ long packet_open(void)
   if( !wifi_is_connected() )
     return -1;
 
+  if( isRunning )
+    return 0;
+
   if (!MDNS.begin(MDNS_NAME)){
     Serial.println("MDNS.begin error");
   }else{
@@ -202,14 +206,24 @@ long packet_open(void)
   }
 
   server.begin();
+  isRunning = true;
   
   return 0;
 }
 
-long packet_close(void){
+long packet_close(void)
+{
+  if( !isRunning )
+    return 0;
+
   server.end();
   MDNS.end();
 
   return 0;
+}
+
+long packet_isRunning(void)
+{
+  return isRunning;
 }
 

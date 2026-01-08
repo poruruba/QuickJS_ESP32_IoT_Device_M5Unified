@@ -67,12 +67,12 @@ void setup()
   if( ret != 0 )
     Serial.println("m5_connect error");
 
-  binSem = xSemaphoreCreateBinary();
-  xSemaphoreGive(binSem);
-
   ret = packet_initialize();
   if( ret != 0 )
     Serial.println("packet_initialize error");
+
+  binSem = xSemaphoreCreateBinary();
+  xSemaphoreGive(binSem);
 
   ret = packet_open();
   if( ret != 0 )
