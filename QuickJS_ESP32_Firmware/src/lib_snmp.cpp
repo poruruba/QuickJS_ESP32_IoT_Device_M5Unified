@@ -130,7 +130,7 @@ long snmp_initialize(void)
   snmp.addReadOnlyStaticStringHandler (".1.3.6.1.2.1.25.2.3.1.3.5", std::string("psram"));
   snmp.addReadOnlyStaticStringHandler (".1.3.6.1.2.1.25.2.3.1.3.6", std::string("stack"));
 
-  // hrStorageUsed
+  // hrStorageSize
   snmp.addReadOnlyIntegerHandler(".1.3.6.1.2.1.25.2.3.1.5.1", getFlashSize());
   snmp.addReadOnlyIntegerHandler(".1.3.6.1.2.1.25.2.3.1.5.2", SPIFFS.totalBytes());
   snmp.addReadOnlyIntegerHandler(".1.3.6.1.2.1.25.2.3.1.5.3", getRamTotal());
@@ -144,7 +144,7 @@ long snmp_initialize(void)
     }
   );
 
-  // hrStorageSize
+  // hrStorageUsed
   snmp.addReadOnlyIntegerHandler(".1.3.6.1.2.1.25.2.3.1.6.1", getPartitionApplication());
   snmp.addDynamicIntegerHandler(".1.3.6.1.2.1.25.2.3.1.6.2", 
     []() -> int {
