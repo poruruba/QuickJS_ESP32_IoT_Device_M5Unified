@@ -86,6 +86,8 @@ https://poruruba.github.io/EspWebDownloader/quickjs_esp32_firmware/
   - TOTP, Base32を追加
 - 2025-10-26
   - オフライン音声認識モジュールを追加
+- 2026-01-12
+  - SNMPエージェントを追加
 
 ## 誤記訂正
 - 2022-03-31
