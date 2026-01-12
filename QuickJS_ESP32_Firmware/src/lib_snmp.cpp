@@ -133,8 +133,16 @@ long snmp_initialize(void)
   // hrStorageSize
   snmp.addReadOnlyIntegerHandler(".1.3.6.1.2.1.25.2.3.1.5.1", getFlashSize());
   snmp.addReadOnlyIntegerHandler(".1.3.6.1.2.1.25.2.3.1.5.2", SPIFFS.totalBytes());
-  snmp.addReadOnlyIntegerHandler(".1.3.6.1.2.1.25.2.3.1.5.3", getRamTotal());
-  snmp.addReadOnlyIntegerHandler(".1.3.6.1.2.1.25.2.3.1.5.4", ESP.getHeapSize());
+  snmp.addDynamicIntegerHandler(".1.3.6.1.2.1.25.2.3.1.5.3",
+    []() -> int {
+      return getRamTotal();
+    }
+  );
+  snmp.addDynamicIntegerHandler(".1.3.6.1.2.1.25.2.3.1.5.4",
+    []() -> int {
+      return ESP.getHeapSize();
+    }
+  );
   snmp.addReadOnlyIntegerHandler(".1.3.6.1.2.1.25.2.3.1.5.5", ESP.getPsramSize());
   snmp.addDynamicIntegerHandler(".1.3.6.1.2.1.25.2.3.1.5.6", 
     []() -> int {

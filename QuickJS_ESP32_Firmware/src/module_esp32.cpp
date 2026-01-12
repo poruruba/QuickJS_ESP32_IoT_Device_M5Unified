@@ -89,10 +89,9 @@ long syslog_changeServer(const char *host, uint16_t port)
 {
   if( p_syslog_host != NULL )
     free(p_syslog_host);
-  p_syslog_host = (char*)malloc(strlen(host) + 1);
+  p_syslog_host = strdup(host);
   if( p_syslog_host == NULL )
     return -1;
-  strcpy(p_syslog_host, host);
   g_syslog.server(p_syslog_host, port);
 
   Serial.printf("syslog: host=%s, port=%d\n", p_syslog_host, port);
@@ -279,22 +278,20 @@ static JSValue esp32_setSyslogAppName(JSContext *ctx, JSValueConst jsThis, int a
     return JS_EXCEPTION;
 
   if( p_syslog_appName != NULL ){
-    char *p_temp = (char*)malloc(strlen(appName) + 1);
+    char *p_temp = strdup(appName);
     if( p_temp == NULL ){
       JS_FreeCString(ctx, appName);
       return JS_EXCEPTION;
     }
-    strcpy(p_temp, appName);
     g_syslog.appName(p_temp);
     free(p_syslog_appName);
     p_syslog_appName = p_temp;    
   }else{
-    p_syslog_appName = (char*)malloc(strlen(appName) + 1);
+    p_syslog_appName = strdup(appName);
     if( p_syslog_appName == NULL ){
       JS_FreeCString(ctx, appName);
       return JS_EXCEPTION;
     }
-    strcpy(p_syslog_appName, appName);
     g_syslog.appName(p_syslog_appName);
   }
   g_syslog.deviceHostname(MDNS_NAME);
