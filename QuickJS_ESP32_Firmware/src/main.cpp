@@ -7,6 +7,7 @@
 #include "quickjs_esp32.h"
 #include "config_utils.h"
 #include "wifi_utils.h"
+#include "lib_snmp.h"
 
 #include "endpoint_types.h"
 #include "endpoint_packet.h"
@@ -78,6 +79,12 @@ void setup()
   if( ret != 0 )
     Serial.println("packet_open error");
 
+#ifdef _SNMP_AGENT_ENABLE_    
+  ret = snmp_initialize();
+  if( ret != 0 )
+    Serial.println("snmp_initialize error");
+#endif
+
   long conf = read_config_long(CONFIG_INDEX_AUTOUPDATE, 0);
   g_autoupdate = (conf != 0) ? true : false;
   if( g_autoupdate )
@@ -102,6 +109,10 @@ void loop()
 // FILE_LOADING_START
 // FILE_LOADING_STOPPING
   }
+
+#ifdef _SNMP_AGENT_ENABLE_    
+  snmp_loop();
+#endif
 
   if( g_autoupdate )
     qjs.update_modules();

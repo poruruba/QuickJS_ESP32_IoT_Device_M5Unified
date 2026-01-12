@@ -531,7 +531,7 @@ JsModuleEntry http_module = {
 long http_delegateRequest(AsyncWebServerRequest *request, const char *message)
 {
   if( g_event_list.size() >= MAX_CUSTOMCALL_EVENT ){
-      CUSTOMCALL_EVENT_INFO info = (CUSTOMCALL_EVENT_INFO)g_event_list.front();
+      CUSTOMCALL_EVENT_INFO info = g_event_list.front();
       http_sendResponseError(info, "too many requests");
       g_event_list.erase(g_event_list.begin());
   }

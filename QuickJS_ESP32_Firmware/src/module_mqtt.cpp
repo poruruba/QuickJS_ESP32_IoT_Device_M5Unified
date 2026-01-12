@@ -333,7 +333,7 @@ void loopModule_mqtt(void)
     }
 
     while(g_event_list.size() > 0){
-      MQTT_EVENT_INFO info = (MQTT_EVENT_INFO)g_event_list.front();
+      MQTT_EVENT_INFO info = g_event_list.front();
       JSValue obj = JS_NewObject(g_ctx);
       JS_SetPropertyStr(g_ctx, obj, "topic", JS_NewString(g_ctx, (const char *)info.topic_name));
       JS_SetPropertyStr(g_ctx, obj, "payload", JS_NewString(g_ctx, (const char *)info.payload));

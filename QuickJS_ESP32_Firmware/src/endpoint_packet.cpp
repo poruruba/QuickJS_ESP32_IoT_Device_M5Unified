@@ -10,6 +10,7 @@
 #include "endpoint_types.h"
 #include "endpoint_packet.h"
 #include "wifi_utils.h"
+#include "lib_snmp.h"
 
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
@@ -226,4 +227,3 @@ long packet_isRunning(void)
 {
   return isRunning;
 }
-

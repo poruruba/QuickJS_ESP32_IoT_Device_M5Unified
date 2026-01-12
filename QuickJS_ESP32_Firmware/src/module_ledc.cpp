@@ -9,8 +9,9 @@
 #include "esp32-hal-ledc.h"
 
 #define NUM_LEDC_CHANNEL  3
-static bool is_beeping[NUM_LEDC_CHANNEL] = { false, false, false };
+static bool is_beeping[NUM_LEDC_CHANNEL];
 static uint32_t beep_end[NUM_LEDC_CHANNEL];
+static int channelToPin[NUM_LEDC_CHANNEL];
 
 static JSValue esp32_ledc_setup(JSContext *ctx, JSValueConst jsThis,
                                       int argc, JSValueConst *argv)
@@ -34,6 +35,7 @@ static JSValue esp32_ledc_attachPin(JSContext *ctx, JSValueConst jsThis,
   JS_ToUint32(ctx, &channel, argv[1]);
 
   ledcAttachPin(pin, channel);
+  channelToPin[channel] = pin;
 
   return JS_UNDEFINED;
 }
@@ -45,6 +47,10 @@ static JSValue esp32_ledc_detachPin(JSContext *ctx, JSValueConst jsThis,
   JS_ToUint32(ctx, &pin, argv[0]);
 
   ledcDetachPin(pin);
+  for( int i = 0 ; i < NUM_LEDC_CHANNEL ; i++ ){
+    if( channelToPin[i] == pin )
+      channelToPin[i] = -1;
+  }
 
   return JS_UNDEFINED;
 }
@@ -239,6 +245,14 @@ JSModuleDef *addModule_ledc(JSContext *ctx, JSValue global)
   return mod;
 }
 
+long initialize_ledc(void){
+  for( int i = 0 ; i < NUM_LEDC_CHANNEL ; i++ ){
+    is_beeping[i] = false;
+    channelToPin[i] = -1;
+  }
+  return 0;
+}
+
 void loopModule_ledc(void){
   for( int i = 0 ; i < NUM_LEDC_CHANNEL ; i++ ){
     if( is_beeping[i] ){
@@ -256,11 +270,15 @@ void endModule_ledc(void){
       is_beeping[i] = false;
       ledcWrite(i, 0);
     }
+    if( channelToPin[i] >= 0 ){
+      ledcDetachPin(channelToPin[i]);
+      channelToPin[i] = -1;
+    }
   }
 }
 
 JsModuleEntry ledc_module = {
-  NULL,
+  initialize_ledc,
   addModule_ledc,
   loopModule_ledc,
   endModule_ledc

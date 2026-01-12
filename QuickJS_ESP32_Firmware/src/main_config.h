@@ -21,12 +21,13 @@
 #define _UNIT_AUDIOPLAYER_ENABLE_
 #define _UNIT_ASR_ENABLE_
 #define _ESPNOW_ENABLE_
-#endif
-
-#define _HTTP_ENABLE_
-#define _MQTT_ENABLE_
 #define _WEBSOCKET_ENABLE_
 #define _WEBSOCKET_CLIENT_ENABLE_
+#endif
+
+#define _SNMP_AGENT_ENABLE_
+#define _HTTP_ENABLE_
+#define _MQTT_ENABLE_
 #define _ENV_ENABLE_
 #define _CRYPTO_ENABLE_
 #define _IR_ENABLE_

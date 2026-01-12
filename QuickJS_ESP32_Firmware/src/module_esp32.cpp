@@ -19,6 +19,9 @@
 #include <ESP32Ping.h>
 #include <time.h>
 
+#include <Esp.h>
+#include <SPIFFS.h>
+
 #include "quickjs.h"
 #include "quickjs_esp32.h"
 #include "module_type.h"
@@ -27,6 +30,7 @@
 
 #include "wifi_utils.h"
 #include "endpoint_packet.h"
+#include "storage_info.h"
 
 #define GLOBAL_ESP32
 #define GLOBAL_CONSOLE
@@ -233,6 +237,12 @@ static JSValue esp32_get_deviceModel(JSContext *ctx, JSValueConst jsThis, int ar
   return JS_NewUint32(ctx, model);
 }
 
+static JSValue esp32_get_chipModel(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
+{
+  const char *chipModel = ESP.getChipModel();
+  return JS_NewString(ctx, chipModel);
+}
+
 static JSValue esp32_syslog(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
 {
   const char *message = JS_ToCString(ctx, argv[0]);
@@ -348,10 +358,31 @@ static JSValue esp32_getMemoryUsage(JSContext *ctx, JSValueConst jsThis, int arg
   JS_SetPropertyStr(ctx, obj, "malloc_limit", JS_NewUint32(ctx, usage.malloc_limit));
   JS_SetPropertyStr(ctx, obj, "memory_usage_size", JS_NewUint32(ctx, usage.memory_used_size));
   JS_SetPropertyStr(ctx, obj, "malloc_size", JS_NewUint32(ctx, usage.malloc_size));
-  JS_SetPropertyStr(ctx, obj, "total_heap", JS_NewUint32(ctx, ESP.getHeapSize()));
-  JS_SetPropertyStr(ctx, obj, "free_heap", JS_NewUint32(ctx, ESP.getFreeHeap()));
-  JS_SetPropertyStr(ctx, obj, "total_psram", JS_NewUint32(ctx, ESP.getPsramSize()));
-  JS_SetPropertyStr(ctx, obj, "free_psram", JS_NewUint32(ctx, ESP.getFreePsram()));
+  // JS_SetPropertyStr(ctx, obj, "total_heap", JS_NewUint32(ctx, ESP.getHeapSize()));
+  // JS_SetPropertyStr(ctx, obj, "free_heap", JS_NewUint32(ctx, ESP.getFreeHeap()));
+  // JS_SetPropertyStr(ctx, obj, "total_psram", JS_NewUint32(ctx, ESP.getPsramSize()));
+  // JS_SetPropertyStr(ctx, obj, "free_psram", JS_NewUint32(ctx, ESP.getFreePsram()));
+
+  return obj;
+}
+
+static JSValue esp32_getStorageInfo(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
+{
+  JSValue obj = JS_NewObject(ctx);
+  JS_SetPropertyStr(ctx, obj, "scketch_application", JS_NewUint32(ctx, ESP.getSketchSize()));
+  JS_SetPropertyStr(ctx, obj, "partition_application", JS_NewUint32(ctx, getPartitionApplication()));
+  JS_SetPropertyStr(ctx, obj, "flash_total", JS_NewUint32(ctx, getFlashSize()));
+  JS_SetPropertyStr(ctx, obj, "flash_chip_size", JS_NewUint32(ctx, ESP.getFlashChipSize()));
+
+  JS_SetPropertyStr(ctx, obj, "ram_total", JS_NewUint32(ctx, getRamTotal()));
+  JS_SetPropertyStr(ctx, obj, "ram_used", JS_NewUint32(ctx, getRamUsed()));
+  JS_SetPropertyStr(ctx, obj, "spiffs_total", JS_NewUint32(ctx, SPIFFS.totalBytes()));
+  JS_SetPropertyStr(ctx, obj, "spiffs_used", JS_NewUint32(ctx, SPIFFS.usedBytes()));
+  JS_SetPropertyStr(ctx, obj, "heap_total", JS_NewUint32(ctx, ESP.getHeapSize()));
+  JS_SetPropertyStr(ctx, obj, "heap_free", JS_NewUint32(ctx, ESP.getFreeHeap()));
+  JS_SetPropertyStr(ctx, obj, "heap_free_min", JS_NewUint32(ctx, ESP.getMinFreeHeap()));
+  JS_SetPropertyStr(ctx, obj, "psram_total", JS_NewUint32(ctx, ESP.getPsramSize()));
+  JS_SetPropertyStr(ctx, obj, "psram_free", JS_NewUint32(ctx, ESP.getFreePsram()));
 
   return obj;
 }
@@ -548,6 +579,9 @@ static const JSCFunctionListEntry esp32_funcs[] = {
     JSCFunctionListEntry{"getDeviceModel", 0, JS_DEF_CFUNC, 0, {
                            func : {0, JS_CFUNC_generic, esp32_get_deviceModel}
                          }},
+    JSCFunctionListEntry{"getChipModel", 0, JS_DEF_CFUNC, 0, {
+                           func : {0, JS_CFUNC_generic, esp32_get_chipModel}
+                         }},
     JSCFunctionListEntry{"syslog", 0, JS_DEF_CFUNC, 0, {
                            func : {1, JS_CFUNC_generic, esp32_syslog}
                          }},
@@ -565,6 +599,9 @@ static const JSCFunctionListEntry esp32_funcs[] = {
                          }},
     JSCFunctionListEntry{"getMemoryUsage", 0, JS_DEF_CFUNC, 0, {
                            func : {0, JS_CFUNC_generic, esp32_getMemoryUsage}
+                         }},
+    JSCFunctionListEntry{"getStorageInfo", 0, JS_DEF_CFUNC, 0, {
+                           func : {0, JS_CFUNC_generic, esp32_getStorageInfo}
                          }},
     JSCFunctionListEntry{"getDatetime", 0, JS_DEF_CFUNC, 0, {
                            func : {0, JS_CFUNC_generic, esp32_getDatetime}
