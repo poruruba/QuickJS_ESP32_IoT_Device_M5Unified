@@ -31,6 +31,7 @@
 #include "wifi_utils.h"
 #include "endpoint_packet.h"
 #include "storage_info.h"
+#include "lib_snmp.h"
 
 #define GLOBAL_ESP32
 #define GLOBAL_CONSOLE
@@ -484,6 +485,47 @@ static JSValue esp32_web_is_running(JSContext *ctx, JSValueConst jsThis, int arg
   return JS_NewBool(ctx, ret);
 }
 
+#ifdef _SNMP_AGENT_ENABLE_
+static JSValue esp32_setSnmpNumber(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
+{
+  int32_t index, value;
+  JS_ToInt32(ctx, &index, argv[0]);
+  JS_ToInt32(ctx, &value, argv[1]);
+
+  long ret = snmp_set_number(index, value);
+  if( ret != 0 )
+    return JS_EXCEPTION;
+  return JS_UNDEFINED;
+}
+
+static JSValue esp32_setSnmpString(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
+{
+  int32_t index, value;
+  JS_ToInt32(ctx, &index, argv[0]);
+  const char *str = JS_ToCString(ctx, argv[1]);
+  if( str == NULL )
+    return JS_EXCEPTION;
+
+  long ret = snmp_set_string(index, str);
+  JS_FreeCString(ctx, str);
+  if( ret != 0 )
+    return JS_EXCEPTION;
+  return JS_UNDEFINED;
+}
+
+static JSValue esp32_setSnmpTimestamp(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
+{
+  int32_t index, value;
+  JS_ToInt32(ctx, &index, argv[0]);
+  JS_ToInt32(ctx, &value, argv[1]);
+
+  long ret = snmp_set_timestamp(index, value);
+  if( ret != 0 )
+    return JS_EXCEPTION;
+  return JS_UNDEFINED;
+}
+#endif
+
 static JSValue esp32_console_log(JSContext *ctx, JSValueConst jsThis, int argc,
                             JSValueConst *argv, int magic) {
   int i = 0;
@@ -603,6 +645,17 @@ static const JSCFunctionListEntry esp32_funcs[] = {
     JSCFunctionListEntry{"getDatetime", 0, JS_DEF_CFUNC, 0, {
                            func : {0, JS_CFUNC_generic, esp32_getDatetime}
                          }},
+#ifdef _SNMP_AGENT_ENABLE_
+    JSCFunctionListEntry{"setSnmpNumber", 0, JS_DEF_CFUNC, 0, {
+                           func : {2, JS_CFUNC_generic, esp32_setSnmpNumber}
+                         }},
+    JSCFunctionListEntry{"setSnmpString", 0, JS_DEF_CFUNC, 0, {
+                           func : {2, JS_CFUNC_generic, esp32_setSnmpString}
+                         }},
+    JSCFunctionListEntry{"setSnmpTimestamp", 0, JS_DEF_CFUNC, 0, {
+                           func : {2, JS_CFUNC_generic, esp32_setSnmpTimestamp}
+                         }},
+#endif
     JSCFunctionListEntry{"time", 0, JS_DEF_CFUNC, 0, {
                            func : {0, JS_CFUNC_generic, esp32_time}
                          }},

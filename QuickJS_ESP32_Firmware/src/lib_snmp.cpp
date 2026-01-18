@@ -9,6 +9,7 @@
 #include <SNMP_Agent.h>
 #include "wifi_utils.h"
 #include "storage_info.h"
+#include "lib_snmp.h"
 
 #include "quickjs_esp32.h"
 
@@ -33,6 +34,55 @@ static float avgFast = 0;
 static float avgMid  = 0;
 static float avgSlow = 0;
 
+static int private_number[NUM_OF_PRIV_NUMBER] = { NUMBER_DEFAULT, NUMBER_DEFAULT, NUMBER_DEFAULT };
+static std::string private_string[NUM_OF_PRIV_STRING] = { "", "", "" };
+static uint32_t private_timestamp[NUM_OF_PRIV_TIMESTAMP] = { 0, 0, 0 };
+
+long snmp_set_number(unsigned char index, int value)
+{
+  if( index >= NUM_OF_PRIV_NUMBER )
+    return -1;
+
+  private_number[index] = value;
+
+  return 0;
+}
+
+long snmp_set_string(unsigned char index, const char *p_str)
+{
+  if( index >= NUM_OF_PRIV_STRING )
+    return -1;
+
+  if( p_str != NULL )
+    private_string[index] = std::string(p_str);
+  else
+    private_string[index] = "";
+
+  return 0;
+}
+
+long snmp_set_timestamp(unsigned char index, unsigned long value)
+{
+  if( index >= NUM_OF_PRIV_TIMESTAMP )
+    return -1;
+
+  private_timestamp[index] = value;
+
+  return 0;
+}
+
+long snmp_clear_value(void)
+{
+  for( int i = 0 ; i < NUM_OF_PRIV_NUMBER ; i++ )
+    private_number[i] = NUMBER_DEFAULT;
+  for( int i = 0 ; i < NUM_OF_PRIV_STRING ; i++ )
+    private_string[i] = "";
+  for( int i = 0 ; i < NUM_OF_PRIV_TIMESTAMP ; i++ )
+    private_timestamp[i] = 0;
+  
+  return 0;
+}
+
 long snmp_initialize(void)
 {
   if( !wifi_is_connected() )
@@ -41,73 +91,62 @@ long snmp_initialize(void)
   snmp.setUDP(&udp);
   snmp.begin();
 
+  lastLoopMicros = micros();
+
   // system.sysDescr
-  snmp.addReadOnlyStaticStringHandler(
-    ".1.3.6.1.2.1.1.1.0",
+  snmp.addReadOnlyStaticStringHandler(".1.3.6.1.2.1.1.1.0",
     std::string("ESP32 SNMP Agent")
   );
   // system.sysObjectID
-  snmp.addOIDHandler(
-    ".1.3.6.1.2.1.1.2.0",
+  snmp.addOIDHandler(".1.3.6.1.2.1.1.2.0",
     ".1.3.6.1.4.1.8072.3.2.255"
   );
   // system.sysUpTime
-  snmp.addDynamicReadOnlyTimestampHandler(
-    ".1.3.6.1.2.1.1.3.0",
+  snmp.addDynamicReadOnlyTimestampHandler(".1.3.6.1.2.1.1.3.0",
     []() -> uint32_t {
         return millis() / 10;
     }
   );
   // system.sysName
-  snmp.addReadOnlyStaticStringHandler(
-    ".1.3.6.1.2.1.1.5.0",
+  snmp.addReadOnlyStaticStringHandler(".1.3.6.1.2.1.1.5.0",
     std::string(MDNS_NAME)
   );
   // system.sysServices
-  snmp.addReadOnlyIntegerHandler(
-    ".1.3.6.1.2.1.1.7.0",
+  snmp.addReadOnlyIntegerHandler(".1.3.6.1.2.1.1.7.0",
     72
   );
   // interface.ifNumber
-  snmp.addReadOnlyIntegerHandler(
-    ".1.3.6.1.2.1.2.1.0",
+  snmp.addReadOnlyIntegerHandler(".1.3.6.1.2.1.2.1.0",
     1
   );
   // interface.ifIndex
-  snmp.addReadOnlyIntegerHandler(
-    ".1.3.6.1.2.1.2.2.1.1.1",
+  snmp.addReadOnlyIntegerHandler(".1.3.6.1.2.1.2.2.1.1.1",
     1
   );
   // interface.ifDescr
-  snmp.addReadOnlyStaticStringHandler(
-    ".1.3.6.1.2.1.2.2.1.2.1",
+  snmp.addReadOnlyStaticStringHandler(".1.3.6.1.2.1.2.2.1.2.1",
     std::string("wifi")
   );
   // interface.ifType
-  snmp.addReadOnlyIntegerHandler(
-    ".1.3.6.1.2.1.2.2.1.3.1",
+  snmp.addReadOnlyIntegerHandler(".1.3.6.1.2.1.2.2.1.3.1",
     71
   );
   // interface.ifMtu
-  snmp.addReadOnlyIntegerHandler(
-    ".1.3.6.1.2.1.2.2.1.4.1",
+  snmp.addReadOnlyIntegerHandler(".1.3.6.1.2.1.2.2.1.4.1",
     1500
   );
   uint8_t mac[6];
   WiFi.macAddress(mac);
   // interface.ifPhysAddress
-  snmp.addReadOnlyStaticStringHandler(
-    ".1.3.6.1.2.1.2.2.1.6.1",
+  snmp.addReadOnlyStaticStringHandler(".1.3.6.1.2.1.2.2.1.6.1",
     std::string((char*)mac, sizeof(mac))
   );
   // interface.ifAdminStatus
-  snmp.addReadOnlyIntegerHandler(
-    ".1.3.6.1.2.1.2.2.1.7.1",
+  snmp.addReadOnlyIntegerHandler(".1.3.6.1.2.1.2.2.1.7.1",
     1
   );
   // interface.ifOperStatus
-  snmp.addDynamicIntegerHandler(
-    ".1.3.6.1.2.1.2.2.1.8.1",
+  snmp.addDynamicIntegerHandler(".1.3.6.1.2.1.2.2.1.8.1",
     []() -> int {
         return (WiFi.status() == WL_CONNECTED) ? 1 : 2; 
     }
@@ -183,14 +222,59 @@ long snmp_initialize(void)
   );
 
   // hrProcessorLoad
-  snmp.addDynamicIntegerHandler(
-    ".1.3.6.1.2.1.25.3.3.1.2.1",
+  snmp.addDynamicIntegerHandler(".1.3.6.1.2.1.25.3.3.1.2.1",
     []() -> int {
       return (int)(avgSlow + 0.5);
     }
   );
 
-  lastLoopMicros = micros();
+  snmp.addDynamicIntegerHandler(PRIVETE_OID_BASE ".1.0",
+    []() -> int {
+      return private_number[0];
+    }
+  );
+  snmp.addDynamicIntegerHandler(PRIVETE_OID_BASE ".1.1",
+    []() -> int {
+      return private_number[1];
+    }
+  );
+  snmp.addDynamicIntegerHandler(PRIVETE_OID_BASE ".1.2",
+    []() -> int {
+      return private_number[2];
+    }
+  );
+
+  snmp.addDynamicReadOnlyStringHandler(PRIVETE_OID_BASE ".2.0",
+    []() -> const std::string {
+      return private_string[0];
+    }
+  );
+  snmp.addDynamicReadOnlyStringHandler(PRIVETE_OID_BASE ".2.1",
+    []() -> const std::string {
+      return private_string[1];
+    }
+  );
+  snmp.addDynamicReadOnlyStringHandler(PRIVETE_OID_BASE ".2.2",
+    []() -> const std::string {
+      return private_string[2];
+    }
+  );
+
+  snmp.addDynamicReadOnlyTimestampHandler(PRIVETE_OID_BASE ".3.0",
+    []() -> uint32_t {
+        return private_timestamp[0] / 10;
+    }
+  );
+  snmp.addDynamicReadOnlyTimestampHandler(PRIVETE_OID_BASE ".3.1",
+    []() -> uint32_t {
+        return private_timestamp[1] / 10;
+    }
+  );
+  snmp.addDynamicReadOnlyTimestampHandler(PRIVETE_OID_BASE ".3.2",
+    []() -> uint32_t {
+        return private_timestamp[2] / 10;
+    }
+  );      
 
   return 0;
 }
