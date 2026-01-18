@@ -5,7 +5,7 @@
 #define NUM_OF_PRIV_STRING      3
 #define NUM_OF_PRIV_TIMESTAMP   3
 
-#define NUMBER_DEFAULT  INT_MIN
+#define NUMBER_DEFAULT  0 // INT_MIN
 #define PRIVETE_OID_BASE  ".1.3.6.1.4.1.8072.9999"
 
 long snmp_initialize(void);
