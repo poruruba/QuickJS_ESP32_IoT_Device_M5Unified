@@ -187,7 +187,7 @@ long snmp_initialize(void)
     []() -> int {
       JSMemoryUsage usage;
       qjs.getMemoryUsage(&usage);
-      return usage.malloc_limit;
+      return usage.memory_used_size;
     }
   );
 
