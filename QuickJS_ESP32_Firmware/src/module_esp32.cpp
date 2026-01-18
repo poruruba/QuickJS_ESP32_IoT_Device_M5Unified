@@ -936,11 +936,17 @@ long initialize_esp32(void)
   return 0;
 }
 
+void endModule_esp32(void){
+#ifdef _SNMP_AGENT_ENABLE_
+  snmp_clear_value();
+#endif
+}
+
 JsModuleEntry esp32_module = {
   initialize_esp32,
   addModule_esp32,
   NULL,
-  NULL
+  endModule_esp32
 };
 
 JsModuleEntry console_module = {
