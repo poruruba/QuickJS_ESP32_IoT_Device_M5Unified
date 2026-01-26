@@ -96,6 +96,7 @@
 #define CONFIG_AWS_CREDENTIAL3  "/awscred3.ini"
 
 #define CONFIG_INDEX_AUTOUPDATE 0
+#define CONFIG_INDEX_AUTOSYSLOG 1
 
 //#define WIFI_SSID "【固定のWiFiアクセスポイントのSSID】" // WiFiアクセスポイントのSSID
 //#define WIFI_PASSWORD "【固定のWiFIアクセスポイントのパスワード】" // WiFIアクセスポイントのパスワード

@@ -9,14 +9,12 @@ long read_config_long(uint16_t index, long def)
     return def;
   
   size_t fsize = fp.size();
-  if( fsize < (index + 1) * sizeof(long) )
-    return def;
-
-  bool ret = fp.seek(index * sizeof(long));
-  if( !ret ){
+  if( fsize < (index + 1) * sizeof(long) ){
     fp.close();
     return def;
   }
+
+  fp.seek(index * sizeof(long));
 
   long value;
   if( fp.read((uint8_t*)&value, sizeof(long)) != sizeof(long) ){
@@ -30,18 +28,22 @@ long read_config_long(uint16_t index, long def)
 
 long write_config_long(uint16_t index, long value)
 {
-  File fp = SPIFFS.open(CONFIG_FNAME, FILE_WRITE);
-  if( !fp )
-    return -1;
+  File fp = SPIFFS.open(CONFIG_FNAME, "r+");
+  if (!fp) {
+    fp = SPIFFS.open(CONFIG_FNAME, "w+");
+    if (!fp) return -1;
+  }
   
   size_t fsize = fp.size();
-  long temp = 0;
   if( fsize < index * sizeof(long) ){
     fp.seek(fsize / sizeof(long) * sizeof(long));
+    const long temp = 0;
     for( int i = fsize / sizeof(long) ; i < index ; i++ )
       fp.write((uint8_t*)&temp, sizeof(long));
   }
 
+  fp.seek(index * sizeof(long));
+  
   if( fp.write((uint8_t*)&value, sizeof(long)) != sizeof(long) ){
     fp.close();
     return -1;

@@ -82,6 +82,9 @@ int g_external_display_type = -1;
 
 long syslog_send(uint16_t pri, const char *p_message)
 {
+  if( !wifi_is_connected() )
+    return -1;
+
   bool ret = g_syslog.log(pri, p_message);
   return ret ? 0 : -1;
 }
@@ -346,6 +349,23 @@ static JSValue esp32_getSyslogServer(JSContext *ctx, JSValueConst jsThis, int ar
   return obj;
 }
 
+static JSValue esp32_setEnableConsoleSyslog(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
+{
+  bool enable = JS_ToBool(ctx, argv[0]);
+
+  long ret = write_config_long(CONFIG_INDEX_AUTOSYSLOG, enable ? 1 : 0);
+  if( ret != 0 )
+    return JS_EXCEPTION;
+
+  return JS_UNDEFINED;
+}
+
+static JSValue esp32_getEnableConsoleSyslog(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
+{
+  long ret = read_config_long(CONFIG_INDEX_AUTOSYSLOG, 0);
+  return JS_NewBool(ctx, ret > 0 );
+}
+
 static JSValue esp32_getMemoryUsage(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
 {
   JSMemoryUsage usage;
@@ -543,6 +563,15 @@ static JSValue esp32_console_log(JSContext *ctx, JSValueConst jsThis, int argc,
       else if( magic == 4 ) Serial.print("[warn] ");
       else if( magic == 5 ) Serial.print("[error] ");
       Serial.println(str);
+
+      if( read_config_long(CONFIG_INDEX_AUTOSYSLOG, 0) != 0 ){
+        uint16_t pri = LOG_INFO;
+        if( magic == 2 ) pri = LOG_INFO;
+        else if( magic == 3 ) pri = LOG_DEBUG;
+        else if( magic == 4 ) pri = LOG_WARNING;
+        else if( magic == 5 ) pri = LOG_ERR;
+        syslog_send(pri, str);
+      }
       JS_FreeCString(ctx, str);
     }
   }
@@ -635,6 +664,12 @@ static const JSCFunctionListEntry esp32_funcs[] = {
                          }},
     JSCFunctionListEntry{"getSyslogServer", 0, JS_DEF_CFUNC, 0, {
                            func : {0, JS_CFUNC_generic, esp32_getSyslogServer}
+                         }},
+    JSCFunctionListEntry{"setEnableConsoleSyslog", 0, JS_DEF_CFUNC, 0, {
+                           func : {1, JS_CFUNC_generic, esp32_setEnableConsoleSyslog}
+                         }},
+    JSCFunctionListEntry{"getEnableConsoleSyslog", 0, JS_DEF_CFUNC, 0, {
+                           func : {0, JS_CFUNC_generic, esp32_getEnableConsoleSyslog}
                          }},
     JSCFunctionListEntry{"getMemoryUsage", 0, JS_DEF_CFUNC, 0, {
                            func : {0, JS_CFUNC_generic, esp32_getMemoryUsage}
