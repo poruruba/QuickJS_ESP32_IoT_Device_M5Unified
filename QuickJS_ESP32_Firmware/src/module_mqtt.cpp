@@ -344,6 +344,7 @@ void loopModule_mqtt(void)
       JSValue ret = qjs->callJsFunc_with_arg(g_ctx, g_callback_func, g_callback_func, 1, &obj);
       JS_FreeValue(g_ctx, obj);
       JS_FreeValue(g_ctx, ret);
+
       g_event_list.erase(g_event_list.begin());
     }
   }

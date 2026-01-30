@@ -107,6 +107,9 @@
 #ifdef _WEBSOCKET_CLIENT_ENABLE_
 #include "module_websocket_client.h"
 #endif
+#ifdef _COAP_ENABLE_
+#include "module_coap.h"
+#endif
 
 static JsModuleEntry module_entries[] = {
   esp32_module,
@@ -199,6 +202,9 @@ static JsModuleEntry module_entries[] = {
 #endif
 #ifdef _WEBSOCKET_CLIENT_ENABLE_
   websocket_client_module,
+#endif
+#ifdef _COAP_ENABLE_
+  coap_module,
 #endif
   utils_module
 };
