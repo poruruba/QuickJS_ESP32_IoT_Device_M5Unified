@@ -186,6 +186,7 @@ static JSValue coap_post(JSContext *ctx, JSValueConst jsThis, int argc, JSValueC
     is_object = true;
     JSValue value = JS_JSONStringify(ctx, argv[3], JS_UNDEFINED, JS_UNDEFINED);
     payload = JS_ToCString(ctx, value);
+    JS_FreeValue(ctx, value);
   }else if( JS_IsString(argv[3]) ){
     is_object = false;
     payload = JS_ToCString(ctx, argv[3]);
