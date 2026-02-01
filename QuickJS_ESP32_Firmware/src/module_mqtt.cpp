@@ -23,6 +23,7 @@ static PubSubClient mqttClient(wifiClient);
 static char *g_client_name = NULL;
 static char *g_topic_name = NULL;
 static JSValue g_callback_func = JS_UNDEFINED;
+static bool isConnected = false;
 
 typedef struct{
   char* topic_name;
@@ -75,64 +76,35 @@ static long mqttUnsubscribe(void)
   return 0;
 }
 
-static long mqttSubscribe(const char* topic_name, JSValue callback)
-{
-  mqttUnsubscribe();
-
-  if( mqttClient.subscribe(topic_name) ){
-    g_topic_name = (char*)strdup(topic_name);
-    if( g_topic_name == NULL )
-      return -1;
-
-    JSValue func = JS_DupValue(g_ctx, callback);
-    g_callback_func = func;
-    return 0;
-  }else{
-    return -1;
-  }
-}
-
 static void mqttDisconnect(void){
-  if( g_ctx != NULL ){
+  if( isConnected ){
     mqttUnsubscribe();
 
     if (mqttClient.connected())
         mqttClient.disconnect();
 
-    if( g_client_name != NULL )
-      free(g_client_name);
+    free(g_client_name);
     g_client_name = NULL;
 
-    g_ctx = NULL;
+    isConnected = false;
   }
-}
-
-static boolean mqttConnect(JSContext *ctx, const char *client_name, const char *broker_url, uint16_t broker_port, uint16_t buffer_size, const char *username, const char *password)
-{
-  mqttDisconnect();
-
-  g_client_name = (char*)strdup(client_name);
-  if( g_client_name == NULL )
-    return JS_EXCEPTION;
-
-  mqttClient.setBufferSize(buffer_size);
-  mqttClient.setCallback(mqttCallback);
-  mqttClient.setServer(broker_url, broker_port);
-
-  boolean ret = mqttClient.connect(g_client_name, username, password);
-  if( ret )
-    g_ctx = ctx;
-
-  return ret;
 }
 
 static JSValue mqtt_connect(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
 {
-  if( g_ctx != NULL )
+  mqttDisconnect();
+
+  String server = read_config_string(CONFIG_FNAME_MQTT);
+  int delim = server.indexOf(':');
+  if( delim < 0 )
     return JS_EXCEPTION;
 
   const char *client_name = JS_ToCString(ctx, argv[0]);
   if( client_name == NULL )
+    return JS_EXCEPTION;
+  g_client_name = (char*)strdup(client_name);
+  JS_FreeCString(ctx, client_name);
+  if( g_client_name == NULL )
     return JS_EXCEPTION;
 
   uint32_t buffer_size = DEFAULT_MQTT_BUFFER_SIZE;
@@ -146,26 +118,26 @@ static JSValue mqtt_connect(JSContext *ctx, JSValueConst jsThis, int argc, JSVal
   if( argc >= 4 )
     password = JS_ToCString(ctx, argv[3]);
 
-  String server = read_config_string(CONFIG_FNAME_MQTT);
-  int delim = server.indexOf(':');
-  if( delim < 0 ){
-    JS_FreeCString(ctx, client_name);
-    return JS_EXCEPTION;
-  }
-
   String host = server.substring(0, delim);
   String port = server.substring(delim + 1);
-  boolean ret = mqttConnect(ctx, client_name, host.c_str(), port.toInt(), buffer_size, username, password);
-  JS_FreeCString(ctx, client_name);
+
+  mqttClient.setBufferSize(buffer_size);
+  mqttClient.setCallback(mqttCallback);
+  mqttClient.setServer(host.c_str(), port.toInt());
+
+  boolean ret = mqttClient.connect(g_client_name, username, password);
   if( username != NULL )
     JS_FreeCString(ctx, username);
   if( password != NULL )
     JS_FreeCString(ctx, password);
-
-  if( ret )
-    return JS_UNDEFINED;
-  else
+  if( !ret ){
+    free(g_client_name);
+    g_client_name = NULL;
     return JS_EXCEPTION;
+  }
+  isConnected = true;
+
+  return JS_UNDEFINED;
 }
 
 static JSValue mqtt_disconnect(JSContext * ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
@@ -176,34 +148,50 @@ static JSValue mqtt_disconnect(JSContext * ctx, JSValueConst jsThis, int argc, J
 
 static JSValue mqtt_subscribe(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
 {
-  if( g_ctx == NULL )
+  if( !isConnected )
     return JS_EXCEPTION;
+
+  mqttUnsubscribe();
+  g_ctx = NULL;
 
   const char *topic = JS_ToCString(ctx, argv[0]);
   if( topic == NULL )
     return JS_EXCEPTION;
 
-  long ret = mqttSubscribe(topic, argv[1]);
+  g_topic_name = (char*)strdup(topic);
   JS_FreeCString(ctx, topic);
-  if( ret != 0 )
+  if( g_topic_name == NULL )
     return JS_EXCEPTION;
+
+  boolean result = mqttClient.subscribe(g_topic_name);
+  if( !result ){
+    free(g_topic_name);
+    g_topic_name = NULL;
+    return JS_EXCEPTION;
+  }
+
+  JSValue func = JS_DupValue(g_ctx, argv[1]);
+  g_callback_func = func;
+
+  g_ctx = ctx;
 
   return JS_UNDEFINED;
 }
 
 static JSValue mqtt_unsubscribe(JSContext * ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
 {
-  if( g_ctx == NULL )
+  if( !isConnected )
     return JS_EXCEPTION;
 
   mqttUnsubscribe();
+  g_ctx = NULL;
 
   return JS_UNDEFINED;
 }
 
 static JSValue mqtt_publish(JSContext * ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
 {
-  if( g_ctx == NULL )
+  if( !isConnected )
     return JS_EXCEPTION;
 
   const char *topic = JS_ToCString(ctx, argv[0]);
@@ -219,11 +207,10 @@ static JSValue mqtt_publish(JSContext * ctx, JSValueConst jsThis, int argc, JSVa
   bool ret = mqttClient.publish(topic, payload);
   JS_FreeCString(ctx, payload);
   JS_FreeCString(ctx, topic);
-
-  if( ret )
-    return JS_UNDEFINED;
-  else
+  if( !ret )
     return JS_EXCEPTION;
+
+  return JS_UNDEFINED;
 }
 
 
@@ -316,7 +303,7 @@ JSModuleDef *addModule_mqtt(JSContext *ctx, JSValue global)
 
 void loopModule_mqtt(void)
 {
-  if( g_ctx != NULL ){
+  if( isConnected ){
     mqttClient.loop();
 
     for( int i = 0 ; !mqttClient.connected() && i < MQTT_CONNECT_TRY_COUNT ; i++ ){
@@ -332,20 +319,22 @@ void loopModule_mqtt(void)
       delay(500);
     }
 
-    while(g_event_list.size() > 0){
-      MQTT_EVENT_INFO info = g_event_list.front();
-      JSValue obj = JS_NewObject(g_ctx);
-      JS_SetPropertyStr(g_ctx, obj, "topic", JS_NewString(g_ctx, (const char *)info.topic_name));
-      JS_SetPropertyStr(g_ctx, obj, "payload", JS_NewString(g_ctx, (const char *)info.payload));
-      free(info.topic_name);
-      free(info.payload);
+    if( g_callback_func != JS_UNDEFINED ){
+      while(g_event_list.size() > 0){
+        MQTT_EVENT_INFO info = g_event_list.front();
+        JSValue obj = JS_NewObject(g_ctx);
+        JS_SetPropertyStr(g_ctx, obj, "topic", JS_NewString(g_ctx, (const char *)info.topic_name));
+        JS_SetPropertyStr(g_ctx, obj, "payload", JS_NewString(g_ctx, (const char *)info.payload));
+        free(info.topic_name);
+        free(info.payload);
 
-      ESP32QuickJS *qjs = (ESP32QuickJS *)JS_GetContextOpaque(g_ctx);
-      JSValue ret = qjs->callJsFunc_with_arg(g_ctx, g_callback_func, g_callback_func, 1, &obj);
-      JS_FreeValue(g_ctx, obj);
-      JS_FreeValue(g_ctx, ret);
+        ESP32QuickJS *qjs = (ESP32QuickJS *)JS_GetContextOpaque(g_ctx);
+        JSValue ret = qjs->callJsFunc_with_arg(g_ctx, g_callback_func, g_callback_func, 1, &obj);
+        JS_FreeValue(g_ctx, obj);
+        JS_FreeValue(g_ctx, ret);
 
-      g_event_list.erase(g_event_list.begin());
+        g_event_list.erase(g_event_list.begin());
+      }
     }
   }
 }

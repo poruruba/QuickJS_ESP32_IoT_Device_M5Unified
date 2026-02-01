@@ -23,9 +23,9 @@
 #define _ESPNOW_ENABLE_
 #define _WEBSOCKET_ENABLE_
 #define _WEBSOCKET_CLIENT_ENABLE_
+#define _COAP_ENABLE_
 #endif
 
-#define _COAP_ENABLE_
 #define _SNMP_AGENT_ENABLE_
 #define _HTTP_ENABLE_
 #define _MQTT_ENABLE_

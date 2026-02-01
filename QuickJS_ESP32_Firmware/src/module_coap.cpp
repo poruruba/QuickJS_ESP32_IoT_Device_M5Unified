@@ -50,7 +50,7 @@ static void coap_callback_response(CoapPacket &packet, IPAddress ip, int port)
   g_event_list.push_back(info);
 }
 
-static JSValue coap_get(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
+static JSValue coap_get_delete(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv, int magic)
 {
   const char *ipaddress = JS_ToCString(ctx, argv[0]);
   if( ipaddress == NULL )
@@ -70,7 +70,7 @@ static JSValue coap_get(JSContext *ctx, JSValueConst jsThis, int argc, JSValueCo
   uint8_t tmp[2] = { (uint8_t)((g_token >> 8) & 0xff), (uint8_t)(g_token & 0xff) };
   uint16_t ret = coap.send(
       ip, port, url,
-      COAP_CON, COAP_GET,
+      COAP_CON, magic == 1 ? COAP_DELETE : COAP_GET,
       tmp, 2,
       NULL, 0
   );
@@ -81,38 +81,7 @@ static JSValue coap_get(JSContext *ctx, JSValueConst jsThis, int argc, JSValueCo
   return JS_NewInt32(ctx, ret);
 }
 
-static JSValue coap_delete(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
-{
-  const char *ipaddress = JS_ToCString(ctx, argv[0]);
-  if( ipaddress == NULL )
-    return JS_EXCEPTION;
-  uint32_t port;
-  JS_ToUint32(ctx, &port, argv[1]);
-  const char *url = JS_ToCString(ctx, argv[2]);
-  if( url == NULL ){
-    JS_FreeCString(ctx, ipaddress);
-    return JS_EXCEPTION;
-  }
-  IPAddress ip;
-  ip.fromString(ipaddress);
-  JS_FreeCString(ctx, ipaddress);
-
-  g_token++;
-  uint8_t tmp[2] = { (uint8_t)((g_token >> 8) & 0xff), (uint8_t)(g_token & 0xff) };
-  uint16_t ret = coap.send(
-      ip, port, url,
-      COAP_CON, COAP_DELETE,
-      tmp, 2,
-      NULL, 0
-  );
-  JS_FreeCString(ctx, url);
-  if( ret == 0 )
-    return JS_EXCEPTION;
-
-  return JS_NewInt32(ctx, ret);
-}
-
-static JSValue coap_put(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
+static JSValue coap_post_put(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv, int magic)
 {
   const char *ipaddress = JS_ToCString(ctx, argv[0]);
   if( ipaddress == NULL )
@@ -151,65 +120,14 @@ static JSValue coap_put(JSContext *ctx, JSValueConst jsThis, int argc, JSValueCo
   uint8_t tmp[2] = { (uint8_t)((g_token >> 8) & 0xff), (uint8_t)(g_token & 0xff) };
   uint16_t ret = coap.send(
       ip, port, url,
-      COAP_CON, COAP_PUT,
+      COAP_CON,
+      magic == 1 ? COAP_PUT : COAP_POST,
       tmp, 2,
       (uint8_t*)payload, strlen(payload),
       is_object ? COAP_APPLICATION_JSON : COAP_TEXT_PLAIN
   );
   JS_FreeCString(ctx, payload);
   JS_FreeCString(ctx, url);
-  if( ret == 0 )
-    return JS_EXCEPTION;
-
-  return JS_NewInt32(ctx, ret);
-}
-
-static JSValue coap_post(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
-{
-  const char *ipaddress = JS_ToCString(ctx, argv[0]);
-  if( ipaddress == NULL )
-    return JS_EXCEPTION;
-  uint32_t port;
-  JS_ToUint32(ctx, &port, argv[1]);
-  const char *url = JS_ToCString(ctx, argv[2]);
-  if( url == NULL ){
-    JS_FreeCString(ctx, ipaddress);
-    return JS_EXCEPTION;
-  }
-  IPAddress ip;
-  ip.fromString(ipaddress);
-  JS_FreeCString(ctx, ipaddress);
-
-  bool is_object = false;
-  const char *payload = NULL;
-  if( JS_IsObject(argv[3]) ){
-    is_object = true;
-    JSValue value = JS_JSONStringify(ctx, argv[3], JS_UNDEFINED, JS_UNDEFINED);
-    payload = JS_ToCString(ctx, value);
-    JS_FreeValue(ctx, value);
-  }else if( JS_IsString(argv[3]) ){
-    is_object = false;
-    payload = JS_ToCString(ctx, argv[3]);
-  }else{
-    JS_FreeCString(ctx, url);
-    return JS_EXCEPTION;
-  }
-  if( payload == NULL ){
-    JS_FreeCString(ctx, url);
-    return JS_EXCEPTION;
-  }
-
-  g_token++;
-  uint8_t tmp[2] = { (uint8_t)((g_token >> 8) & 0xff), (uint8_t)(g_token & 0xff) };
-  uint16_t ret = coap.send(
-      ip, port, url,
-      COAP_CON, COAP_POST,
-      tmp, 2,
-      (uint8_t*)payload, strlen(payload),
-      is_object ? COAP_APPLICATION_JSON : COAP_TEXT_PLAIN
-  );
-  JS_FreeCString(ctx, url);
-  JS_FreeCString(ctx, payload);
   if( ret == 0 )
     return JS_EXCEPTION;
 
@@ -233,19 +151,19 @@ static JSValue coap_setCallback(JSContext *ctx, JSValueConst jsThis, int argc, J
 static const JSCFunctionListEntry coap_funcs[] = {
     JSCFunctionListEntry{
         "get", 0, JS_DEF_CFUNC, 0, {
-          func : {3, JS_CFUNC_generic, coap_get}
+          func : {3, JS_CFUNC_generic_magic, {generic_magic : coap_get_delete}}
         }},
     JSCFunctionListEntry{
-        "delete", 0, JS_DEF_CFUNC, 0, {
-          func : {3, JS_CFUNC_generic, coap_delete}
-        }},
-    JSCFunctionListEntry{
-        "put", 0, JS_DEF_CFUNC, 0, {
-          func : {4, JS_CFUNC_generic, coap_put}
+        "delete", 0, JS_DEF_CFUNC, 1, {
+          func : {3, JS_CFUNC_generic_magic, {generic_magic : coap_get_delete}}
         }},
     JSCFunctionListEntry{
         "post", 0, JS_DEF_CFUNC, 0, {
-          func : {4, JS_CFUNC_generic, coap_post}
+          func : {4, JS_CFUNC_generic_magic, {generic_magic : coap_post_put}}
+        }},
+    JSCFunctionListEntry{
+        "put", 0, JS_DEF_CFUNC, 1, {
+          func : {4, JS_CFUNC_generic_magic, {generic_magic : coap_post_put}}
         }},
     JSCFunctionListEntry{
         "setCallback", 0, JS_DEF_CFUNC, 0, {
