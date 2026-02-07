@@ -108,8 +108,11 @@ static JSValue mqtt_connect(JSContext *ctx, JSValueConst jsThis, int argc, JSVal
     return JS_EXCEPTION;
 
   uint32_t buffer_size = DEFAULT_MQTT_BUFFER_SIZE;
-  if( argc >= 2 )
+  if( argc >= 2 ){
       JS_ToUint32(ctx, &buffer_size, argv[1]);
+      if( buffer_size <= 0 )
+        buffer_size = DEFAULT_MQTT_BUFFER_SIZE;
+  }
 
   const char *username = NULL;
   if( argc >= 3 )
