@@ -5,7 +5,7 @@
 
 #include <WiFi.h>
 #include <WiFiUdp.h>
-#include <coap-simple.h>
+#include "coap-simple.h"
 #include "quickjs.h"
 #include "quickjs_esp32.h"
 #include "module_coap.h"
@@ -18,7 +18,7 @@ static Coap coap(udp);
 
 static JSContext *g_ctx;
 static JSValue g_callback_func = JS_UNDEFINED;
-static uint16_t g_token = 0;
+static uint16_t g_token = (uint16_t)esp_random();
 
 typedef struct{
   CoapPacket packet;
@@ -38,8 +38,11 @@ static uint8_t simple_code_to_rfc(uint8_t simple_code)
 
 static void coap_callback_response(CoapPacket &packet, IPAddress ip, int port)
 {
-//  Serial.printf("CoAP packet received from %d.%d.%d.%d:%d", ip[0], ip[1], ip[2], ip[3], port);
+//  Serial.printf("CoAP packet received from %d.%d.%d.%d:%d\n", ip[0], ip[1], ip[2], ip[3], port);
   if( g_event_list.size() >= MAX_COAP_EVENT )
+    return;
+
+  if( packet.tokenlen != sizeof(uint16_t) )
     return;
 
   COAP_EVENT_INFO info;
@@ -57,7 +60,9 @@ static JSValue coap_get_delete(JSContext *ctx, JSValueConst jsThis, int argc, JS
     return JS_EXCEPTION;
   uint32_t port;
   JS_ToUint32(ctx, &port, argv[1]);
-  const char *url = JS_ToCString(ctx, argv[2]);
+  bool conformable;
+  conformable = JS_ToBool(ctx, argv[2]);
+  const char *url = JS_ToCString(ctx, argv[3]);
   if( url == NULL ){
     JS_FreeCString(ctx, ipaddress);
     return JS_EXCEPTION;
@@ -70,15 +75,17 @@ static JSValue coap_get_delete(JSContext *ctx, JSValueConst jsThis, int argc, JS
   uint8_t tmp[2] = { (uint8_t)((g_token >> 8) & 0xff), (uint8_t)(g_token & 0xff) };
   uint16_t ret = coap.send(
       ip, port, url,
-      COAP_CON, magic == 1 ? COAP_DELETE : COAP_GET,
+      conformable ? COAP_CON : COAP_NONCON,
+      magic == 1 ? COAP_DELETE : COAP_GET,
       tmp, 2,
-      NULL, 0
+      NULL, 0,
+      COAP_NONE
   );
   JS_FreeCString(ctx, url);
   if( ret == 0 )
     return JS_EXCEPTION;
 
-  return JS_NewInt32(ctx, ret);
+  return JS_NewInt32(ctx, g_token);
 }
 
 static JSValue coap_post_put(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv, int magic)
@@ -88,7 +95,9 @@ static JSValue coap_post_put(JSContext *ctx, JSValueConst jsThis, int argc, JSVa
     return JS_EXCEPTION;
   uint32_t port;
   JS_ToUint32(ctx, &port, argv[1]);
-  const char *url = JS_ToCString(ctx, argv[2]);
+  bool conformable;
+  conformable = JS_ToBool(ctx, argv[2]);
+  const char *url = JS_ToCString(ctx, argv[3]);
   if( url == NULL ){
     JS_FreeCString(ctx, ipaddress);
     return JS_EXCEPTION;
@@ -101,7 +110,7 @@ static JSValue coap_post_put(JSContext *ctx, JSValueConst jsThis, int argc, JSVa
   const char *payload = NULL;
   if( JS_IsObject(argv[3]) ){
     is_object = true;
-    JSValue value = JS_JSONStringify(ctx, argv[3], JS_UNDEFINED, JS_UNDEFINED);
+    JSValue value = JS_JSONStringify(ctx, argv[4], JS_UNDEFINED, JS_UNDEFINED);
     payload = JS_ToCString(ctx, value);
     JS_FreeValue(ctx, value);
   }else if( JS_IsString(argv[3]) ){
@@ -120,7 +129,7 @@ static JSValue coap_post_put(JSContext *ctx, JSValueConst jsThis, int argc, JSVa
   uint8_t tmp[2] = { (uint8_t)((g_token >> 8) & 0xff), (uint8_t)(g_token & 0xff) };
   uint16_t ret = coap.send(
       ip, port, url,
-      COAP_CON,
+      conformable ? COAP_CON : COAP_NONCON,
       magic == 1 ? COAP_PUT : COAP_POST,
       tmp, 2,
       (uint8_t*)payload, strlen(payload),
@@ -131,7 +140,7 @@ static JSValue coap_post_put(JSContext *ctx, JSValueConst jsThis, int argc, JSVa
   if( ret == 0 )
     return JS_EXCEPTION;
 
-  return JS_NewInt32(ctx, ret);
+  return JS_NewInt32(ctx, g_token);
 }
 
 static JSValue coap_setCallback(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
@@ -151,23 +160,51 @@ static JSValue coap_setCallback(JSContext *ctx, JSValueConst jsThis, int argc, J
 static const JSCFunctionListEntry coap_funcs[] = {
     JSCFunctionListEntry{
         "get", 0, JS_DEF_CFUNC, 0, {
-          func : {3, JS_CFUNC_generic_magic, {generic_magic : coap_get_delete}}
+          func : {4, JS_CFUNC_generic_magic, {generic_magic : coap_get_delete}}
         }},
     JSCFunctionListEntry{
         "delete", 0, JS_DEF_CFUNC, 1, {
-          func : {3, JS_CFUNC_generic_magic, {generic_magic : coap_get_delete}}
+          func : {4, JS_CFUNC_generic_magic, {generic_magic : coap_get_delete}}
         }},
     JSCFunctionListEntry{
         "post", 0, JS_DEF_CFUNC, 0, {
-          func : {4, JS_CFUNC_generic_magic, {generic_magic : coap_post_put}}
+          func : {5, JS_CFUNC_generic_magic, {generic_magic : coap_post_put}}
         }},
     JSCFunctionListEntry{
         "put", 0, JS_DEF_CFUNC, 1, {
-          func : {4, JS_CFUNC_generic_magic, {generic_magic : coap_post_put}}
+          func : {5, JS_CFUNC_generic_magic, {generic_magic : coap_post_put}}
         }},
     JSCFunctionListEntry{
         "setCallback", 0, JS_DEF_CFUNC, 0, {
           func : {1, JS_CFUNC_generic, coap_setCallback}
+        }},
+    JSCFunctionListEntry{
+        "COAP_TEXT_PLAIN", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : COAP_TEXT_PLAIN
+        }},
+    JSCFunctionListEntry{
+        "COAP_APPLICATION_LINK_FORMAT", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : COAP_APPLICATION_LINK_FORMAT
+        }},
+    JSCFunctionListEntry{
+        "COAP_APPLICATION_XML", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : COAP_APPLICATION_XML
+        }},
+    JSCFunctionListEntry{
+        "COAP_APPLICATION_OCTET_STREAM", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : COAP_APPLICATION_OCTET_STREAM
+        }},
+    JSCFunctionListEntry{
+        "COAP_APPLICATION_EXI", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : COAP_APPLICATION_EXI
+        }},
+    JSCFunctionListEntry{
+        "COAP_APPLICATION_JSON", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : COAP_APPLICATION_JSON
+        }},
+    JSCFunctionListEntry{
+        "COAP_APPLICATION_CBOR", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : COAP_APPLICATION_CBOR
         }},
 };
 
@@ -198,14 +235,27 @@ void loopModule_coap(void){
 
       JS_SetPropertyStr(g_ctx, obj, "type", JS_NewUint32(g_ctx, info.packet.type));
       JS_SetPropertyStr(g_ctx, obj, "code", JS_NewUint32(g_ctx, simple_code_to_rfc(info.packet.code)));
-      JS_SetPropertyStr(g_ctx, obj, "messageid", JS_NewUint32(g_ctx, info.packet.messageid));
+      JS_SetPropertyStr(g_ctx, obj, "message_id", JS_NewUint32(g_ctx, info.packet.messageid));
+      uint16_t token = (((uint16_t)info.packet.token[0]) << 8) | info.packet.token[1];
+      JS_SetPropertyStr(g_ctx, obj, "token", JS_NewUint32(g_ctx, token));
 
       if( info.packet.payloadlen > 0 ){
         String payload = String((const char*)info.packet.payload, info.packet.payloadlen);
         JS_SetPropertyStr(g_ctx, obj, "payload", JS_NewString(g_ctx, payload.c_str()));
       }
+      for( int i = 0 ; i < info.packet.optionnum ; i++ ){
+        if( info.packet.options[i].number == COAP_CONTENT_FORMAT){
+          uint32_t content_format = 0;
+          for( int j = 0 ; j < info.packet.options[i].length && j < 4; j++ )
+            content_format = (content_format << 8) | info.packet.options[i].buffer[j];
+          JS_SetPropertyStr(g_ctx, obj, "content_format", JS_NewUint32(g_ctx, content_format));
+          break;
+        }
+      }
       
-      JS_SetPropertyStr(g_ctx, obj, "remote_ip", JS_NewUint32(g_ctx, info.remote_ip));
+      char ipaddress_str[16];
+      sprintf(ipaddress_str, "%d.%d.%d.%d", (info.remote_ip >> 24) & 0xff, (info.remote_ip >> 16) & 0xff, (info.remote_ip >> 8) & 0xff, (info.remote_ip >> 0) & 0xff);
+      JS_SetPropertyStr(g_ctx, obj, "remote_ip", JS_NewString(g_ctx, ipaddress_str));
       JS_SetPropertyStr(g_ctx, obj, "remote_port", JS_NewInt32(g_ctx, info.remote_port));
 
       ESP32QuickJS *qjs = (ESP32QuickJS *)JS_GetContextOpaque(g_ctx);
