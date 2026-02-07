@@ -1,5 +1,5 @@
 #ifndef _WIFI_UTILS_H_
-#define _WIFI_UtILS_H_
+#define _WIFI_UTILS_H_
 
 //#define WIFI_SSID "【固定のWiFiアクセスポイントのSSID】" // WiFiアクセスポイントのSSID
 //#define WIFI_PASSWORD "【固定のWiFIアクセスポイントのパスワード】" // WiFIアクセスポイントのパスワード
