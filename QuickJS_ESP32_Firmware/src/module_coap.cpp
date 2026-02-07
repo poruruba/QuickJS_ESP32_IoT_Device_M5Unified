@@ -179,31 +179,31 @@ static const JSCFunctionListEntry coap_funcs[] = {
           func : {1, JS_CFUNC_generic, coap_setCallback}
         }},
     JSCFunctionListEntry{
-        "COAP_TEXT_PLAIN", 0, JS_DEF_PROP_INT32, 0, {
+        "TEXT_PLAIN", 0, JS_DEF_PROP_INT32, 0, {
           i32 : COAP_TEXT_PLAIN
         }},
     JSCFunctionListEntry{
-        "COAP_APPLICATION_LINK_FORMAT", 0, JS_DEF_PROP_INT32, 0, {
+        "APPLICATION_LINK_FORMAT", 0, JS_DEF_PROP_INT32, 0, {
           i32 : COAP_APPLICATION_LINK_FORMAT
         }},
     JSCFunctionListEntry{
-        "COAP_APPLICATION_XML", 0, JS_DEF_PROP_INT32, 0, {
+        "APPLICATION_XML", 0, JS_DEF_PROP_INT32, 0, {
           i32 : COAP_APPLICATION_XML
         }},
     JSCFunctionListEntry{
-        "COAP_APPLICATION_OCTET_STREAM", 0, JS_DEF_PROP_INT32, 0, {
+        "APPLICATION_OCTET_STREAM", 0, JS_DEF_PROP_INT32, 0, {
           i32 : COAP_APPLICATION_OCTET_STREAM
         }},
     JSCFunctionListEntry{
-        "COAP_APPLICATION_EXI", 0, JS_DEF_PROP_INT32, 0, {
+        "APPLICATION_EXI", 0, JS_DEF_PROP_INT32, 0, {
           i32 : COAP_APPLICATION_EXI
         }},
     JSCFunctionListEntry{
-        "COAP_APPLICATION_JSON", 0, JS_DEF_PROP_INT32, 0, {
+        "APPLICATION_JSON", 0, JS_DEF_PROP_INT32, 0, {
           i32 : COAP_APPLICATION_JSON
         }},
     JSCFunctionListEntry{
-        "COAP_APPLICATION_CBOR", 0, JS_DEF_PROP_INT32, 0, {
+        "APPLICATION_CBOR", 0, JS_DEF_PROP_INT32, 0, {
           i32 : COAP_APPLICATION_CBOR
         }},
 };
