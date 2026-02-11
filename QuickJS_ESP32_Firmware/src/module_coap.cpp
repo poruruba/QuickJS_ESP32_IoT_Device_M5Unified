@@ -108,14 +108,14 @@ static JSValue coap_post_put(JSContext *ctx, JSValueConst jsThis, int argc, JSVa
 
   bool is_object = false;
   const char *payload = NULL;
-  if( JS_IsObject(argv[3]) ){
+  if( JS_IsObject(argv[4]) ){
     is_object = true;
     JSValue value = JS_JSONStringify(ctx, argv[4], JS_UNDEFINED, JS_UNDEFINED);
     payload = JS_ToCString(ctx, value);
     JS_FreeValue(ctx, value);
-  }else if( JS_IsString(argv[3]) ){
+  }else if( JS_IsString(argv[4]) ){
     is_object = false;
-    payload = JS_ToCString(ctx, argv[3]);
+    payload = JS_ToCString(ctx, argv[4]);
   }else{
     JS_FreeCString(ctx, url);
     return JS_EXCEPTION;

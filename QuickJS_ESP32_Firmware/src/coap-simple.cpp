@@ -240,7 +240,7 @@ uint16_t Coap::send(IPAddress ip, int port, const char *url, COAP_TYPE type, COA
     // use URI_HOST UIR_PATH
     char ipaddress[16] = "";
     sprintf(ipaddress, "%d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]);
-//    packet.addOption(COAP_URI_HOST, strlen(ipaddress), (uint8_t *)ipaddress);
+    packet.addOption(COAP_URI_HOST, strlen(ipaddress), (uint8_t *)ipaddress);
 
     /*
         Add Query Support

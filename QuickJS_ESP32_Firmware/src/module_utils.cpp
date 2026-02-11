@@ -1018,3 +1018,31 @@ long getNumberArray(JSContext *ctx, JSValue value, int32_t **pp_buffer, uint32_t
 
   return 0;
 }
+
+JSValue create_Uint8Array(JSContext *ctx, const uint8_t *p_buffer, uint32_t len)
+{
+    JSValue array_buffer = JS_NewArrayBufferCopy(ctx, p_buffer, len);
+    JSValue global_obj = JS_GetGlobalObject(ctx);
+    JSValue ctor = JS_GetPropertyStr(ctx, global_obj, "Uint8Array");
+    JSValue args[1] = { array_buffer };
+    JSValue uint8_array = JS_CallConstructor(ctx, ctor, 1, args);
+    JS_FreeValue(ctx, ctor);
+    JS_FreeValue(ctx, global_obj);
+    JS_FreeValue(ctx, array_buffer);
+
+    return uint8_array;
+}
+
+JSValue from_Uint8Array(JSContext *ctx, JSValue value, uint8_t** pp_buffer, uint32_t *p_num)
+{
+  uint8_t unit_size;
+  JSValue vbuffer = getTypedArrayBuffer(ctx, value, (void**)pp_buffer, &unit_size, p_num);
+  if( vbuffer == JS_NULL )
+    return JS_EXCEPTION;
+  if( unit_size != 1 ){
+    JS_FreeValue(ctx, vbuffer);
+    return JS_EXCEPTION;
+  }
+
+  return vbuffer;
+}

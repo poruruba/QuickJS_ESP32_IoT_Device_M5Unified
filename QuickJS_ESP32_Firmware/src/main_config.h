@@ -23,6 +23,7 @@
 #define _ESPNOW_ENABLE_
 #define _WEBSOCKET_ENABLE_
 #define _WEBSOCKET_CLIENT_ENABLE_
+#define _BLEPERIPHERAL_ENABLE_
 #define _COAP_ENABLE_
 #endif
 
@@ -77,9 +78,6 @@
 #define MDNS_NAME "QuickJS_ESP32_M5AtomS3" // mDNSサービスホスト名
 #elif defined(ARDUINO_M5Stack_StampS3)
 #include <M5Unified.h>
-#define _LCD_ENABLE_
-#define _IMU_ENABLE_
-#define _AUDIO_ENABLE_
 #define MDNS_NAME "QuickJS_ESP32_M5StampS3" // mDNSサービスホスト名
 #elif defined(ARDUINO_ESP32C6_DEV)
 #include <M5Unified.h>
