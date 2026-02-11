@@ -97,20 +97,16 @@ static JSValue bleperipheral_startAdvertise2(JSContext *ctx, JSValueConst jsThis
   uint32_t duration = 0;
   JS_ToUint32(ctx, &duration, argv[0]);
 
-  JSValue value;
   if( argc >= 2 ){
-    NimBLEAdvertisementData advertisementData = NimBLEAdvertisementData();
     uint32_t unit_num;
     uint8_t *p_buffer;
     JSValue vbuffer = from_Uint8Array(ctx, argv[1], &p_buffer, &unit_num);
-    if( JS_IsNull(vbuffer) ){
-      JS_FreeValue(ctx, value);
+    if( JS_IsNull(vbuffer) )
       return JS_EXCEPTION;
-    }
-    JS_FreeValue(ctx, value);
 
+    NimBLEAdvertisementData advertisementData = NimBLEAdvertisementData();
     advertisementData.addData(p_buffer, unit_num);
-    free(p_buffer);
+    JS_FreeValue(ctx, vbuffer);
 
     g_pAdvertising->setAdvertisementData(advertisementData);
   }
@@ -232,7 +228,7 @@ static const JSCFunctionListEntry bleperipheral_funcs[] = {
         }},
     JSCFunctionListEntry{
         "startIbeacon", 0, JS_DEF_CFUNC, 0, {
-          func : {3, JS_CFUNC_generic, bleperipheral_startIbeacon}
+          func : {5, JS_CFUNC_generic, bleperipheral_startIbeacon}
         }},
     JSCFunctionListEntry{
         "stopAdvertise", 0, JS_DEF_CFUNC, 0, {

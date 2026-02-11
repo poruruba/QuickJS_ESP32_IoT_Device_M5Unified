@@ -226,7 +226,7 @@ static JSValue sd_writeBinary(JSContext *ctx, JSValueConst jsThis, int argc, JSV
     file.close();
     if( sem ) xSemaphoreGive(binSem);
     JS_FreeValue(ctx, vbuffer);
-      return JS_EXCEPTION;
+    return JS_EXCEPTION;
   }
 
   uint32_t fsize = file.size();
