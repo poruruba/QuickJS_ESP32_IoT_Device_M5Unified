@@ -334,13 +334,27 @@ static JSValue esp32_lcd_drawAlignedText(JSContext *ctx, JSValueConst jsThis, in
 
     long ret;
     if( magic == 1 ){
-        M5.Displays(g_external_display).setTextDatum(align);
-        M5.Displays(g_external_display).setTextSize(scale);
-        ret = M5.Displays(g_external_display).drawString(text, base_x, base_y);
+      uint32_t backup_align = M5.Displays(g_external_display).getTextDatum();
+      float backup_textsizeX = M5.Displays(g_external_display).getTextSizeX();
+      float backup_textsizeY = M5.Displays(g_external_display).getTextSizeY();
+
+      M5.Displays(g_external_display).setTextDatum(align);
+      M5.Displays(g_external_display).setTextSize(scale);
+      ret = M5.Displays(g_external_display).drawString(text, base_x, base_y);
+
+      M5.Displays(g_external_display).setTextDatum(backup_align);
+      M5.Displays(g_external_display).setTextSize(backup_textsizeX, backup_textsizeY);
     }else{
+      uint32_t backup_align = M5.Display.getTextDatum();
+      float backup_textsizeX = M5.Display.getTextSizeX();
+      float backup_textsizeY = M5.Display.getTextSizeY();
+
       M5.Display.setTextDatum(align);
       M5.Display.setTextSize(scale);
       ret = M5.Display.drawString(text, base_x, base_y);
+
+      M5.Display.setTextDatum(backup_align);
+      M5.Display.setTextSize(backup_textsizeX, backup_textsizeY);
     }
     JS_FreeCString(ctx, text);
   }
