@@ -324,14 +324,22 @@ static JSValue esp32_lcd_drawAlignedText(JSContext *ctx, JSValueConst jsThis, in
     JS_FreeValue(ctx, val);
     val = JS_GetPropertyStr(ctx, item, "base_y");
     JS_ToInt32(ctx, &base_y, val);
+    double scale = 1.0;
+    val = JS_GetPropertyStr(ctx, item, "scale");
+    if( val != JS_UNDEFINED ){
+      JS_ToFloat64(ctx, &scale, val);
+      JS_FreeValue(ctx, val);
+    }
     JS_FreeValue(ctx, item);
 
     long ret;
     if( magic == 1 ){
         M5.Displays(g_external_display).setTextDatum(align);
+        M5.Displays(g_external_display).setTextSize(scale);
         ret = M5.Displays(g_external_display).drawString(text, base_x, base_y);
     }else{
       M5.Display.setTextDatum(align);
+      M5.Display.setTextSize(scale);
       ret = M5.Display.drawString(text, base_x, base_y);
     }
     JS_FreeCString(ctx, text);
