@@ -278,6 +278,68 @@ static JSValue esp32_lcd_println(JSContext *ctx, JSValueConst jsThis, int argc, 
   return JS_NewInt32(ctx, ret);
 }
 
+static JSValue esp32_lcd_drawText(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv, int magic)
+{
+  if( magic == 1 && g_external_display == -1 )
+    return JS_EXCEPTION;
+
+  const char *text = JS_ToCString(ctx, argv[0]);
+  int32_t x, y;
+  JS_ToInt32(ctx, &x, argv[1]);
+  JS_ToInt32(ctx, &y, argv[2]);
+
+  long ret;
+  if( magic == 1 )
+    ret = M5.Displays(g_external_display).drawString(text, x, y);
+  else
+    ret = M5.Display.drawString(text, x, y);
+  JS_FreeCString(ctx, text);
+
+  return JS_NewInt32(ctx, ret);
+}
+
+static JSValue esp32_lcd_drawAlignedText(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv, int magic)
+{
+  if( magic == 1 && g_external_display == -1 )
+    return JS_EXCEPTION;
+
+  uint32_t num_item;
+  JSValue value = JS_GetPropertyStr(ctx, argv[0], "length");
+  JS_ToUint32(ctx, &num_item, value);
+  JS_FreeValue(ctx, value);
+
+  for( int i = 0 ; i < num_item ; i++ ){
+    JSValue item = JS_GetPropertyUint32(ctx, argv[0], i);
+    JSValue val;
+    uint32_t align;
+    int32_t base_x, base_y;
+    val = JS_GetPropertyStr(ctx, item, "text");
+    const char *text = JS_ToCString(ctx, val);
+    JS_FreeValue(ctx, val);
+    val = JS_GetPropertyStr(ctx, item, "align");
+    JS_ToUint32(ctx, &align, val);
+    JS_FreeValue(ctx, val);
+    val = JS_GetPropertyStr(ctx, item, "base_x");
+    JS_ToInt32(ctx, &base_x, val);
+    JS_FreeValue(ctx, val);
+    val = JS_GetPropertyStr(ctx, item, "base_y");
+    JS_ToInt32(ctx, &base_y, val);
+    JS_FreeValue(ctx, item);
+
+    long ret;
+    if( magic == 1 ){
+        M5.Displays(g_external_display).setTextDatum(align);
+        ret = M5.Displays(g_external_display).drawString(text, base_x, base_y);
+    }else{
+      M5.Display.setTextDatum(align);
+      ret = M5.Display.drawString(text, base_x, base_y);
+    }
+    JS_FreeCString(ctx, text);
+  }
+  
+  return JS_NewInt32(ctx, num_item);
+}
+
 long module_lcd_setFont(uint16_t size, int magic)
 {
   if( magic == 1 ){
@@ -859,6 +921,12 @@ static const JSCFunctionListEntry lcd_funcs[] = {
     JSCFunctionListEntry{"println", 0, JS_DEF_CFUNC, 0, {
                            func : {1, JS_CFUNC_generic_magic, {generic_magic : esp32_lcd_println}}
                          }},
+    JSCFunctionListEntry{"drawText", 0, JS_DEF_CFUNC, 0, {
+                           func : {3, JS_CFUNC_generic_magic, {generic_magic : esp32_lcd_drawText}}
+                         }},
+    JSCFunctionListEntry{"drawAlignedText", 0, JS_DEF_CFUNC, 0, {
+                           func : {1, JS_CFUNC_generic_magic, {generic_magic : esp32_lcd_drawAlignedText}}
+                         }},
     JSCFunctionListEntry{"fillScreen", 0, JS_DEF_CFUNC, 0, {
                            func : {1, JS_CFUNC_generic_magic, {generic_magic : esp32_lcd_fillScreen}}
                          }},
@@ -1015,6 +1083,12 @@ static const JSCFunctionListEntry lcd_funcs2[] = {
                          }},
     JSCFunctionListEntry{"println", 0, JS_DEF_CFUNC, 1, {
                            func : {1, JS_CFUNC_generic_magic, {generic_magic : esp32_lcd_println}}
+                         }},
+    JSCFunctionListEntry{"drawText", 0, JS_DEF_CFUNC, 1, {
+                           func : {3, JS_CFUNC_generic_magic, {generic_magic : esp32_lcd_drawText}}
+                         }},
+    JSCFunctionListEntry{"drawAlignedText", 0, JS_DEF_CFUNC, 1, {
+                           func : {1, JS_CFUNC_generic_magic, {generic_magic : esp32_lcd_drawAlignedText}}
                          }},
     JSCFunctionListEntry{"fillScreen", 0, JS_DEF_CFUNC, 1, {
                            func : {1, JS_CFUNC_generic_magic, {generic_magic : esp32_lcd_fillScreen}}
