@@ -149,7 +149,7 @@ void loop()
     }
   }
 
-  delay(1);
+//  delay(1);
 }
 
 static long start_qjs(void)

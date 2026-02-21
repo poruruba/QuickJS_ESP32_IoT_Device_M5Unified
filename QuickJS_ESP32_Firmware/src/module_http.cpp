@@ -25,6 +25,8 @@
 #define HTTP_METHOD_POST_FORMDATA  0x3
 #define HTTP_METHOD_MASK           0x07
 
+#define REALLOC_MIN_SIZE  1024
+
 #ifdef _HTTP_CUSTOMCALL_
 #include <ESPAsyncWebServer.h>
 #include <AsyncJson.h>
@@ -286,15 +288,45 @@ static JSValue http_bridge(JSContext *ctx, JSValueConst jsThis, int argc, JSValu
     const char *buffer = result.c_str();
     value = JS_NewString(ctx, buffer);
   }else if( response_type == HTTP_RESP_BINARY ){
-    String result = http.getString();
-    const char *b64 = result.c_str();
-    unsigned long binlen = b64_decode_length(b64);
-    unsigned char *bin = (unsigned char*)malloc(binlen);
+    int alloclen = REALLOC_MIN_SIZE;
+    unsigned char *bin = (unsigned char*)realloc(NULL, alloclen);
     if( bin == NULL )
       goto end;
-    b64_decode(b64, bin);
+    WiFiClient *stream = http.getStreamPtr();
+    unsigned long index = 0;
+    while (http.connected()) {
+        size_t size = stream->available();
+        if (size) {
+          if( (index + size ) > alloclen ){
+            alloclen += (size > REALLOC_MIN_SIZE) ? size : REALLOC_MIN_SIZE;
+            unsigned char *t = (unsigned char*)realloc(bin, alloclen);
+            if( t == NULL ){
+              free(bin);
+              goto end;
+            }
+            bin = t;
+          }
+          int clen = stream->readBytes(&bin[index], size);
+          index += clen;
+        }else{
+          break;
+        }
+        delay(1);
+    }
 
-    value = JS_NewArrayBufferCopy(ctx, bin, binlen);
+    // int binlen = http.getSize();
+    // String result = http.getString();
+    // const char *b64 = result.c_str();
+    // unsigned long binlen = b64_decode_length(b64);
+    // unsigned char *bin = (unsigned char*)malloc(binlen);
+    // Serial.printf("3 binlen=%d bin=%ld\n", binlen, bin);
+    // if( bin == NULL )
+    //   goto end;
+    // b64_decode(b64, bin);
+//    value = JS_NewArrayBufferCopy(ctx, bin, binlen);
+
+//    value = JS_NewArrayBufferCopy(ctx, bin, index);
+    value = create_Uint8Array(ctx, bin, index);
     free(bin);
   }else if( response_type == HTTP_RESP_NONE ){
     value = JS_UNDEFINED;

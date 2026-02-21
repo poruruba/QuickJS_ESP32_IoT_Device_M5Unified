@@ -25,15 +25,15 @@
 #define _WEBSOCKET_CLIENT_ENABLE_
 #define _BLEPERIPHERAL_ENABLE_
 #define _COAP_ENABLE_
-#endif
-
-#define _SNMP_AGENT_ENABLE_
-#define _HTTP_ENABLE_
+#define _CRYPTO_ENABLE_
+#define _LEDC_ENABLE_
 #define _MQTT_ENABLE_
 #define _ENV_ENABLE_
-#define _CRYPTO_ENABLE_
 #define _IR_ENABLE_
-#define _LEDC_ENABLE_
+#define _SNMP_AGENT_ENABLE_
+#endif
+
+#define _HTTP_ENABLE_
 
 #if defined(ARDUINO_M5Stack_ATOM)
 #include <M5Unified.h>
@@ -45,7 +45,6 @@
 #define _LCD_ENABLE_
 #define _RTC_ENABLE_
 #define _IMU_ENABLE_
-#define _AUDIO_ENABLE_
 #define MDNS_NAME "QuickJS_ESP32_M5StickC" // mDNSサービスホスト名
 #elif defined(ARDUINO_M5STACK_FIRE)
 #define M5STACK_MPU6886

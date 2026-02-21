@@ -48,6 +48,26 @@ long endp_getSyslogServer(JsonObject& request, JsonObject& response, int magic)
   return 0;
 }
 
+long endp_setEnableConsoleSyslog(JsonObject& request, JsonObject& response, int magic)
+{
+  bool enable = request["enable"];
+
+  long ret = write_config_long(CONFIG_INDEX_AUTOSYSLOG, enable ? 1 : 0);
+  if( ret != 0 )
+    return -1;
+
+  return 0;
+}
+
+long endp_getEnableConsoleSyslog(JsonObject& request, JsonObject& response, int magic)
+{
+  long ret = read_config_long(CONFIG_INDEX_AUTOSYSLOG, 0);
+  
+  response["result"]["enable"] = (ret > 0);
+
+  return 0;
+}
+
 long endp_setHttpBridgeServer(JsonObject& request, JsonObject& response, int magic)
 {
   const char* url = request["url"];
@@ -251,6 +271,8 @@ EndpointEntry esp32_table[] = {
   EndpointEntry{ endp_getDeviceModel, "/getDeviceModel", 0 },
   EndpointEntry{ endp_setSyslogServer, "/setSyslogServer", 0 },
   EndpointEntry{ endp_getSyslogServer, "/getSyslogServer", 0 },
+  EndpointEntry{ endp_setEnableConsoleSyslog, "/setEnableConsoleSyslog", 0 },
+  EndpointEntry{ endp_getEnableConsoleSyslog, "/getEnableConsoleSyslog", 0 },
   EndpointEntry{ endp_setHttpBridgeServer, "/setHttpBridgeServer", 0 },
   EndpointEntry{ endp_getHttpBridgeServer, "/getHttpBridgeServer", 0 },
   EndpointEntry{ endp_get_code_config, "/get-code-config", 0 },
