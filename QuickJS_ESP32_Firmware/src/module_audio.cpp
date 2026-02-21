@@ -307,6 +307,28 @@ static JSValue audio_playSd(JSContext *ctx, JSValueConst jsThis, int argc, JSVal
   return JS_NewBool(ctx, ret);
 }
 
+static JSValue audio_tone(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
+{
+  if( out == NULL )
+    return JS_EXCEPTION;
+
+  audio_source_dispose();
+
+  double frequency;
+  JS_ToFloat64(ctx, &frequency, argv[0]);
+
+  uint32_t duration = UINT32_MAX;
+  JS_ToUint32(ctx, &duration, argv[1]);
+
+  bool stop_current_sound = true;
+  if( argc > 2 )
+    stop_current_sound = JS_ToBool(ctx, argv[2]);
+
+  bool ret = M5.Speaker.tone(frequency, duration, 0, stop_current_sound);
+
+  return JS_NewBool(ctx, ret);
+}
+
 static JSValue audio_setVolume(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
 {
   if( out == NULL )
@@ -370,6 +392,9 @@ static const JSCFunctionListEntry audio_funcs[] = {
                          }},
     JSCFunctionListEntry{"getVolume", 0, JS_DEF_CFUNC, 0, {
                            func : {0, JS_CFUNC_generic, audio_getVolume}
+                         }},
+    JSCFunctionListEntry{"tone", 0, JS_DEF_CFUNC, 0, {
+                           func : {3, JS_CFUNC_generic, audio_tone}
                          }},
     JSCFunctionListEntry{"isRunning", 0, JS_DEF_CFUNC, 0, {
                            func : {0, JS_CFUNC_generic, audio_isRunning}
