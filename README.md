@@ -88,6 +88,10 @@ https://poruruba.github.io/EspWebDownloader/quickjs_esp32_firmware/
   - オフライン音声認識モジュールを追加
 - 2026-01-12
   - SNMPエージェントを追加
+- 2026-02-11
+  - BLEペリフェラルを変更
+- 2026-02-22
+  - AudioのI/Fを変更
 
 ## 誤記訂正
 - 2022-03-31
