@@ -7,33 +7,37 @@
 #define _HTTP_CUSTOMCALL_
 
 #if 0
+#define _UNIT_ANGLE8_ENABLE_
+#define _UNIT_ASR_ENABLE_
+#define _UNIT_AUDIOPLAYER_ENABLE_
+#define _UNIT_BYTEBUTTON_ENABLE_
 #define _UNIT_COLOR_ENABLE_
-#define _UNIT_SONICIO_ENABLE_
+#define _UNIT_ENVPRO_ENABLE_
 #define _UNIT_GAS_ENABLE_
 #define _UNIT_GESTURE_ENABLE_
-#define _UNIT_PBHUB_ENABLE_
-#define _UNIT_ANGLE8_ENABLE_
-#define _UNIT_ENVPRO_ENABLE_
 #define _UNIT_IMUPRO_ENABLE_
-#define _UNIT_BYTEBUTTON_ENABLE_
-#define _UNIT_AUDIOPLAYER_ENABLE_
+#define _UNIT_PBHUB_ENABLE_
+#define _UNIT_SONICIO_ENABLE_
 #define _UNIT_STEP16_ENABLE_
-#define _UNIT_AUDIOPLAYER_ENABLE_
-#define _UNIT_ASR_ENABLE_
-#define _ESPNOW_ENABLE_
-#define _WEBSOCKET_ENABLE_
-#define _WEBSOCKET_CLIENT_ENABLE_
+#define _AUDIO_ENABLE_
 #define _BLEPERIPHERAL_ENABLE_
+#define _CAMERA_ENABLE_
 #define _COAP_ENABLE_
 #define _CRYPTO_ENABLE_
+#define _ENV_ENABLE_
+#define _ESPNOW_ENABLE_
+#define _HTTP_ENABLE_
+#define _IMU_ENABLE_
+#define _IR_ENABLE_
+#define _LCD_ENABLE_
 #define _LEDC_ENABLE_
 #define _MQTT_ENABLE_
-#define _ENV_ENABLE_
-#define _IR_ENABLE_
+#define _RTC_ENABLE_
+#define _SD_ENABLE_
 #define _SNMP_AGENT_ENABLE_
+#define _WEBSOCKET_ENABLE_
+#define _WEBSOCKET_CLIENT_ENABLE_
 #endif
-
-#define _HTTP_ENABLE_
 
 #if defined(ARDUINO_M5Stack_ATOM)
 #include <M5Unified.h>
@@ -78,6 +82,14 @@
 #elif defined(ARDUINO_M5Stack_StampS3)
 #include <M5Unified.h>
 #define MDNS_NAME "QuickJS_ESP32_M5StampS3" // mDNSサービスホスト名
+#elif defined(ARDUINO_ESP32S3_DEV)
+#include <M5Unified.h>
+#define _LCD_ENABLE_
+#define _RTC_ENABLE_
+#define _IMU_ENABLE_
+#define _IR_ENABLE_
+#define _AUDIO_ENABLE_
+#define MDNS_NAME "QuickJS_ESP32_M5StickS3" // mDNSサービスホスト名
 #elif defined(ARDUINO_ESP32C6_DEV)
 #include <M5Unified.h>
 #define MDNS_NAME "QuickJS_ESP32_C6" // mDNSサービスホスト名
