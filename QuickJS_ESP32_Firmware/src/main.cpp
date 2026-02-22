@@ -90,9 +90,17 @@ void setup()
   if( g_autoupdate )
     Serial.println("autoupdate: on");
 
+  if(Serial.available() > 0) {
+    if( Serial.read() == 0x04 ){ // Ctrl-D
+      g_fileloading = FILE_LOADING_PAUSE;
+      Serial.println("Now temporarily in pause");
+    }
+  }
+
   qjs.initialize_modules();
 
-  start_qjs();
+  if( g_fileloading == FILE_LOADING_NONE )
+    start_qjs();
 }
 
 void loop()

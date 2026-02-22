@@ -3,7 +3,6 @@
 
 #ifdef _AUDIO_ENABLE_
 
-#include <M5Unified.h>
 #include "quickjs.h"
 #include "module_type.h"
 #include "module_utils.h"
