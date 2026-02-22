@@ -113,6 +113,9 @@
 #ifdef _BLEPERIPHERAL_ENABLE_
 #include "module_bleperipheral.h"
 #endif
+#ifdef _GRAPHQL_ENABLE_
+#include "module_graphql.h"
+#endif
 
 static JsModuleEntry module_entries[] = {
   esp32_module,
@@ -211,6 +214,9 @@ static JsModuleEntry module_entries[] = {
 #endif
 #ifdef _BLEPERIPHERAL_ENABLE_
   bleperipheral_module,
+#endif
+#ifdef _GRAPHQL_ENABLE_
+  graphql_module,
 #endif
   utils_module
 };

@@ -26,6 +26,7 @@
 #define _CRYPTO_ENABLE_
 #define _ENV_ENABLE_
 #define _ESPNOW_ENABLE_
+#define _GRAPHQL_ENABLE_
 #define _HTTP_ENABLE_
 #define _IMU_ENABLE_
 #define _IR_ENABLE_

@@ -22,5 +22,7 @@ long getNumberArray(JSContext *ctx, JSValue value, int32_t **pp_buffer, uint32_t
 JSValue createNumberArray(JSContext *ctx, int32_t *p_buffer, uint32_t unit_num);
 JSValue create_Uint8Array(JSContext *ctx, const uint8_t *p_buffer, uint32_t len);
 JSValue from_Uint8Array(JSContext *ctx, JSValue value, uint8_t** pp_buffer, uint32_t *p_num);
+JSValue json_stringify(JSContext *ctx, JSValueConst obj);
+JSValue json_parse(JSContext *ctx, const char *json_str);
 
 #endif
