@@ -278,7 +278,7 @@ static JSValue esp32_prefs_getBytes(JSContext *ctx, JSValueConst jsThis,
   int32_t len = preferences.getBytes(key, p_buffer, def);
   JS_FreeCString(ctx, key);
 
-  JSValue value = JS_NewArrayBufferCopy(ctx, p_buffer, len);
+  JSValue value = create_Uint8Array(ctx, p_buffer, len);
   free(p_buffer);
 
   return value;

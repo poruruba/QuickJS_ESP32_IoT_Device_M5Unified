@@ -114,7 +114,7 @@ static JSValue crypto_hmacCreate(JSContext *ctx, JSValueConst jsThis, int argc, 
   JS_FreeCString(ctx, p_key);
   JS_FreeCString(ctx, p_input);
 
-  return JS_NewArrayBufferCopy(ctx, hmacResult, output_len);
+  return create_Uint8Array(ctx, hmacResult, output_len);
 }
 
 static JSValue crypto_aesEcbEncrypt(JSContext *ctx, JSValueConst jsThis,
@@ -178,7 +178,7 @@ static JSValue crypto_aesEcbEncrypt(JSContext *ctx, JSValueConst jsThis,
   free(p_input);
 
   JSValue value = JS_EXCEPTION;
-  value = JS_NewArrayBufferCopy(ctx, p_output, input_len);
+  value = create_Uint8Array(ctx, p_output, input_len);
   free(p_output);
 
   return value;
@@ -260,7 +260,7 @@ static JSValue crypto_aesCbcEncrypt(JSContext *ctx, JSValueConst jsThis,
   free(p_input);
 
   JSValue value = JS_EXCEPTION;
-  value = JS_NewArrayBufferCopy(ctx, p_output, input_len);
+  value = create_Uint8Array(ctx, p_output, input_len);
   free(p_output);
 
   return value;
@@ -314,7 +314,7 @@ static JSValue crypto_mdCreate(JSContext *ctx, JSValueConst jsThis,
   free(p_input);
 
   JSValue value = JS_EXCEPTION;
-  value = JS_NewArrayBufferCopy(ctx, digestResult, output_len);
+  value = create_Uint8Array(ctx, digestResult, output_len);
 
   return value;  
 }

@@ -102,7 +102,7 @@ static JSValue esp32_udp_checkRecvBinary(JSContext *ctx, JSValueConst jsThis, in
     return JS_EXCEPTION;
   }
 
-  JSValue value = JS_NewArrayBufferCopy(ctx, p_buffer, len);
+  JSValue value = create_Uint8Array(ctx, p_buffer, len);
   free(p_buffer);
 
   String remoteIp = udp.remoteIP().toString();

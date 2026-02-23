@@ -406,6 +406,10 @@ static JSValue http_setHttpContent(JSContext *ctx, JSValueConst jsThis, int argc
     }
     long ret = packet_set_content((const uint8_t*)content, strlen(content), content_type);
     JS_FreeCString(ctx, content);
+    if( ret != 0 ){
+      JS_FreeCString(ctx, content_type);
+      return JS_EXCEPTION;
+    }
   }else{
     uint8_t *p_buffer;
     uint32_t len;
@@ -416,9 +420,20 @@ static JSValue http_setHttpContent(JSContext *ctx, JSValueConst jsThis, int argc
     }
     long ret = packet_set_content(p_buffer, (size_t)len, content_type);
     JS_FreeValue(ctx, vbuffer);
+    if( ret != 0 ){
+      JS_FreeCString(ctx, content_type);
+      return JS_EXCEPTION;
+    }
   }
   JS_FreeCString(ctx, content_type);
 
+  return JS_UNDEFINED;
+}
+
+
+static JSValue http_clearHttpContent(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
+{
+  packet_clear_content();
   return JS_UNDEFINED;
 }
 
@@ -464,6 +479,9 @@ static const JSCFunctionListEntry http_funcs[] = {
                          }},
     JSCFunctionListEntry{"setHttpContent", 0, JS_DEF_CFUNC, 0, {
                            func : {1, JS_CFUNC_generic, http_setHttpContent}
+                         }},
+    JSCFunctionListEntry{"clearHttpContent", 0, JS_DEF_CFUNC, 0, {
+                           func : {1, JS_CFUNC_generic, http_clearHttpContent}
                          }},
     JSCFunctionListEntry{"fetch", 0, JS_DEF_CFUNC, 0, {
                            func : {5, JS_CFUNC_generic, http_fetch}

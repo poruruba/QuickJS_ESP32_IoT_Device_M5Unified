@@ -461,7 +461,7 @@ static JSValue utils_base64(JSContext *ctx, JSValueConst jsThis, int argc, JSVal
     }
     b64_decode(b64, buffer);
     JS_FreeCString(ctx, b64);
-    JSValue value = JS_NewArrayBufferCopy(ctx, buffer, length);
+    JSValue value = create_Uint8Array(ctx, buffer, length);
     free(buffer);
 
     return value;
@@ -500,7 +500,7 @@ static JSValue utils_base32(JSContext *ctx, JSValueConst jsThis, int argc, JSVal
     }
     base32_decode(b32, buffer, length);
     JS_FreeCString(ctx, b32);
-    JSValue value = JS_NewArrayBufferCopy(ctx, buffer, length);
+    JSValue value = create_Uint8Array(ctx, buffer, length);
     free(buffer);
 
     return value;
@@ -638,7 +638,7 @@ static JSValue utils_hex2array(JSContext *ctx, JSValueConst jsThis,
   }
 
   JSValue value = JS_EXCEPTION;
-  value = JS_NewArrayBufferCopy(ctx, p_array, len / 2);
+  value = create_Uint8Array(ctx, p_array, len / 2);
   free(p_array);
 
   return value;

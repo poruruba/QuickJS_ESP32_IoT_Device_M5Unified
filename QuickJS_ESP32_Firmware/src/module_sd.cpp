@@ -193,7 +193,7 @@ static JSValue sd_readBinary(JSContext *ctx, JSValueConst jsThis, int argc, JSVa
   file.close();
   if( sem ) xSemaphoreGive(binSem);
 
-  JSValue value = JS_NewArrayBufferCopy(ctx, buffer, size);
+  JSValue value = create_Uint8Array(ctx, buffer, size);
   free(buffer);
 
   return value;

@@ -81,7 +81,7 @@ static JSValue esp32_uart_read(JSContext *ctx, JSValueConst jsThis,
       p_buffer[i] = (uint8_t)c;
     }
 
-    JSValue value = JS_NewArrayBufferCopy(ctx, p_buffer, i);
+    JSValue value = create_Uint8Array(ctx, p_buffer, i);
     free(p_buffer);
     return value;
   }else{

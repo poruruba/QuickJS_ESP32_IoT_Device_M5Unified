@@ -139,7 +139,7 @@ static JSValue esp32_camera_getPicture(JSContext *ctx, JSValueConst jsThis, int 
     return JS_EXCEPTION;
 
   JSValue value = JS_EXCEPTION;
-  value = JS_NewArrayBufferCopy(ctx, p_image, image_size);
+  value = create_Uint8Array(ctx, p_image, image_size);
   free(p_image);
 
   return value;

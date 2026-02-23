@@ -40,6 +40,8 @@
 #define _WEBSOCKET_CLIENT_ENABLE_
 #endif
 
+#define _HTTP_ENABLE_
+
 #if defined(ARDUINO_M5Stack_ATOM)
 #include <M5Unified.h>
 #define _IMU_ENABLE_
