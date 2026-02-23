@@ -10,6 +10,7 @@
 #include "quickjs.h"
 #include "quickjs_esp32.h"
 #include "module_http.h"
+#include "endpoint_packet.h"
 
 #define HTTP_RESP_SHIFT   0
 #define HTTP_RESP_NONE    0x0
@@ -391,6 +392,36 @@ static JSValue http_setCustomCallback(JSContext *ctx, JSValueConst jsThis, int a
 }
 #endif
 
+static JSValue http_setHttpContent(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
+{
+  const char *content_type = JS_ToCString(ctx, argv[0]);
+  if( content_type == NULL )
+    return JS_EXCEPTION;
+
+  if(JS_IsString(argv[1])){
+    const char *content = JS_ToCString(ctx, argv[1]);
+    if( content == NULL ){
+      JS_FreeCString(ctx, content_type);
+      return JS_EXCEPTION;
+    }
+    long ret = packet_set_content((const uint8_t*)content, strlen(content), content_type);
+    JS_FreeCString(ctx, content);
+  }else{
+    uint8_t *p_buffer;
+    uint32_t len;
+    JSValue vbuffer = from_Uint8Array(ctx, argv[1], &p_buffer, &len);
+    if (JS_IsNull(vbuffer)){
+      JS_FreeCString(ctx, content_type);
+      return JS_EXCEPTION;
+    }
+    long ret = packet_set_content(p_buffer, (size_t)len, content_type);
+    JS_FreeValue(ctx, vbuffer);
+  }
+  JS_FreeCString(ctx, content_type);
+
+  return JS_UNDEFINED;
+}
+
 static JSValue http_fetch(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
 {
   if( argc <= 1 )
@@ -430,6 +461,9 @@ static const JSCFunctionListEntry http_funcs[] = {
                          }},
     JSCFunctionListEntry{"setAwsCredential", 0, JS_DEF_CFUNC, 0, {
                            func : {3, JS_CFUNC_generic, http_setAwsCredential}
+                         }},
+    JSCFunctionListEntry{"setHttpContent", 0, JS_DEF_CFUNC, 0, {
+                           func : {1, JS_CFUNC_generic, http_setHttpContent}
                          }},
     JSCFunctionListEntry{"fetch", 0, JS_DEF_CFUNC, 0, {
                            func : {5, JS_CFUNC_generic, http_fetch}
@@ -550,6 +584,7 @@ void endModule_http(void)
   }
   g_ctx = NULL;
 #endif
+  packet_clear_content();
 }
 
 JsModuleEntry http_module = {

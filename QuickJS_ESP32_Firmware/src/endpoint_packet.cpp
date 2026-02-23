@@ -48,6 +48,52 @@ static AsyncWebSocket ws("/ws");
 static std::unordered_map<std::string, EndpointEntry*> endpoint_list;
 static bool isRunning = false;
 
+static uint8_t *g_content_buffer = NULL;
+static size_t g_content_size = 0;
+static char *g_content_type = NULL;
+ 
+long packet_clear_content(void){
+  if (g_content_buffer != NULL) {
+    free(g_content_buffer);
+    g_content_buffer = NULL;
+    g_content_size = 0;
+  }
+  if (g_content_type != NULL) {
+    free(g_content_type);
+    g_content_type = NULL;
+  }
+
+  return 0;
+}
+
+long packet_set_content(const uint8_t *p_data, size_t len, const char *content_type)
+{
+  if (g_content_buffer != NULL) {
+    free(g_content_buffer);
+    g_content_buffer = NULL;
+    g_content_size = 0;
+  }
+  if (g_content_type != NULL) {
+    free(g_content_type);
+    g_content_type = NULL;
+  }
+  g_content_buffer = (uint8_t*)malloc(len);
+  if (g_content_buffer == NULL)
+    return -1;
+  memcpy(g_content_buffer, p_data, len);
+  g_content_size = len;
+
+  g_content_type = strdup(content_type);
+  if (g_content_type == NULL) {
+    free(g_content_buffer);
+    g_content_buffer = NULL;
+    g_content_size = 0;
+    return -1;
+  }
+  
+  return 0;
+}
+
 void packet_appendEntry(EndpointEntry *tables, int num_of_entry)
 {
   for(int i = 0 ; i < num_of_entry ; i++ )
@@ -172,6 +218,16 @@ long packet_initialize(void)
     http_delegateRequest(request, (p != NULL) ? p->value().c_str() : "/customcall");
   });
 #endif
+
+  server.on("/content", HTTP_GET, [](AsyncWebServerRequest *request) {
+    if (g_content_buffer == NULL || g_content_size == 0) {
+      request->send(503, "text/plain", "No content available");
+      return;
+    }
+    AsyncResponseStream *response = request->beginResponseStream(g_content_type);
+    response->write(g_content_buffer, g_content_size);
+    request->send(response);
+  });
 
   DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
   DefaultHeaders::Instance().addHeader("Access-Control-Allow-Headers", "*");

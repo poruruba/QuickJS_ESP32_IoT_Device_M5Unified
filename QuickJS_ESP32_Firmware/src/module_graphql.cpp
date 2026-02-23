@@ -151,7 +151,7 @@ static String processGraphql(const char *p_body)
   }
 
   int httpCode = http.POST(p_body);
-  if (httpCode > 0) {
+  if ((httpCode >= 200 && httpCode < 300) || httpCode == 400) {
     String payload = http.getString();
     http.end();
     return payload;

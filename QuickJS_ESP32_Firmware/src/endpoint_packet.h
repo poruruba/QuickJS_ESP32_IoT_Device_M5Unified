@@ -10,5 +10,7 @@ long packet_execute(const char *endpoint, JsonObject& params, JsonObject& respon
 long packet_open(void);
 long packet_close(void);
 long packet_isRunning(void);
+long packet_set_content(const uint8_t *p_data, size_t len, const char *content_type);
+long packet_clear_content(void);
 
 #endif

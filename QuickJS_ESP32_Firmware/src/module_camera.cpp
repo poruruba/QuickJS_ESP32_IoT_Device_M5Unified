@@ -19,6 +19,7 @@ enum camera_pins_type {
   CAMERA_MODEL_AI_THINKER,  // Has PSRAM
   CAMERA_MODEL_TTGO_T_JOURNAL,  // No PSRAM
   CAMERA_MODEL_TTGO_CAMERA, // Has PSRAM
+  CAMERA_MODEL_M5UNIT_CAMS3,  // Has PSRAM (ESP32-S3, OV2640)
   CAMERA_MODEL_NUM
 };
 
@@ -42,15 +43,17 @@ enum camera_pins_index{
 };
 
 static const int8_t camera_pins[][16] = {
-  { -1, -1, 21, 26, 27, 35, 34, 39, 36, 19, 18, 5, 4, 25, 23, 22 },
-  { -1, -1, 4, 18, 23, 36, 37, 38, 39, 35, 14, 13, 34, 5, 27, 25 },
-  { -1, 15, 27, 25, 23, 19, 36, 18, 39, 5, 34, 35, 32, 22, 26, 21 },
-  { -1, 15, 27, 22, 23, 19, 36, 18, 39, 5, 34, 35, 32, 25, 26, 21 },
-  { -1, 15, 27, 22, 23, 19, 36, 18, 39, 5, 34, 35, 32, 25, 26, 21 },
-  { -1, 15, 27, 25, 23, 19, 36, 18, 39, 5, 34, 35, 17, 22, 26, 21 },
-  { 32, -1, 0, 26, 27, 35, 34, 39, 36, 21, 19, 18, 5, 25, 23, 22 },
-  { 0, 15, 27, 25, 23, 19, 36, 18, 39, 5, 34, 35, 17, 22, 26, 21 },
-  { -1, -1, 4, 18, 23, 36, 37, 38, 39, 35, 26, 13, 34, 5, 27, 25 },
+  // PWDN,RESET,XCLK,SIOD,SIOC,Y9,Y8,Y7,Y6,Y5,Y4,Y3,Y2,VSYNC,HREF,PCLK
+  { -1, -1, 21, 26, 27, 35, 34, 39, 36, 19, 18, 5, 4, 25, 23, 22 }, // CAMERA_MODEL_WROVER_KIT
+  { -1, -1, 4, 18, 23, 36, 37, 38, 39, 35, 14, 13, 34, 5, 27, 25 }, // CAMERA_MODEL_ESP_EYE
+  { -1, 15, 27, 25, 23, 19, 36, 18, 39, 5, 34, 35, 32, 22, 26, 21 }, // CAMERA_MODEL_M5STACK_PSRAM
+  { -1, 15, 27, 22, 23, 19, 36, 18, 39, 5, 34, 35, 32, 25, 26, 21 }, // CAMERA_MODEL_M5STACK_V2_PSRAM
+  { -1, 15, 27, 22, 23, 19, 36, 18, 39, 5, 34, 35, 32, 25, 26, 21 }, // CAMERA_MODEL_M5STACK_WIDE
+  { -1, 15, 27, 25, 23, 19, 36, 18, 39, 5, 34, 35, 17, 22, 26, 21 }, // CAMERA_MODEL_M5STACK_ESP32CAM
+  { 32, -1, 0, 26, 27, 35, 34, 39, 36, 21, 19, 18, 5, 25, 23, 22 }, // CAMERA_MODEL_AI_THINKER
+  { 0, 15, 27, 25, 23, 19, 36, 18, 39, 5, 34, 35, 17, 22, 26, 21 }, // CAMERA_MODEL_TTGO_T_JOURNAL
+  { -1, -1, 4, 18, 23, 36, 37, 38, 39, 35, 26, 13, 34, 5, 27, 25 }, // CAMERA_MODEL_TTGO_CAMERA
+  { -1, -1, 15, 4, 5, 16, 17, 18, 12, 10, 8, 9, 11, 6, 7, 13 }, // CAMERA_MODEL_M5UNIT_CAMS3
 };
 
 // typedef enum {
@@ -427,6 +430,10 @@ static const JSCFunctionListEntry camera_funcs[] = {
         "MODEL_TTGO_CAMERA", 0, JS_DEF_PROP_INT32, 0, {
           i32 : CAMERA_MODEL_TTGO_CAMERA
         }},
+    JSCFunctionListEntry{
+        "MODEL_M5UNIT_CAMS3", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : CAMERA_MODEL_M5UNIT_CAMS3
+        }},
     JSCFunctionListEntry{ // 96x96
         "FRAMESIZE_96X96", 0, JS_DEF_PROP_INT32, 0, {
           i32 : FRAMESIZE_96X96
@@ -664,9 +671,9 @@ static long camera_get_capture(uint8_t **pp_image, size_t *p_image_size)
 {
   camera_fb_t *fb = NULL;
   fb = esp_camera_fb_get();
-  if( fb )
-    esp_camera_fb_return(fb);
-  fb = esp_camera_fb_get();
+  // if( fb )
+  //   esp_camera_fb_return(fb);
+  // fb = esp_camera_fb_get();
   if (!fb){
       Serial.println("Camera capture failed");
       return -1;
