@@ -195,7 +195,6 @@ long packet_initialize(void)
   });
   server.addHandler(handler);
 
-#ifdef _HTTP_CUSTOMCALL_
   AsyncCallbackJsonWebHandler *handler_customCall = new AsyncCallbackJsonWebHandler("/customcall_post", [](AsyncWebServerRequest *request, JsonVariant &json) {
     const JsonObject& jsonObj = json.as<JsonObject>();
 //    AsyncJsonResponse *response = new AsyncJsonResponse(false, PACKET_JSON_DOCUMENT_SIZE);
@@ -217,7 +216,6 @@ long packet_initialize(void)
     }
     http_delegateRequest(request, (p != NULL) ? p->value().c_str() : "/customcall");
   });
-#endif
 
   server.on("/content", HTTP_GET, [](AsyncWebServerRequest *request) {
     if (g_content_buffer == NULL || g_content_size == 0) {

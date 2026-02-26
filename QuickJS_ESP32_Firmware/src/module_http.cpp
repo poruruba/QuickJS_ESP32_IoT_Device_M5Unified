@@ -28,7 +28,6 @@
 
 #define REALLOC_MIN_SIZE  1024
 
-#ifdef _HTTP_CUSTOMCALL_
 #include <ESPAsyncWebServer.h>
 #include <AsyncJson.h>
 static JSContext *g_ctx = NULL;
@@ -44,7 +43,6 @@ static std::vector<CUSTOMCALL_EVENT_INFO> g_event_list;
 
 static long http_sendResponseText(CUSTOMCALL_EVENT_INFO info, const char *message);
 static long http_sendResponseError(CUSTOMCALL_EVENT_INFO info, const char *error);
-#endif
 
 static const char *aws4_request = "aws4_request";
 static const char *signedHeaderNamesBase = "host;x-amz-content-sha256;x-amz-date";
@@ -378,7 +376,6 @@ static JSValue http_setAwsCredential(JSContext *ctx, JSValueConst jsThis, int ar
   return JS_UNDEFINED;
 }
 
-#ifdef _HTTP_CUSTOMCALL_
 static JSValue http_setCustomCallback(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
 {
   if( g_callback_func != JS_UNDEFINED )
@@ -389,7 +386,68 @@ static JSValue http_setCustomCallback(JSContext *ctx, JSValueConst jsThis, int a
 
   return JS_UNDEFINED;
 }
-#endif
+
+static JSValue http_pushMessage(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
+{
+  const char *host = JS_ToCString(ctx, argv[0]);
+  if( host == NULL )
+    return JS_EXCEPTION;
+
+  String url("http://");
+  url += host;
+  url += "/customcall_post";
+  JS_FreeCString(ctx, host);
+
+  JSValue obj = JS_NewObject(ctx);
+  if( obj == JS_UNDEFINED )
+    return JS_EXCEPTION;
+  JS_SetPropertyStr(ctx, obj, "message", JS_DupValue(ctx, argv[1]));
+  JSValue json = JS_JSONStringify(ctx, obj, JS_UNDEFINED, JS_UNDEFINED);
+  if( json == JS_UNDEFINED ){
+    JS_FreeValue(ctx, obj);
+    return JS_EXCEPTION;
+  }
+  JS_FreeValue(ctx, obj);
+  const char *body = JS_ToCString(ctx, json);
+  if( body == NULL ){
+    JS_FreeValue(ctx, json);
+    return JS_EXCEPTION;
+  }
+  HTTPClient http;
+  http.begin(url); //HTTP
+  http.addHeader("Content-Type", "application/json");
+
+  // HTTP POST JSON
+  int status_code = http.POST(body);
+  JS_FreeCString(ctx, body);
+  JS_FreeValue(ctx, json);
+  if (status_code != 200){
+    Serial.printf("status_code=%d\n", status_code);
+    return JS_EXCEPTION;
+  }
+
+  String response = http.getString();
+  JSValue value = JS_ParseJSON(ctx, response.c_str(), response.length(), "json");
+  if( value == JS_UNDEFINED || value == JS_EXCEPTION )
+    return JS_EXCEPTION;
+  JSValue status = JS_GetPropertyStr(ctx, value, "status");
+  if( status == JS_UNDEFINED ){
+    JS_FreeValue(ctx, value);
+    return JS_EXCEPTION;
+  }
+  const char *status_str = JS_ToCString(ctx, status);
+  if( strcmp(status_str, "OK") != 0 ){
+    JS_FreeCString(ctx, status_str);
+    JS_FreeValue(ctx, status);
+    JS_FreeValue(ctx, value);
+    return JS_EXCEPTION;
+  }
+
+  JSValue result = JS_GetPropertyStr(ctx, value, "message");
+  JS_FreeValue(ctx, value);
+
+  return result;
+}
 
 static JSValue http_setHttpContent(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
 {
@@ -491,12 +549,12 @@ static const JSCFunctionListEntry http_funcs[] = {
     JSCFunctionListEntry{"getHttpBridgeServer", 0, JS_DEF_CFUNC, 0, {
                            func : {0, JS_CFUNC_generic, http_getHttpBridgeServer}
                          }},
-#ifdef _HTTP_CUSTOMCALL_
     JSCFunctionListEntry{"setCustomCallback", 0, JS_DEF_CFUNC, 0, {
                           func : {1, JS_CFUNC_generic, http_setCustomCallback}
                         }},
-#endif
-
+    JSCFunctionListEntry{"pushMessage", 0, JS_DEF_CFUNC, 0, {
+                          func : {2, JS_CFUNC_generic, http_pushMessage}
+                        }},
     JSCFunctionListEntry{
         "resp_none", 0, JS_DEF_PROP_INT32, 0, {
           i32 : (HTTP_RESP_NONE << HTTP_RESP_SHIFT)
@@ -549,7 +607,6 @@ JSModuleDef *addModule_http(JSContext *ctx, JSValue global)
 
 void loopModule_http(void)
 {
-#ifdef _HTTP_CUSTOMCALL_
   if( http_isWaitRequest() ){
     while(g_event_list.size() > 0){
       CUSTOMCALL_EVENT_INFO info = (CUSTOMCALL_EVENT_INFO)g_event_list.front();
@@ -579,12 +636,10 @@ void loopModule_http(void)
       g_event_list.erase(g_event_list.begin());
     }
   }
-#endif
 }
 
 void endModule_http(void)
 {
-#ifdef _HTTP_CUSTOMCALL_
   while(g_event_list.size() > 0){
     CUSTOMCALL_EVENT_INFO info = (CUSTOMCALL_EVENT_INFO)g_event_list.front();
     if( info.method != NULL)
@@ -600,7 +655,6 @@ void endModule_http(void)
     g_callback_func = JS_UNDEFINED;
   }
   g_ctx = NULL;
-#endif
   packet_clear_content();
 }
 
@@ -611,7 +665,6 @@ JsModuleEntry http_module = {
   endModule_http
 };
 
-#ifdef _HTTP_CUSTOMCALL_
 long http_delegateRequest(AsyncWebServerRequest *request, const char *message)
 {
   if( g_event_list.size() >= MAX_CUSTOMCALL_EVENT ){
@@ -689,7 +742,6 @@ static long http_sendResponseError(CUSTOMCALL_EVENT_INFO info, const char *error
     return -1;
   }
 }
-#endif
 
 static long hmacCreate(const uint8_t *p_key, int key_len, const uint8_t *p_input, int input_len, uint8_t *p_result)
 {

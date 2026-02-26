@@ -4,7 +4,6 @@
 #include <Arduino.h>
 
 //#define _WEBSERV_DISABLE_
-#define _HTTP_CUSTOMCALL_
 
 #if 0
 #define _UNIT_ANGLE8_ENABLE_
