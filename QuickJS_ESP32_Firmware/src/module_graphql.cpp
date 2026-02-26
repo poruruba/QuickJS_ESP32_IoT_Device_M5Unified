@@ -65,7 +65,7 @@ static JSValue graphql_execute(JSContext *ctx, JSValueConst jsThis, int argc, JS
   JSValue obj = JS_NewObject(ctx);
   JS_SetPropertyStr(ctx, obj, "query", JS_DupValue(ctx, argv[0]));
   JS_SetPropertyStr(ctx, obj, "variables", JS_DupValue(ctx, argv[1]));
-  JSValue body_object = json_stringify(ctx, obj);
+  JSValue body_object = JS_JSONStringify(ctx, obj, JS_UNDEFINED, JS_UNDEFINED);
   JS_FreeValue(ctx, obj);
 
   const char *body = JS_ToCString(ctx, body_object);
@@ -79,7 +79,7 @@ static JSValue graphql_execute(JSContext *ctx, JSValueConst jsThis, int argc, JS
   if( result.length() == 0 )
     return JS_EXCEPTION;
 
-  JSValue result_object = json_parse(ctx, result.c_str());
+  JSValue result_object = JS_ParseJSON(ctx, result.c_str(), result.length(), "json");
 
   return result_object;
 }

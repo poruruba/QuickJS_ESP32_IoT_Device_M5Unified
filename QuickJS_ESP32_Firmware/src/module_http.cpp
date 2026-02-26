@@ -225,9 +225,8 @@ static JSValue http_bridge(JSContext *ctx, JSValueConst jsThis, int argc, JSValu
   }
 
   const char *target_host = JS_ToCString(ctx, argv[0]);
-  if( target_host == NULL ){
+  if( target_host == NULL )
     return JS_EXCEPTION;
-  }
 
   JSValue obj = JS_NewObject(ctx);
   if (argc >= 1)
@@ -243,14 +242,14 @@ static JSValue http_bridge(JSContext *ctx, JSValueConst jsThis, int argc, JSValu
 
   JSValue json = JS_JSONStringify(ctx, obj, JS_UNDEFINED, JS_UNDEFINED);
   JS_FreeValue(ctx, obj);
-  if( json == JS_UNDEFINED ){
+  if( json == JS_UNDEFINED || json == JS_EXCEPTION ){
     JS_FreeCString(ctx, target_host);
     return JS_EXCEPTION;
   }
   const char *body = JS_ToCString(ctx, json);
-  JS_FreeValue(ctx, json);
   if (body == NULL){
     JS_FreeCString(ctx, target_host);
+    JS_FreeValue(ctx, json);
     return JS_EXCEPTION;
   }
 
@@ -272,6 +271,7 @@ static JSValue http_bridge(JSContext *ctx, JSValueConst jsThis, int argc, JSValu
   // HTTP POST JSON
   int status_code = http.POST(body);
   JS_FreeCString(ctx, body);
+  JS_FreeValue(ctx, json);
 
   uint8_t response_type = ( magic >> HTTP_RESP_SHIFT ) & HTTP_RESP_MASK;
   JSValue value = JS_EXCEPTION;
@@ -282,8 +282,7 @@ static JSValue http_bridge(JSContext *ctx, JSValueConst jsThis, int argc, JSValu
 
   if (response_type == HTTP_RESP_JSON ){
     String result = http.getString();
-    const char *buffer = result.c_str();
-    value = JS_ParseJSON(ctx, buffer, strlen(buffer), "json");
+    value = JS_ParseJSON(ctx, result.c_str(), result.length(), "json");
   }else if( response_type == HTTP_RESP_TEXT ){
     String result = http.getString();
     const char *buffer = result.c_str();
@@ -299,7 +298,7 @@ static JSValue http_bridge(JSContext *ctx, JSValueConst jsThis, int argc, JSValu
         size_t size = stream->available();
         if (size) {
           if( (index + size ) > alloclen ){
-            alloclen += (size > REALLOC_MIN_SIZE) ? size : REALLOC_MIN_SIZE;
+            alloclen += ((index + size) > (alloclen + REALLOC_MIN_SIZE)) ? size : REALLOC_MIN_SIZE;
             unsigned char *t = (unsigned char*)realloc(bin, alloclen);
             if( t == NULL ){
               free(bin);
@@ -439,7 +438,7 @@ static JSValue http_clearHttpContent(JSContext *ctx, JSValueConst jsThis, int ar
 
 static JSValue http_fetch(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
 {
-  if( argc <= 1 )
+  if( argc < 2 )
     return JS_EXCEPTION;
 
   int32_t type;

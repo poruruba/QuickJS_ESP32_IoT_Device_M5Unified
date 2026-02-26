@@ -10,10 +10,8 @@
 //#include <M5UnitLCD.h>
 //#include <M5UnitRCA.h>
 
-#include <M5Unified.h>
-#include <ArduinoJson.h>
 #include "main_config.h"
-
+#include <ArduinoJson.h>
 #include <WiFi.h>
 #include <Syslog.h>
 #include <ESP32Ping.h>
@@ -107,7 +105,7 @@ extern "C" {
   uint8_t temprature_sens_read(); 
 }
 
-static JSValue esp32_readTemperature(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
+static JSValue esp32_getCpuTemperature(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
 {
   uint8_t temp = temperatureRead();
   return JS_NewUint32(ctx, temp);
@@ -726,8 +724,8 @@ static const JSCFunctionListEntry esp32_funcs[] = {
                            func : {2, JS_CFUNC_generic, esp32_sleep_startSleepExt1}
                          }},
 */
-    JSCFunctionListEntry{"readTemperature", 0, JS_DEF_CFUNC, 0, {
-                           func : {2, JS_CFUNC_generic, esp32_readTemperature}
+    JSCFunctionListEntry{"getCpuTemperature", 0, JS_DEF_CFUNC, 0, {
+                           func : {2, JS_CFUNC_generic, esp32_getCpuTemperature}
                          }},
     JSCFunctionListEntry{
         "MODEL_OTHER", 0, JS_DEF_PROP_INT32, 0, {

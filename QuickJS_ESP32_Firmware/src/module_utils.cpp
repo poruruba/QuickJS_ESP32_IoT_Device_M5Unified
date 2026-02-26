@@ -1046,33 +1046,3 @@ JSValue from_Uint8Array(JSContext *ctx, JSValue value, uint8_t** pp_buffer, uint
 
   return vbuffer;
 }
-
-JSValue json_stringify(JSContext *ctx, JSValueConst obj)
-{
-  JSValue global_obj = JS_GetGlobalObject(ctx);
-  JSValue json = JS_GetPropertyStr(ctx, global_obj, "JSON");
-  JS_FreeValue(ctx, global_obj);
-
-  JSValue stringify = JS_GetPropertyStr(ctx, json, "stringify");
-  JSValue result = JS_Call(ctx, stringify, json, 1, &obj);
-  JS_FreeValue(ctx, json);
-  JS_FreeValue(ctx, stringify);
-
-  return result;
-}
-
-JSValue json_parse(JSContext *ctx, const char *json_str)
-{
-  JSValue global_obj = JS_GetGlobalObject(ctx);
-  JSValue json = JS_GetPropertyStr(ctx, global_obj, "JSON");
-  JS_FreeValue(ctx, global_obj);
-
-  JSValue arg = JS_NewString(ctx, json_str);
-  JSValue parse = JS_GetPropertyStr(ctx, json, "parse");
-  JSValue result = JS_Call(ctx, parse, json, 1, &arg);
-  JS_FreeValue(ctx, arg);
-  JS_FreeValue(ctx, json);
-  JS_FreeValue(ctx, parse);
-
-  return result;
-}

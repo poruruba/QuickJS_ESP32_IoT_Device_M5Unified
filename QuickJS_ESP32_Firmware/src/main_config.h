@@ -106,6 +106,10 @@
 #include <M5Unified.h>
 #define _CAMERA_ENABLE_
 #define MDNS_NAME "QuickJS_ESP32_M5CAMERA" // mDNSサービスホスト名
+#elif defined(ARDUINO_ESP32_TEMP)
+#include <M5Unified.h>
+#define _LCD_ENABLE_
+#define MDNS_NAME "QuickJS_ESP32_TEMP" // mDNSサービスホスト名
 #endif
 
 #define DUMMY_FNAME  "/dummy"

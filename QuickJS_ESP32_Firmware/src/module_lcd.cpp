@@ -1285,6 +1285,12 @@ void endModule_lcd(void)
       sprites[i] = NULL;
     }
   }
+  M5.Display.setFont(&fonts::lgfxJapanGothic_16);
+  M5.Display.setColorDepth(16);
+  M5.Display.setBrightness(128);
+  M5.Display.setRotation(1);
+  M5.Display.setCursor(0, 0);
+  M5.Display.setTextColor(FONT_COLOR);  
 }
 
 JsModuleEntry lcd_module = {
