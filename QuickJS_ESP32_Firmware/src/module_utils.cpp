@@ -1204,6 +1204,15 @@ long getNumberArray(JSContext *ctx, JSValue value, int32_t **pp_buffer, uint32_t
   return 0;
 }
 
+JSValue createNumberArray(JSContext *ctx, int32_t *p_buffer, uint32_t unit_num)
+{
+  JSValue list = JS_NewArray(ctx);
+  for( uint32_t i = 0 ; i < unit_num ; i++ )
+    JS_SetPropertyUint32(ctx, list, i, JS_NewInt32(ctx, p_buffer[i]));
+
+  return list;
+}
+
 JSValue create_Uint8Array(JSContext *ctx, const uint8_t *p_buffer, uint32_t len)
 {
     JSValue array_buffer = JS_NewArrayBufferCopy(ctx, p_buffer, len);
