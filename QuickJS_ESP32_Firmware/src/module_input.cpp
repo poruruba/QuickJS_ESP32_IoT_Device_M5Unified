@@ -133,14 +133,66 @@ static JSValue input_onButtonWasPressed(JSContext *ctx, JSValueConst jsThis, int
   return JS_UNDEFINED;
 }
 
-static JSValue input_isTouched(JSContext *ctx, JSValueConst jsThis,
-                                     int argc, JSValueConst *argv)
+static JSValue input_isTouched(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
 {
   if( M5.Touch.getCount() > 0 ){
     m5::touch_detail_t pos = M5.Touch.getDetail();
     JSValue obj = JS_NewObject(ctx);
     JS_SetPropertyStr(ctx, obj, "x", JS_NewInt32(ctx, pos.x));
     JS_SetPropertyStr(ctx, obj, "y", JS_NewInt32(ctx, pos.y));
+    if( argc > 0 ){
+      JSValue value = JS_GetPropertyStr(ctx, argv[0], "length");
+      if( value == JS_UNDEFINED ){
+        JS_FreeValue(ctx, obj);
+        return JS_EXCEPTION;
+      }
+      uint32_t num_item;
+      JS_ToUint32(ctx, &num_item, value);
+      JS_FreeValue(ctx, value);
+
+      JSValue list = JS_NewArray(ctx);
+      int index = 0;
+      for( int i = 0 ; i < num_item ; i++ ){
+        JSValue item = JS_GetPropertyUint32(ctx, argv[0], i);
+        JSValue val;
+        int32_t x, y, width, height;
+        val = JS_GetPropertyStr(ctx, item, "x");
+        if( val == JS_UNDEFINED ){
+          JS_FreeValue(ctx, item);
+          continue;
+        }
+        JS_ToInt32(ctx, &x, val);
+        JS_FreeValue(ctx, val);
+        val = JS_GetPropertyStr(ctx, item, "y");
+        if( val == JS_UNDEFINED ){
+          JS_FreeValue(ctx, item);
+          continue;
+        }
+        JS_ToInt32(ctx, &y, val);
+        JS_FreeValue(ctx, val);
+        val = JS_GetPropertyStr(ctx, item, "width");
+        if( val == JS_UNDEFINED ){
+          JS_FreeValue(ctx, item);
+          continue;
+        }
+        JS_ToInt32(ctx, &width, val);
+        JS_FreeValue(ctx, val);
+        val = JS_GetPropertyStr(ctx, item, "height");
+        if( val == JS_UNDEFINED ){
+          JS_FreeValue(ctx, item);
+          continue;
+        }
+        JS_ToInt32(ctx, &height, val);
+        JS_FreeValue(ctx, val);
+
+        JS_FreeValue(ctx, item);
+        if( pos.x >= x && pos.x < (x + width) && pos.y >= y && pos.y < (y + height) ){
+          JS_SetPropertyUint32(ctx, list, index, JS_NewInt32(ctx, i));
+          index++;
+        }
+      }
+      JS_SetPropertyStr(ctx, obj, "list", list);
+    }
     return obj;
   }else{
     return JS_NULL;
@@ -233,10 +285,9 @@ static const JSCFunctionListEntry input_funcs[] = {
     JSCFunctionListEntry{"closeCustomButton", 0, JS_DEF_CFUNC, 0, {
                            func : {1, JS_CFUNC_generic, input_closeCustomButton}
                          }},
-    JSCFunctionListEntry{
-        "isTouched", 0, JS_DEF_CFUNC, 0, {
-          func : {0, JS_CFUNC_generic, input_isTouched}
-        }},
+    JSCFunctionListEntry{"isTouched", 0, JS_DEF_CFUNC, 0, {
+                          func : {1, JS_CFUNC_generic, input_isTouched}
+                        }},
     JSCFunctionListEntry{
         "BUTTON_A", 0, JS_DEF_PROP_INT32, 0, {
           i32 : INPUT_BUTTON_A
