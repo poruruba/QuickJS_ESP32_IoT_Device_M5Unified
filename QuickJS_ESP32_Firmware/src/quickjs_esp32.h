@@ -116,6 +116,9 @@
 #ifdef _GRAPHQL_ENABLE_
 #include "module_graphql.h"
 #endif
+#ifdef _MML_ENABLE_
+#include "module_mml.h"
+#endif
 
 static JsModuleEntry module_entries[] = {
   esp32_module,
@@ -217,6 +220,9 @@ static JsModuleEntry module_entries[] = {
 #endif
 #ifdef _GRAPHQL_ENABLE_
   graphql_module,
+#endif
+#ifdef _MML_ENABLE_
+  mml_module,
 #endif
   utils_module
 };

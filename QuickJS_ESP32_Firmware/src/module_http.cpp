@@ -286,7 +286,7 @@ static JSValue http_bridge(JSContext *ctx, JSValueConst jsThis, int argc, JSValu
     const char *buffer = result.c_str();
     value = JS_NewString(ctx, buffer);
   }else if( response_type == HTTP_RESP_BINARY ){
-    int alloclen = REALLOC_MIN_SIZE;
+    uint32_t alloclen = REALLOC_MIN_SIZE;
     unsigned char *bin = (unsigned char*)realloc(NULL, alloclen);
     if( bin == NULL )
       goto end;
@@ -296,7 +296,10 @@ static JSValue http_bridge(JSContext *ctx, JSValueConst jsThis, int argc, JSValu
         size_t size = stream->available();
         if (size) {
           if( (index + size ) > alloclen ){
-            alloclen += ((index + size) > (alloclen + REALLOC_MIN_SIZE)) ? size : REALLOC_MIN_SIZE;
+            if( (index + size) > (alloclen + REALLOC_MIN_SIZE) )
+              alloclen = index + size;
+            else
+              alloclen += REALLOC_MIN_SIZE;
             unsigned char *t = (unsigned char*)realloc(bin, alloclen);
             if( t == NULL ){
               free(bin);

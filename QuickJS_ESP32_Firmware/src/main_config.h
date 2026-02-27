@@ -31,6 +31,7 @@
 #define _IR_ENABLE_
 #define _LCD_ENABLE_
 #define _LEDC_ENABLE_
+#define _MML_ENABLE_
 #define _MQTT_ENABLE_
 #define _RTC_ENABLE_
 #define _SD_ENABLE_

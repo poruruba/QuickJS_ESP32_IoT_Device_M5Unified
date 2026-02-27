@@ -441,10 +441,10 @@ static JSValue utils_http_binary(JSContext *ctx, JSValueConst jsThis, int argc, 
         JSAtom atom = atoms[i].atom;
         const char *name = JS_AtomToCString(ctx, atom);
         if( name != NULL ){
-          JSValue value = JS_GetPropertyStr(ctx, argv[1], name);
+          JSValue val = JS_GetPropertyStr(ctx, argv[1], name);
           JS_FreeCString(ctx, name);
-          const char *str = JS_ToCString(ctx, value);
-          JS_FreeValue(ctx, value);
+          const char *str = JS_ToCString(ctx, val);
+          JS_FreeValue(ctx, val);
           if( str != NULL ){
 //            Serial.printf("%s=%s\n", name, str);
 
@@ -495,10 +495,10 @@ static JSValue utils_http_binary(JSContext *ctx, JSValueConst jsThis, int argc, 
       JSAtom atom = atoms[i].atom;
       const char *name = JS_AtomToCString(ctx, atom);
       if( name != NULL ){
-        JSValue value = JS_GetPropertyStr(ctx, argv[2], name);
+        JSValue val = JS_GetPropertyStr(ctx, argv[2], name);
         JS_FreeCString(ctx, name);
-        const char *str = JS_ToCString(ctx, value);
-        JS_FreeValue(ctx, value);
+        const char *str = JS_ToCString(ctx, val);
+        JS_FreeValue(ctx, val);
         if( str != NULL ){
 //          Serial.printf("%s=%s\n", name, str);
           http.addHeader(name, str);
@@ -545,10 +545,10 @@ static JSValue utils_http_binary(JSContext *ctx, JSValueConst jsThis, int argc, 
         JSAtom atom = atoms[i].atom;
         const char *name = JS_AtomToCString(ctx, atom);
         if( name != NULL ){
-          JSValue value = JS_GetPropertyStr(ctx, argv[1], name);
+          JSValue val = JS_GetPropertyStr(ctx, argv[1], name);
           JS_FreeCString(ctx, name);
-          const char *str = JS_ToCString(ctx, value);
-          JS_FreeValue(ctx, value);
+          const char *str = JS_ToCString(ctx, val);
+          JS_FreeValue(ctx, val);
           if( str != NULL ){
 //            Serial.printf("%s=%s\n", name, str);
             if( first ){
@@ -573,7 +573,7 @@ static JSValue utils_http_binary(JSContext *ctx, JSValueConst jsThis, int argc, 
   }
 
   if (status_code == 200){
-    int alloclen = REALLOC_MIN_SIZE;
+    uint32_t alloclen = REALLOC_MIN_SIZE;
     unsigned char *bin = (unsigned char*)realloc(NULL, alloclen);
     if( bin == NULL )
       goto end;
@@ -582,8 +582,11 @@ static JSValue utils_http_binary(JSContext *ctx, JSValueConst jsThis, int argc, 
     while (http.connected()) {
         size_t size = stream->available();
         if (size) {
-          if( (index + size ) > alloclen ){
-            alloclen += ((index + size) > (alloclen + REALLOC_MIN_SIZE)) ? size : REALLOC_MIN_SIZE;
+          if( (index + size) > alloclen ){
+            if( (index + size) > (alloclen + REALLOC_MIN_SIZE) )
+              alloclen = index + size;
+            else
+              alloclen += REALLOC_MIN_SIZE;
             unsigned char *t = (unsigned char*)realloc(bin, alloclen);
             if( t == NULL ){
               free(bin);
