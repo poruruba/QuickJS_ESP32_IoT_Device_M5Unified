@@ -256,7 +256,7 @@ void loopModule_coap(void){
       char ipaddress_str[16];
       sprintf(ipaddress_str, "%d.%d.%d.%d", (info.remote_ip >> 24) & 0xff, (info.remote_ip >> 16) & 0xff, (info.remote_ip >> 8) & 0xff, (info.remote_ip >> 0) & 0xff);
       JS_SetPropertyStr(g_ctx, obj, "remote_ip", JS_NewString(g_ctx, ipaddress_str));
-      JS_SetPropertyStr(g_ctx, obj, "remote_port", JS_NewInt32(g_ctx, info.remote_port));
+      JS_SetPropertyStr(g_ctx, obj, "remote_port", JS_NewUint32(g_ctx, info.remote_port));
 
       ESP32QuickJS *qjs = (ESP32QuickJS *)JS_GetContextOpaque(g_ctx);
       JSValue ret = qjs->callJsFunc_with_arg(g_ctx, g_callback_func, g_callback_func, 1, &obj);

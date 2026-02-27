@@ -10,6 +10,8 @@
 #include "wifi_utils.h"
 #include "lib_base32.h"
 
+#define REALLOC_MIN_SIZE  1024
+
 unsigned long b64_encode_length(unsigned long input_length)
 {
   return encode_base64_length(input_length);
@@ -63,8 +65,6 @@ String urlencode(String str)
   }
   return encodedString;
 }
-
-#ifdef _HTTP_ENABLE_
 
 static JSValue utils_http_text(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv, int magic)
 {
@@ -413,7 +413,204 @@ end:
   return value;
 }
 
-#endif
+static JSValue utils_http_binary(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv, int magic)
+{
+  bool sem = xSemaphoreTake(binSem, portMAX_DELAY);
+  JSValue value = JS_EXCEPTION;
+  HTTPClient http;
+  const char *url = JS_ToCString(ctx, argv[0]);
+  if (magic == 0){
+    // HTTP POST JSON
+    Serial.println(url);
+    http.begin(url); //HTTP
+    http.addHeader("Content-Type", "application/json");
+  }else if( magic == 1){
+    // HTTP GET
+    if( argc >= 2 && argv[1] != JS_UNDEFINED ){
+      JSPropertyEnum *atoms;
+      uint32_t len;
+      int ret = JS_GetOwnPropertyNames(ctx, &atoms, &len, argv[1], JS_GPN_ENUM_ONLY | JS_GPN_STRING_MASK);
+      if (ret != 0){
+        JS_FreeCString(ctx, url);
+        goto end;
+      }
+
+      String url_str = String(url);
+      bool first = true;
+      for (int i = 0; i < len; i++){
+        JSAtom atom = atoms[i].atom;
+        const char *name = JS_AtomToCString(ctx, atom);
+        if( name != NULL ){
+          JSValue value = JS_GetPropertyStr(ctx, argv[1], name);
+          JS_FreeCString(ctx, name);
+          const char *str = JS_ToCString(ctx, value);
+          JS_FreeValue(ctx, value);
+          if( str != NULL ){
+//            Serial.printf("%s=%s\n", name, str);
+
+            if( first ){
+              if (url_str.indexOf('?') >= 0)
+                url_str += "&";
+              else
+                url_str += "?";
+              first = false;
+            }else{
+              url_str += "&";
+            }
+            url_str += name;
+            url_str += "=";
+            url_str += urlencode(str);
+            JS_FreeCString(ctx, str);
+          }
+        }
+        JS_FreeAtom(ctx, atom);
+      }
+
+      Serial.println(url_str);
+      http.begin(url_str); //HTTP
+    }else{
+      Serial.println(url);
+      http.begin(url); //HTTP
+    }
+  }else if( magic == 2){
+    // HTTP POST UrlEncoded
+    Serial.println(url);
+    http.begin(url); //HTTP
+    http.addHeader("Content-Type", "application/www-form-urlencoded");
+  }else{
+    JS_FreeCString(ctx, url);
+    goto end;
+  }
+  JS_FreeCString(ctx, url);
+
+  if( argc >= 3 && argv[2] != JS_UNDEFINED ){
+    // append headers
+    JSPropertyEnum *atoms;
+    uint32_t len;
+    int ret = JS_GetOwnPropertyNames(ctx, &atoms, &len, argv[2], JS_GPN_ENUM_ONLY | JS_GPN_STRING_MASK);
+    if (ret != 0)
+      goto end;
+
+    for (int i = 0; i < len; i++){
+      JSAtom atom = atoms[i].atom;
+      const char *name = JS_AtomToCString(ctx, atom);
+      if( name != NULL ){
+        JSValue value = JS_GetPropertyStr(ctx, argv[2], name);
+        JS_FreeCString(ctx, name);
+        const char *str = JS_ToCString(ctx, value);
+        JS_FreeValue(ctx, value);
+        if( str != NULL ){
+//          Serial.printf("%s=%s\n", name, str);
+          http.addHeader(name, str);
+          JS_FreeCString(ctx, str);
+        }
+      }
+      JS_FreeAtom(ctx, atom);
+    }
+  }
+
+  int status_code;
+  if (magic == 0){
+    // HTTP POST JSON
+    if( argc >= 2 && argv[1] != JS_UNDEFINED ){
+      JSValue json = JS_JSONStringify(ctx, argv[1], JS_UNDEFINED, JS_UNDEFINED);
+      if( json == JS_UNDEFINED )
+        goto end;
+      const char *body = JS_ToCString(ctx, json);
+      JS_FreeValue(ctx, json);
+      if( body == NULL )
+        goto end;
+
+//      Serial.printf("body=%s\n", body);
+      status_code = http.POST(body);
+      JS_FreeCString(ctx, body);
+    }else{
+      status_code = http.POST("{}");
+    }
+  }else if( magic == 1 ){
+    // HTTP GET
+    status_code = http.GET();
+  }else if( magic == 2 ){
+    // HTTP POST UrlEncoded
+    if( argc >= 2 && argv[1] != JS_UNDEFINED ){
+      JSPropertyEnum *atoms;
+      uint32_t len;
+      int ret = JS_GetOwnPropertyNames(ctx, &atoms, &len, argv[1], JS_GPN_ENUM_ONLY | JS_GPN_STRING_MASK);
+      if (ret != 0)
+        goto end;
+
+      String param_str = String("");
+      bool first = true;
+      for (int i = 0; i < len; i++){
+        JSAtom atom = atoms[i].atom;
+        const char *name = JS_AtomToCString(ctx, atom);
+        if( name != NULL ){
+          JSValue value = JS_GetPropertyStr(ctx, argv[1], name);
+          JS_FreeCString(ctx, name);
+          const char *str = JS_ToCString(ctx, value);
+          JS_FreeValue(ctx, value);
+          if( str != NULL ){
+//            Serial.printf("%s=%s\n", name, str);
+            if( first ){
+              first = false;
+            }else{
+              param_str += "&";
+            }
+            param_str += name;
+            param_str += "=";
+            param_str += urlencode(str);
+            JS_FreeCString(ctx, str);
+          }
+        }
+        JS_FreeAtom(ctx, atom);
+      }
+      status_code = http.POST(param_str);
+    }else{
+      status_code = http.POST("");
+    }
+  }else{
+    goto end;
+  }
+
+  if (status_code == 200){
+    int alloclen = REALLOC_MIN_SIZE;
+    unsigned char *bin = (unsigned char*)realloc(NULL, alloclen);
+    if( bin == NULL )
+      goto end;
+    WiFiClient *stream = http.getStreamPtr();
+    unsigned long index = 0;
+    while (http.connected()) {
+        size_t size = stream->available();
+        if (size) {
+          if( (index + size ) > alloclen ){
+            alloclen += ((index + size) > (alloclen + REALLOC_MIN_SIZE)) ? size : REALLOC_MIN_SIZE;
+            unsigned char *t = (unsigned char*)realloc(bin, alloclen);
+            if( t == NULL ){
+              free(bin);
+              goto end;
+            }
+            bin = t;
+          }
+          int clen = stream->readBytes(&bin[index], size);
+          index += clen;
+        }else{
+          break;
+        }
+        delay(1);
+    }
+    value = create_Uint8Array(ctx, bin, index);
+    free(bin);
+  }else{
+    Serial.printf("status_code=%d\n", status_code);
+    goto end;
+  }
+
+end:
+  http.end();
+  if( sem )
+    xSemaphoreGive(binSem);
+  return value;
+}
 
 static JSValue utils_urlencode(JSContext * ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
 {
@@ -590,6 +787,28 @@ static JSValue utils_rgb2Gray(JSContext *ctx, JSValueConst jsThis,
   return JS_NewUint32(ctx, _color);
 }
 
+static JSValue utils_toString(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
+{
+  uint8_t *buffer;
+  uint32_t num;
+  JSValue value = from_Uint8Array(ctx, argv[0], &buffer, &num);
+  if( value == JS_EXCEPTION )
+    return JS_EXCEPTION;
+  
+  JSValue str = JS_NewStringLen(ctx, (const char*)buffer, num);
+  JS_FreeValue(ctx, value);
+
+  return str;
+}
+
+static JSValue utils_getBytes(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
+{
+  const char *text = JS_ToCString(ctx, argv[0]);
+  JSValue bytes = create_Uint8Array(ctx, (uint8_t*)text, strlen(text));
+  JS_FreeCString(ctx, text);
+  return bytes;
+}
+
 static uint8_t toC(char c){
   if( '0' <= c && c <= '9' )
     return c - '0';
@@ -676,7 +895,6 @@ static JSValue utils_array2hex(JSContext *ctx, JSValueConst jsThis,
 }
 
 static const JSCFunctionListEntry utils_funcs[] = {
-#ifdef _HTTP_ENABLE_
     JSCFunctionListEntry{"httpPostJson", 0, JS_DEF_CFUNC, 0, {
                            func : {3, JS_CFUNC_generic_magic, {generic_magic : utils_http_json}}
                          }},
@@ -695,7 +913,9 @@ static const JSCFunctionListEntry utils_funcs[] = {
     JSCFunctionListEntry{"httpUrlEncodedText", 0, JS_DEF_CFUNC, 2, {
                            func : {3, JS_CFUNC_generic_magic, {generic_magic : utils_http_text}}
                          }},
-#endif
+    JSCFunctionListEntry{"httpGetBinary", 0, JS_DEF_CFUNC, 1, {
+                           func : {3, JS_CFUNC_generic_magic, {generic_magic : utils_http_binary}}
+                         }},
     JSCFunctionListEntry{"urlencode", 0, JS_DEF_CFUNC, 0, {
                            func : {1, JS_CFUNC_generic, utils_urlencode}
                          }},
@@ -732,8 +952,12 @@ static const JSCFunctionListEntry utils_funcs[] = {
                         func : {3, JS_CFUNC_generic, utils_toRgb888}
                       }},
     JSCFunctionListEntry{
-                      "rgb2Gray", 0, JS_DEF_CFUNC, 0, {
-                        func : {3, JS_CFUNC_generic, utils_rgb2Gray}
+                      "toString", 0, JS_DEF_CFUNC, 0, {
+                        func : {1, JS_CFUNC_generic, utils_toString}
+                      }},
+    JSCFunctionListEntry{
+                      "getBytes", 0, JS_DEF_CFUNC, 0, {
+                        func : {1, JS_CFUNC_generic, utils_getBytes}
                       }},
 };
 
@@ -932,45 +1156,6 @@ uint8_t *http_get_binary2(const char *url, uint32_t *p_len)
   delay(100);
   
   return p_buffer;
-}
-
-long http_get_json(String url, JsonDocument * doc)
-{
-  Serial.println(url);
-
-  HTTPClient http;
-  Serial.print("[HTTP] GET begin...\n");
-  // configure traged server and url
-  http.begin(url); //HTTP
-
-  // start connection and send HTTP header
-  int httpCode = http.GET();
-
-  // HTTP header has been send and Server response header has been handled
-  Serial.printf("[HTTP] GET... code: %d\n", httpCode);
-
-  // file found at server
-  if (httpCode == HTTP_CODE_OK){
-    // get tcp stream
-    int len = http.getSize();
-    Serial.printf("[HTTP] Content-Length=%d\n", len);
-    Stream *stream = http.getStreamPtr();
-    DeserializationError err = deserializeJson(*doc, *stream);
-    if (err){
-      Serial.print("Deserialize error: ");
-      Serial.println(err.c_str());
-      return -1;
-    }
-  }else{
-    Serial.printf("[HTTP] GET... failed, error: %s\n", http.errorToString(httpCode).c_str());
-    http.end();
-    return -1;
-  }
-
-  http.end();
-  delay(100);
-
-  return 0;
 }
 
 JSValue getTypedArrayBuffer(JSContext *ctx, JSValue value, void** pp_buffer, uint8_t *p_unit_size, uint32_t *p_unit_num)

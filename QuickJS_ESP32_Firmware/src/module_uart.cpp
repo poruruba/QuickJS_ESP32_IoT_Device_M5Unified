@@ -25,43 +25,32 @@ static JSValue esp32_uart_available(JSContext *ctx, JSValueConst jsThis,
 static JSValue esp32_uart_write(JSContext *ctx, JSValueConst jsThis,
                                 int argc, JSValueConst *argv, int magic)
 {
-  int tag = JS_VALUE_GET_TAG(argv[0]);
-  if (tag == JS_TAG_INT){
+  if (JS_IsNumber(argv[0])){
     uint32_t value;
     JS_ToUint32(ctx, &value, argv[0]);
 
     return JS_NewInt32(ctx, Serial1.write((uint8_t)value));
+  }else if( JS_IsString(argv[0]) ){
+    const char *p_str = JS_ToCString(ctx, argv[0]);
+    if( p_str == NULL )
+      return JS_EXCEPTION;
+
+    size_t ret = Serial1.write(p_str);
+    JS_FreeCString(ctx, p_str);
+    return JS_NewInt32(ctx, ret);
   }else{
     uint8_t *p_buffer;
-    uint8_t unit_size;
-    uint32_t unit_num;
-    JSValue vbuffer = getTypedArrayBuffer(ctx, argv[0], (void**)&p_buffer, &unit_size, &unit_num);
+    uint32_t num;
+    JSValue vbuffer = from_Uint8Array(ctx, argv[0], &p_buffer, &num);
     if( JS_IsNull(vbuffer) ){
       return JS_EXCEPTION;
     }
-    if( unit_size != 1 ){
-      JS_FreeValue(ctx, vbuffer);
-      return JS_EXCEPTION;
-    }
 
-    size_t ret = Serial1.write(p_buffer, unit_num);
+    size_t ret = Serial1.write(p_buffer, num);
     JS_FreeValue(ctx, vbuffer);
 
     return JS_NewInt32(ctx, ret);
   }
-}
-
-static JSValue esp32_uart_writeString(JSContext *ctx, JSValueConst jsThis,
-                                int argc, JSValueConst *argv, int magic)
-{
-  const char *p_str = JS_ToCString(ctx, argv[0]);
-  if( p_str == NULL )
-    return JS_EXCEPTION;
-
-  size_t ret = Serial1.write(p_str);
-  JS_FreeCString(ctx, p_str);
-
-  return JS_NewInt32(ctx, ret);
 }
 
 static JSValue esp32_uart_read(JSContext *ctx, JSValueConst jsThis,
@@ -147,9 +136,6 @@ static const JSCFunctionListEntry uart_funcs[] = {
     JSCFunctionListEntry{"readLine", 0, JS_DEF_CFUNC, 0, {
                           func : {0, JS_CFUNC_generic_magic, {generic_magic : esp32_uart_readLine}}
                          }},
-    JSCFunctionListEntry{"writeString", 0, JS_DEF_CFUNC, 0, {
-                          func : {1, JS_CFUNC_generic_magic, {generic_magic : esp32_uart_writeString}}
-                        }},
     JSCFunctionListEntry{"end", 0, JS_DEF_CFUNC, 0, {
                           func : {0, JS_CFUNC_generic_magic, {generic_magic : esp32_uart_end}}
                         }},

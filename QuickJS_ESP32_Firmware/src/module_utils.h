@@ -1,15 +1,13 @@
 #ifndef _MODULE_UTILS_H_
 #define _MODULE_UTILS_H_
 
-#include <ArduinoJson.h>
 #include "quickjs.h"
 #include "module_type.h"
 
 extern JsModuleEntry utils_module;
 
-long http_get(String url, String *response);
-long http_get_binary(String url, uint8_t *p_buffer, unsigned long *p_len);
-long http_get_json(String url, JsonDocument *doc);
+// long http_get(String url, String *response);
+// long http_get_binary(String url, uint8_t *p_buffer, unsigned long *p_len);
 uint8_t *http_get_binary2(const char *url, uint32_t *p_len);
 
 unsigned long b64_encode_length(unsigned long input_length);

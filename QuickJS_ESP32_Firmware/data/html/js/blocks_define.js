@@ -444,10 +444,10 @@ Blockly.Blocks['udp_recvbegin'] = {
   }
 };
 
-Blockly.Blocks['udp_sendtext'] = {
+Blockly.Blocks['udp_send'] = {
   init: function() {
     this.appendDummyInput()
-        .appendField("Udp.sendText");
+        .appendField("Udp.send");
     this.appendValueInput("host")
         .setCheck("String")
         .setAlign(Blockly.ALIGN_RIGHT)
@@ -1472,35 +1472,6 @@ Blockly.Blocks['audio_begin'] = {
   init: function() {
     this.appendDummyInput()
         .appendField("Audio.begin");
-    this.appendDummyInput()
-        .setAlign(Blockly.ALIGN_RIGHT)
-        .appendField("mode")
-        .appendField(new Blockly.FieldDropdown([["EXTERNAL_I2S","audio.EXTERNAL_I2S"], ["INTERNAL_DAC","audio.INTERNAL_DAC"], ["INTERNAL_PDM","audio.INTERNAL_PDM"]]), "mode");
-    this.setInputsInline(true);
-    this.setPreviousStatement(true, null);
-    this.setNextStatement(true, null);
-    this.setColour(230);
- this.setTooltip("");
- this.setHelpUrl("");
-  }
-};
-
-Blockly.Blocks['audio_setpinout'] = {
-  init: function() {
-    this.appendDummyInput()
-        .appendField("Audio.setPinout");
-    this.appendValueInput("bclk")
-        .setCheck("Number")
-        .setAlign(Blockly.ALIGN_RIGHT)
-        .appendField("bclk");
-    this.appendValueInput("lrck")
-        .setCheck("Number")
-        .setAlign(Blockly.ALIGN_RIGHT)
-        .appendField("lrck");
-    this.appendValueInput("dout")
-        .setCheck("Number")
-        .setAlign(Blockly.ALIGN_RIGHT)
-        .appendField("dout");
     this.setInputsInline(true);
     this.setPreviousStatement(true, null);
     this.setNextStatement(true, null);
@@ -1540,14 +1511,14 @@ Blockly.Blocks['audio_playsd'] = {
   }
 };
 
-Blockly.Blocks['audio_setgain'] = {
+Blockly.Blocks['audio_setvolume'] = {
   init: function() {
     this.appendDummyInput()
-        .appendField("Audio.setGain");
-    this.appendValueInput("gain")
+        .appendField("Audio.setVolume");
+    this.appendValueInput("volume")
         .setCheck("Number")
         .setAlign(Blockly.ALIGN_RIGHT)
-        .appendField("gain");
+        .appendField("volume");
     this.setInputsInline(true);
     this.setPreviousStatement(true, null);
     this.setNextStatement(true, null);
@@ -1557,10 +1528,10 @@ Blockly.Blocks['audio_setgain'] = {
   }
 };
 
-Blockly.Blocks['audio_getgain'] = {
+Blockly.Blocks['audio_getvolume'] = {
   init: function() {
     this.appendDummyInput()
-        .appendField("Audio.getGain");
+        .appendField("Audio.getVolume");
     this.setInputsInline(true);
     this.setOutput(true, "Number");
     this.setColour(230);

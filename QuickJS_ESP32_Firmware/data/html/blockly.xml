@@ -389,17 +389,6 @@
     </category>
     <category name="Audio">
       <block type="audio_begin"></block>
-      <block type="audio_setpinout">
-        <value name="bclk">
-          <shadow type="math_number"></shadow>
-        </value>
-        <value name="lrck">
-          <shadow type="math_number"></shadow>
-        </value>
-        <value name="dout">
-          <shadow type="math_number"></shadow>
-        </value>
-      </block>
       <block type="audio_update"></block>
       <block type="audio_playsd">
         <value name="path">
@@ -408,12 +397,12 @@
           </shadow>
         </value>
       </block>
-      <block type="audio_setgain">
-        <value name="gain">
+      <block type="audio_setvolume">
+        <value name="volume">
           <shadow type="math_number"></shadow>
         </value>
       </block>
-      <block type="audio_getgain"></block>
+      <block type="audio_getvolume"></block>
       <block type="audio_isrunning"></block>
       <block type="audio_stop"></block>
     </category>
@@ -803,7 +792,7 @@
           <shadow type="math_number"></shadow>
         </value>
       </block>
-      <block type="udp_sendtext">
+      <block type="udp_send">
         <value name="host">
           <shadow type="text">
             <field name="TEXT"></field>

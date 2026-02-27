@@ -205,7 +205,7 @@ Blockly.JavaScript['udp_recvbegin'] = function(block) {
   return code;
 };
 
-Blockly.JavaScript['udp_sendtext'] = function(block) {
+Blockly.JavaScript['udp_send'] = function(block) {
   var value_host = Blockly.JavaScript.valueToCode(block, 'host', Blockly.JavaScript.ORDER_ATOMIC);
   var value_port = Blockly.JavaScript.valueToCode(block, 'port', Blockly.JavaScript.ORDER_ATOMIC);
   var value_text = Blockly.JavaScript.valueToCode(block, 'text', Blockly.JavaScript.ORDER_ATOMIC);
@@ -587,7 +587,7 @@ Blockly.JavaScript['mqtt_subscribe'] = function(block) {
   var value_topic = Blockly.JavaScript.valueToCode(block, 'topic', Blockly.JavaScript.ORDER_ATOMIC);
   var statements_func = Blockly.JavaScript.statementToCode(block, 'func');
   // TODO: Assemble JavaScript into code variable.
-  var code = 'mqtt.subscribe(' + value_topic + ', ' + (dropdown_async==='true' ? "async " : "") + '() => {\n' + statements_func + '});\n';
+  var code = 'mqtt.subscribe(' + value_topic + ', ' + (dropdown_async==='true' ? "async " : "") + '(data) => {\n' + statements_func + '});\n';
   return code;
 };
 
@@ -621,18 +621,8 @@ Blockly.JavaScript['mqtt_setserver'] = function(block) {
 };
 
 Blockly.JavaScript['audio_begin'] = function(block) {
-  var dropdown_mode = block.getFieldValue('mode');
   // TODO: Assemble JavaScript into code variable.
-  var code = 'audio.begin(' + dropdown_mode + ');\n';
-  return code;
-};
-
-Blockly.JavaScript['audio_setpinout'] = function(block) {
-  var value_bclk = Blockly.JavaScript.valueToCode(block, 'bclk', Blockly.JavaScript.ORDER_ATOMIC);
-  var value_lrck = Blockly.JavaScript.valueToCode(block, 'lrck', Blockly.JavaScript.ORDER_ATOMIC);
-  var value_dout = Blockly.JavaScript.valueToCode(block, 'dout', Blockly.JavaScript.ORDER_ATOMIC);
-  // TODO: Assemble JavaScript into code variable.
-  var code = 'audio.setPinout(' + value_bclk + ', ' + value_lrck + ', ' + value_dout + ');\n';
+  var code = 'audio.begin();\n';
   return code;
 };
 
@@ -649,16 +639,16 @@ Blockly.JavaScript['audio_playsd'] = function(block) {
   return code;
 };
 
-Blockly.JavaScript['audio_setgain'] = function(block) {
-  var value_gain = Blockly.JavaScript.valueToCode(block, 'gain', Blockly.JavaScript.ORDER_ATOMIC);
+Blockly.JavaScript['audio_setvolume'] = function(block) {
+  var value_volume = Blockly.JavaScript.valueToCode(block, 'volume', Blockly.JavaScript.ORDER_ATOMIC);
   // TODO: Assemble JavaScript into code variable.
-  var code = 'audio.setGain(' + value_gain + ');\n';
+  var code = 'audio.setVolume(' + value_volume + ');\n';
   return code;
 };
 
-Blockly.JavaScript['audio_getgain'] = function(block) {
+Blockly.JavaScript['audio_getvolume'] = function(block) {
   // TODO: Assemble JavaScript into code variable.
-  var code = 'audio.getGain()';
+  var code = 'audio.getVolume()';
   // TODO: Change ORDER_NONE to the correct strength.
   return [code, Blockly.JavaScript.ORDER_FUNCTION_CALL];
 };
