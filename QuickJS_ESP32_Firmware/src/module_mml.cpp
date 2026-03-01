@@ -8,7 +8,7 @@
 #include "module_mml.h"
 #include "MML.h"
 
-#define MML_DEFAULT_VOLUME 50.0
+#define MML_DEFAULT_VOLUME 100.0
 
 static MML mml;
 static TimerHandle_t mmlTimer;
@@ -16,28 +16,33 @@ static bool timerRunning = false;
 static uint8_t g_ledc_ch = 0;
 static uint32_t g_period = 10;
 static uint8_t g_resolution = 10;
+static bool g_repeat = false;
 static float g_volume = MML_DEFAULT_VOLUME;
 static char *gp_mml_text = NULL;
 
 static void startIntervalTimer(uint32_t period);
 static void stopIntervalTimer(void);
 
-static void ledcTone(uint32_t freq) {
+static void ledcTone(uint32_t freq, float vol){
   if (freq == 0) {
     ledcWrite(g_ledc_ch, 0);
     return;
   }
   ledcWriteTone(g_ledc_ch, freq);
-  ledcWrite(g_ledc_ch, ((1ul << g_resolution) - 1) * g_volume / 100);
+  ledcWrite(g_ledc_ch, (1ul << (g_resolution - 1)) * vol * (g_volume / 100.0));
 }
 
 static void func_tone(uint16_t freq, uint16_t tm, uint16_t vol) {
-  ledcTone(freq);
+  ledcTone(freq, vol / 15.0);
 }
 
 static void func_notone() {
-  ledcTone(0);
+  ledcTone(0, 0.0);
 }
+
+// static void debug(uint8_t c) {
+//   Serial.write(c);
+// }
 
 static JSValue mml_begin(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
 {
@@ -60,6 +65,10 @@ static JSValue mml_play(JSContext *ctx, JSValueConst jsThis, int argc, JSValueCo
   const char *text = JS_ToCString(ctx, argv[0]);
   if( text == NULL )
     return JS_EXCEPTION;
+  
+  bool repeat = false;
+  if( argc > 1 )
+    repeat = JS_ToBool(ctx, argv[1]);
 
   stopIntervalTimer();
 
@@ -67,6 +76,7 @@ static JSValue mml_play(JSContext *ctx, JSValueConst jsThis, int argc, JSValueCo
   JS_FreeCString(ctx, text);
 
   mml.setText(gp_mml_text);
+  g_repeat = repeat;
   mml.playBGM();
 
   startIntervalTimer(g_period);
@@ -95,6 +105,15 @@ static JSValue mml_getVolume(JSContext *ctx, JSValueConst jsThis, int argc, JSVa
   return JS_NewFloat64(ctx, g_volume);
 }
 
+static JSValue mml_setTempo(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
+{
+  uint32_t tempo;;
+  JS_ToUint32(ctx, &tempo, argv[0]);
+  mml.tempo(tempo);
+
+  return JS_UNDEFINED;
+}
+
 static JSValue mml_isPlaying(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
 {
   return JS_NewBool(ctx, mml.isBGMPlay());
@@ -105,16 +124,19 @@ static const JSCFunctionListEntry mml_funcs[] = {
                           func : {3, JS_CFUNC_generic, mml_begin}
                         }},
     JSCFunctionListEntry{"play", 0, JS_DEF_CFUNC, 0, {
-                          func : {1, JS_CFUNC_generic, mml_play}
+                          func : {2, JS_CFUNC_generic, mml_play}
                         }},
     JSCFunctionListEntry{"stop", 0, JS_DEF_CFUNC, 0, {
-                          func : {3, JS_CFUNC_generic, mml_stop}
+                          func : {0, JS_CFUNC_generic, mml_stop}
                         }},
     JSCFunctionListEntry{"setVolume", 0, JS_DEF_CFUNC, 0, {
                           func : {1, JS_CFUNC_generic, mml_setVolume}
                         }},
     JSCFunctionListEntry{"getVolume", 0, JS_DEF_CFUNC, 0, {
                           func : {0, JS_CFUNC_generic, mml_getVolume}
+                        }},
+    JSCFunctionListEntry{"setTempo", 0, JS_DEF_CFUNC, 0, {
+                          func : {1, JS_CFUNC_generic, mml_setTempo}
                         }},
     JSCFunctionListEntry{"isPlaying", 0, JS_DEF_CFUNC, 0, {
                           func : {0, JS_CFUNC_generic, mml_isPlaying}
@@ -145,6 +167,10 @@ static void mmlTimerCallback(TimerHandle_t xTimer) {
     }else{
       xTimerStop(mmlTimer, 0);
       timerRunning = false;
+      if( g_repeat ){
+        mml.playBGM();
+        startIntervalTimer(g_period);
+      }
 //      Serial.println("startIntervalTimer end");
     }
   }
@@ -152,6 +178,7 @@ static void mmlTimerCallback(TimerHandle_t xTimer) {
 
 static void stopIntervalTimer(void){
   if( timerRunning ){
+    g_repeat = false;
     mml.stop();
     xTimerStop(mmlTimer, 0);
     timerRunning = false;
@@ -176,7 +203,7 @@ static void startIntervalTimer(uint32_t period){
 
 long initialize_mml(void)
 {
-  mml.init(nullptr, func_tone, func_notone, nullptr);
+  mml.init(nullptr, func_tone, func_notone, nullptr /* debug */);
   mmlTimer = xTimerCreate(
     "mmlTimer",
     pdMS_TO_TICKS(g_period),
