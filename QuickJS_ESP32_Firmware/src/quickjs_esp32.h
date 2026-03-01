@@ -68,6 +68,9 @@
 #ifdef _UNIT_ASR_ENABLE_
 #include "module_unit_asr.h"
 #endif
+#ifdef _UNIT_SYNTH_ENABLE_
+#include "module_unit_synth.h"
+#endif
 #ifdef _HTTP_ENABLE_
 #include "module_http.h"
 #endif
@@ -172,6 +175,9 @@ static JsModuleEntry module_entries[] = {
 #endif
 #ifdef _UNIT_ASR_ENABLE_
   unit_asr_module,
+#endif
+#ifdef _UNIT_SYNTH_ENABLE_
+  unit_synth_module,
 #endif
 #ifdef _HTTP_ENABLE_
   http_module,

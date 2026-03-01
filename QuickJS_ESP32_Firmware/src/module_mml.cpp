@@ -29,7 +29,7 @@ static void ledcTone(uint32_t freq, float vol){
     return;
   }
   ledcWriteTone(g_ledc_ch, freq);
-  ledcWrite(g_ledc_ch, (1ul << (g_resolution - 1)) * vol * (g_volume / 100.0));
+  ledcWrite(g_ledc_ch, (1ul << (g_resolution - 1)) * (vol / 15) * (g_volume / 100.0));
 }
 
 static void func_tone(uint16_t freq, uint16_t tm, uint16_t vol) {
@@ -107,7 +107,7 @@ static JSValue mml_getVolume(JSContext *ctx, JSValueConst jsThis, int argc, JSVa
 
 static JSValue mml_setTempo(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
 {
-  uint32_t tempo;;
+  uint32_t tempo;
   JS_ToUint32(ctx, &tempo, argv[0]);
   mml.tempo(tempo);
 
