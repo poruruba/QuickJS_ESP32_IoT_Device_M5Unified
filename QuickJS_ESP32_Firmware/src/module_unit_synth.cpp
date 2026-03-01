@@ -35,7 +35,6 @@ static void func_notone() {
 }
 
 static void func_instrument(uint8_t value) {
-  Serial.printf("set instrument: %d\n", value);
   synth.setInstrument(0, SYNTH_DEFAULT_CHANNEL, value);
 }
 
