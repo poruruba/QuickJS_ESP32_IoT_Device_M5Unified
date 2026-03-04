@@ -10,35 +10,36 @@
 #include <M5UnitSynth.h>
 
 #define SYNTH_DEFAULT_VOLUME 100.0
-#define SYNTH_DEFAULT_CHANNEL 0
 #define SYNTH_DEFAULT_PROGRAM 0
+#define SYNTH_DEFAULT_BANK 0
+
+#define NUM_OF_SYNCH  3
 
 static M5UnitSynth synth;
-static MML_Synth mml;
+static MML_Synth mml[NUM_OF_SYNCH];
 static TimerHandle_t mmlTimer;
 static bool timerRunning = false;
-static uint8_t g_ledc_ch = 0;
 static uint32_t g_period = 10;
 static uint8_t g_resolution = 10;
 static bool g_repeat = false;
 static float g_volume = SYNTH_DEFAULT_VOLUME;
-static char *gp_mml_text = NULL;
+static char *gp_mml_text[NUM_OF_SYNCH];
 
 static void startIntervalTimer(uint32_t period);
 static void stopIntervalTimer(void);
 
-static void func_tone(uint8_t pitch, uint16_t vol) {
-  synth.setNoteOn(SYNTH_DEFAULT_CHANNEL, pitch, vol / 15 * 127 * (g_volume / 100.0));
+static void func_tone(uint8_t idx,uint8_t pitch, uint16_t vol) {
+  synth.setNoteOn(idx, pitch, vol / 15.0 * 127 * (g_volume / 100.0));
 }
 
-static void func_notone() {
+static void func_notone(uint8_t idx) {
 }
 
-static void func_instrument(uint8_t value) {
-  synth.setInstrument(0, SYNTH_DEFAULT_CHANNEL, value);
+static void func_instrument(uint8_t idx, uint8_t value) {
+  synth.setInstrument(SYNTH_DEFAULT_BANK, idx, value);
 }
 
-// static void debug(uint8_t c) {
+// static void debug(uint8_t idx, uint8_t c) {
 //   Serial.write(c);
 // }
 
@@ -59,23 +60,59 @@ static JSValue unit_synth_begin(JSContext *ctx, JSValueConst jsThis, int argc, J
 
 static JSValue unit_synth_play(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
 {
-  const char *text = JS_ToCString(ctx, argv[0]);
-  if( text == NULL )
+  stopIntervalTimer();
+
+  if( JS_IsArray(ctx, argv[0]) ){
+    JSValue value = JS_GetPropertyStr(ctx, argv[0], "length");
+    uint32_t length;
+    JS_ToUint32(ctx, &length, value);
+    JS_FreeValue(ctx, value);
+    if( length > NUM_OF_SYNCH )
+      return JS_EXCEPTION;
+
+    for( int i = 0 ; i < length ; i++ ){
+      JSValue element = JS_GetPropertyUint32(ctx, argv[0], i);
+      const char *text = JS_ToCString(ctx, element);
+      if( text == NULL ){
+        for( int j = 0 ; j < i ; j++ ){
+          free(gp_mml_text[j]);
+          gp_mml_text[j] = NULL;
+        }
+        JS_FreeValue(ctx, element);
+        return JS_EXCEPTION;
+      }
+      gp_mml_text[i] = strdup(text);
+      JS_FreeCString(ctx, text);
+      JS_FreeValue(ctx, element);
+    }
+  }else if( JS_IsString(argv[0]) ){
+    const char *text = JS_ToCString(ctx, argv[0]);
+    if( text == NULL )
+      return JS_EXCEPTION;
+    gp_mml_text[0] = strdup(text);
+    JS_FreeCString(ctx, text);
+  }else{
     return JS_EXCEPTION;
+  }
   
   bool repeat = false;
   if( argc > 1 )
     repeat = JS_ToBool(ctx, argv[1]);
 
-  stopIntervalTimer();
+  for( int i = 0 ; i < NUM_OF_SYNCH ; i++ ){
+    if( gp_mml_text[i] == NULL )
+      break;
+    mml[i].init(nullptr, func_tone, func_notone, func_instrument, nullptr);
+    mml[i].setText(gp_mml_text[i]);
+  }
 
-  gp_mml_text = strdup(text);
-  JS_FreeCString(ctx, text);
-
-  mml.init(nullptr, func_tone, func_notone, func_instrument, nullptr);
-  mml.setText(gp_mml_text);
   g_repeat = repeat;
-  mml.playBGM();
+
+  for( int i = 0 ; i < NUM_OF_SYNCH ; i++ ){
+    if( gp_mml_text[i] == NULL )
+      break;
+    mml[i].playBGM();
+  }
 
   startIntervalTimer(g_period);
 
@@ -103,18 +140,18 @@ static JSValue unit_synth_getVolume(JSContext *ctx, JSValueConst jsThis, int arg
   return JS_NewFloat64(ctx, g_volume);
 }
 
-static JSValue unit_synth_setTempo(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
+static JSValue unit_synth_reset(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
 {
-  uint32_t tempo;
-  JS_ToUint32(ctx, &tempo, argv[0]);
-  mml.tempo(tempo);
+  for( int i = 0 ; i < NUM_OF_SYNCH ; i++ ){
+    mml[i].reset();
+  }
 
-  return JS_UNDEFINED;
+  return JS_NewBool(ctx, mml[0].isBGMPlay());
 }
 
 static JSValue unit_synth_isPlaying(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
 {
-  return JS_NewBool(ctx, mml.isBGMPlay());
+  return JS_NewBool(ctx, mml[0].isBGMPlay());
 }
 
 static JSValue unit_synth_setNoteOn(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
@@ -142,10 +179,14 @@ static JSValue unit_synth_setNoteOff(JSContext *ctx, JSValueConst jsThis, int ar
 
 static JSValue unit_synth_setInstrument(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
 {
-  uint32_t bank;
-  JS_ToUint32(ctx, &bank, argv[0]);
+  uint32_t idx;
+  JS_ToUint32(ctx, &idx, argv[0]);
+  if( idx >= NUM_OF_SYNCH )
+    return JS_EXCEPTION;
+  uint32_t val;
+  JS_ToUint32(ctx, &val, argv[1]);
 
-  synth.setInstrument(0, SYNTH_DEFAULT_CHANNEL, bank);
+  synth.setInstrument(SYNTH_DEFAULT_BANK, idx, val);
 
   return JS_UNDEFINED;
 }
@@ -166,14 +207,14 @@ static const JSCFunctionListEntry unit_synth_funcs[] = {
     JSCFunctionListEntry{"getVolume", 0, JS_DEF_CFUNC, 0, {
                           func : {0, JS_CFUNC_generic, unit_synth_getVolume}
                         }},
-    JSCFunctionListEntry{"setTempo", 0, JS_DEF_CFUNC, 0, {
-                          func : {1, JS_CFUNC_generic, unit_synth_setTempo}
+    JSCFunctionListEntry{"reset", 0, JS_DEF_CFUNC, 0, {
+                          func : {0, JS_CFUNC_generic, unit_synth_reset}
                         }},
     JSCFunctionListEntry{"isPlaying", 0, JS_DEF_CFUNC, 0, {
                           func : {0, JS_CFUNC_generic, unit_synth_isPlaying}
                         }},
     JSCFunctionListEntry{"setInstrument", 0, JS_DEF_CFUNC, 0, {
-                          func : {1, JS_CFUNC_generic, unit_synth_setInstrument}
+                          func : {2, JS_CFUNC_generic, unit_synth_setInstrument}
                         }},
     JSCFunctionListEntry{"setNoteOn", 0, JS_DEF_CFUNC, 0, {
                           func : {3, JS_CFUNC_generic, unit_synth_setNoteOn}
@@ -181,6 +222,70 @@ static const JSCFunctionListEntry unit_synth_funcs[] = {
     JSCFunctionListEntry{"setNoteOff", 0, JS_DEF_CFUNC, 0, {
                           func : {2, JS_CFUNC_generic, unit_synth_setNoteOff}
                         }},
+    JSCFunctionListEntry{
+        "CATEGORY_PIANO_00", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : 0
+        }},
+    JSCFunctionListEntry{
+        "CATEGORY_CHROMATIC_PERCUSSION_00", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : 8
+        }},
+    JSCFunctionListEntry{
+        "CATEGORY_ORGAN_00", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : 16
+        }},
+    JSCFunctionListEntry{
+        "CATEGORY_GUITAR_00", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : 24
+        }},
+    JSCFunctionListEntry{
+        "CATEGORY_BASS_00", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : 32
+        }},
+    JSCFunctionListEntry{
+        "CATEGORY_STRINGS_00", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : 40
+        }},
+    JSCFunctionListEntry{
+        "CATEGORY_ENSEMBLE_00", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : 48
+        }},
+    JSCFunctionListEntry{
+        "CATEGORY_BRASS_00", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : 56
+        }},
+    JSCFunctionListEntry{
+        "CATEGORY_REED_00", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : 64
+        }},
+    JSCFunctionListEntry{
+        "CATEGORY_PIPE_00", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : 72
+        }},
+    JSCFunctionListEntry{
+        "CATEGORY_SYNTH_LEAD_00", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : 80
+        }},
+    JSCFunctionListEntry{
+        "CATEGORY_SYNTH_PAD_00", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : 88
+        }},
+    JSCFunctionListEntry{
+        "CATEGORY_SYNTH_EFFECTS_00", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : 96
+        }},
+    JSCFunctionListEntry{
+        "CATEGORY_ETHNIC_00", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : 104
+        }},
+    JSCFunctionListEntry{
+        "CATEGORY_PERCUSSIVE_00", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : 112
+        }},
+    JSCFunctionListEntry{
+        "CATEGORY_SOUND_EFFECTS_00", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : 120
+        }},
 };
 
 JSModuleDef *addModule_synth(JSContext *ctx, JSValue global)
@@ -201,14 +306,23 @@ JSModuleDef *addModule_synth(JSContext *ctx, JSValue global)
 
 static void mmlTimerCallback(TimerHandle_t xTimer) {
   if( timerRunning ){
-    if (mml.isBGMPlay()) {
-      if (mml.available()) 
-        mml.playTick();
+    if (mml[0].isBGMPlay()) {
+      uint32_t msec = millis();
+      for( int i = 0 ; i < NUM_OF_SYNCH ; i++ ){
+        if( gp_mml_text[i] == NULL )
+          break;
+        if (mml[i].available(msec))
+          mml[i].playTick(msec);
+      }
     }else{
       xTimerStop(mmlTimer, 0);
       timerRunning = false;
       if( g_repeat ){
-        mml.playBGM();
+        for( int i = 0 ; i < NUM_OF_SYNCH ; i++ ){
+          if( gp_mml_text[i] == NULL )
+            break;
+          mml[i].playBGM();
+        }
         startIntervalTimer(g_period);
       }
 //      Serial.println("startIntervalTimer end");
@@ -219,13 +333,15 @@ static void mmlTimerCallback(TimerHandle_t xTimer) {
 static void stopIntervalTimer(void){
   if( timerRunning ){
     g_repeat = false;
-    mml.stop();
     xTimerStop(mmlTimer, 0);
-    timerRunning = false;
-    if( gp_mml_text != NULL ){
-      free(gp_mml_text);
-      gp_mml_text = NULL;
+    for( int i = 0 ; i < NUM_OF_SYNCH; i++ ){
+      if( gp_mml_text[i] == NULL )
+        break;
+      free(gp_mml_text[i]);
+      gp_mml_text[i] = NULL;
+      mml[i].stop();
     }
+    timerRunning = false;
   }
 }
 
@@ -243,6 +359,11 @@ static void startIntervalTimer(uint32_t period){
 
 long initialize_synth(void)
 {
+  for( int i = 0 ; i < NUM_OF_SYNCH; i++ ){
+    mml[i] = MML_Synth(i);
+    gp_mml_text[i] = NULL;
+  }
+
   mmlTimer = xTimerCreate(
     "mmlTimer",
     pdMS_TO_TICKS(g_period),
@@ -257,7 +378,10 @@ long initialize_synth(void)
 void endModule_synth(void){
   stopIntervalTimer();
   g_volume = SYNTH_DEFAULT_VOLUME;
-  synth.setInstrument(0, SYNTH_DEFAULT_CHANNEL, SYNTH_DEFAULT_PROGRAM);
+  for( int i = 0 ; i < NUM_OF_SYNCH; i++ ){
+    synth.setInstrument(SYNTH_DEFAULT_BANK, i, SYNTH_DEFAULT_PROGRAM);
+    mml[i].reset();
+  }
 }
 
 JsModuleEntry unit_synth_module = {
