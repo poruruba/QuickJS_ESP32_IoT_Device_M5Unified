@@ -39,9 +39,9 @@ static void func_instrument(uint8_t idx, uint8_t value) {
   synth.setInstrument(SYNTH_DEFAULT_BANK, idx, value);
 }
 
-// static void debug(uint8_t idx, uint8_t c) {
-//   Serial.write(c);
-// }
+static void debug(uint8_t idx, uint8_t c) {
+  Serial.write(c);
+}
 
 static JSValue unit_synth_begin(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
 {
@@ -102,7 +102,7 @@ static JSValue unit_synth_play(JSContext *ctx, JSValueConst jsThis, int argc, JS
   for( int i = 0 ; i < NUM_OF_SYNCH ; i++ ){
     if( gp_mml_text[i] == NULL )
       break;
-    mml[i].init(nullptr, func_tone, func_notone, func_instrument, nullptr);
+    mml[i].init(nullptr, func_tone, func_notone, func_instrument, /* nullptr */ debug);
     mml[i].setText(gp_mml_text[i]);
   }
 
