@@ -3,6 +3,12 @@
 
 #include "module_type.h"
 
+#ifdef SD_TYPE_MMC
+#define sd  SD_MMC
+#else
+#define sd  SD
+#endif
+
 extern JsModuleEntry sd_module;
 
 #endif

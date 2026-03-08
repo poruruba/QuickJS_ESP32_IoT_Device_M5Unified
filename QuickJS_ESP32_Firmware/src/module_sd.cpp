@@ -7,17 +7,28 @@
 #include "module_type.h"
 #include "module_utils.h"
 #include "module_sd.h"
-#include <SPI.h>
-#include <SD.h>
 
 #define SD_DEFAULT_FREQ   25000000
 
 static JSValue sd_begin(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
 {
+#ifndef SD_TYPE_MMC
   uint32_t ssPin;
   JS_ToUint32(ctx, &ssPin, argv[0]);
 
   bool ret = SD.begin(ssPin, SPI, SD_DEFAULT_FREQ);
+#else
+  uint32_t clk_pin, cmd_pin, d0_pin;
+  JS_ToUint32(ctx, &clk_pin, argv[0]);
+  JS_ToUint32(ctx, &cmd_pin, argv[1]);
+  JS_ToUint32(ctx, &d0_pin, argv[2]);
+
+  bool ret = SD_MMC.setPins(clk_pin, cmd_pin, d0_pin);
+  if( !ret )
+    return JS_NewBool(ctx, ret);
+  
+  ret = SD_MMC.begin("/sdcard", true);
+#endif
 
   return JS_NewBool(ctx, ret);
 }
@@ -28,7 +39,7 @@ static JSValue sd_exists(JSContext *ctx, JSValueConst jsThis, int argc, JSValueC
   if( fname == NULL )
     return JS_EXCEPTION;
 
-  bool ret = SD.exists(fname);
+  bool ret = sd.exists(fname);
 
   JS_FreeCString(ctx, fname);
   return JS_NewBool(ctx, ret);
@@ -40,7 +51,7 @@ static JSValue sd_mkdir(JSContext *ctx, JSValueConst jsThis, int argc, JSValueCo
   if( dname == NULL )
     return JS_EXCEPTION;
 
-  bool ret = SD.mkdir(dname);
+  bool ret = sd.mkdir(dname);
 
   JS_FreeCString(ctx, dname);
   return JS_NewBool(ctx, ret);
@@ -52,7 +63,7 @@ static JSValue sd_remove(JSContext *ctx, JSValueConst jsThis, int argc, JSValueC
   if( fname == NULL )
     return JS_EXCEPTION;
 
-  bool ret = SD.remove(fname);
+  bool ret = sd.remove(fname);
 
   JS_FreeCString(ctx, fname);
   return JS_NewBool(ctx, ret);
@@ -64,7 +75,7 @@ static JSValue sd_rmdir(JSContext *ctx, JSValueConst jsThis, int argc, JSValueCo
   if( dname == NULL )
     return JS_EXCEPTION;
 
-  bool ret = SD.rmdir(dname);
+  bool ret = sd.rmdir(dname);
 
   JS_FreeCString(ctx, dname);
   return JS_NewBool(ctx, ret);
@@ -76,7 +87,7 @@ static JSValue sd_size(JSContext *ctx, JSValueConst jsThis, int argc, JSValueCon
   if( fname == NULL )
     return JS_EXCEPTION;
 
-  File file = SD.open(fname);
+  File file = sd.open(fname);
   JS_FreeCString(ctx, fname);
   if( !file )
     return JS_EXCEPTION;
@@ -95,7 +106,7 @@ static JSValue sd_readText(JSContext *ctx, JSValueConst jsThis, int argc, JSValu
     return JS_EXCEPTION;
 
   bool sem = xSemaphoreTake(binSem, portMAX_DELAY);
-  File file = SD.open(fname, FILE_READ);
+  File file = sd.open(fname, FILE_READ);
   JS_FreeCString(ctx, fname);
   if( !file ){
     if( sem ) xSemaphoreGive(binSem);
@@ -127,7 +138,7 @@ static JSValue sd_writeText(JSContext *ctx, JSValueConst jsThis, int argc, JSVal
     return JS_EXCEPTION;
 
   bool sem = xSemaphoreTake(binSem, portMAX_DELAY);
-  File file = SD.open(fname, FILE_WRITE);
+  File file = sd.open(fname, FILE_WRITE);
   JS_FreeCString(ctx, fname);
   if( !file ){
     if( sem ) xSemaphoreGive(binSem);
@@ -161,7 +172,7 @@ static JSValue sd_readBinary(JSContext *ctx, JSValueConst jsThis, int argc, JSVa
     return JS_EXCEPTION;
 
   bool sem = xSemaphoreTake(binSem, portMAX_DELAY);
-  File file = SD.open(fname, FILE_READ);
+  File file = sd.open(fname, FILE_READ);
   JS_FreeCString(ctx, fname);
   if( !file ){
     if( sem ) xSemaphoreGive(binSem);
@@ -206,7 +217,7 @@ static JSValue sd_writeBinary(JSContext *ctx, JSValueConst jsThis, int argc, JSV
     return JS_EXCEPTION;
 
   bool sem = xSemaphoreTake(binSem, portMAX_DELAY);
-  File file = SD.open(fname, FILE_WRITE);
+  File file = sd.open(fname, FILE_WRITE);
   JS_FreeCString(ctx, fname);
   if( !file ){
     if( sem ) xSemaphoreGive(binSem);
@@ -272,7 +283,7 @@ static JSValue sd_download(JSContext *ctx, JSValueConst jsThis, int argc, JSValu
   }
 
   bool sem = xSemaphoreTake(binSem, portMAX_DELAY);
-  File file = SD.open(fname, FILE_WRITE);
+  File file = sd.open(fname, FILE_WRITE);
   JS_FreeCString(ctx, fname);
   if( !file ){
     if( sem ) xSemaphoreGive(binSem);
@@ -294,7 +305,7 @@ static JSValue sd_isDirectory(JSContext *ctx, JSValueConst jsThis, int argc, JSV
   const char *fname = JS_ToCString(ctx, argv[0]);
   if( fname == NULL )
     return JS_EXCEPTION;
-  File file = SD.open(fname);
+  File file = sd.open(fname);
   JS_FreeCString(ctx, fname);
   if( !file )
     return JS_EXCEPTION;
@@ -310,7 +321,7 @@ static JSValue sd_list(JSContext *ctx, JSValueConst jsThis, int argc, JSValueCon
   const char *fname = JS_ToCString(ctx, argv[0]);
   if( fname == NULL )
     return JS_EXCEPTION;
-  File base = SD.open(fname);
+  File base = sd.open(fname);
   JS_FreeCString(ctx, fname);
   if( !base )
     return JS_EXCEPTION;
@@ -403,11 +414,15 @@ JSModuleDef *addModule_sd(JSContext *ctx, JSValue global)
   return mod;
 }
 
+void endModule_sd(void){
+  sd.end();
+}
+
 JsModuleEntry sd_module = {
   NULL,
   addModule_sd,
   NULL,
-  NULL
+  endModule_sd
 };
 
 #endif

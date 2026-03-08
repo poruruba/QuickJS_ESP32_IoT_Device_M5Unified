@@ -4,7 +4,7 @@
 #ifdef _LCD_ENABLE_
 
 #ifdef _SD_ENABLE_
-#include <SD.h>
+#include "module_sd.h"
 #endif
 
 #include "endpoint_types.h"
@@ -219,7 +219,7 @@ long endp_lcd_drawImageFile(JsonObject& request, JsonObject& response, int magic
   int32_t x = request["x"] || 0;
   int32_t y = request["y"] || 0;
 
-  File file = SD.open(filename, FILE_READ);
+  File file = sd.open(filename, FILE_READ);
   if( !file )
     return -1;
 
@@ -231,9 +231,9 @@ long endp_lcd_drawImageFile(JsonObject& request, JsonObject& response, int magic
 
   bool ret = false;
   if( image_buffer[0] == 0xff && image_buffer[1] == 0xd8 ){
-    ret = M5.Display.drawJpgFile(SD, filename, x, y);
+    ret = M5.Display.drawJpgFile(sd, filename, x, y);
   }else if (image_buffer[0] == 0x89 && image_buffer[1] == 0x50 && image_buffer[2] == 0x4e && image_buffer[3] == 0x47 ){
-    ret = M5.Display.drawPngFile(SD, filename, x, y);
+    ret = M5.Display.drawPngFile(sd, filename, x, y);
   }
 
   if( !ret )

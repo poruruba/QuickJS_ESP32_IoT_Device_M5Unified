@@ -2,6 +2,7 @@
 #define _MODULE_LCD_H_
 
 #include "module_type.h"
+#include "main_config.h"
 
 #ifdef _LCD_ENABLE_
 

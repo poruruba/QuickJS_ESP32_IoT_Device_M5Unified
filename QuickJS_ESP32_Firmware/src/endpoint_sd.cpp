@@ -1,30 +1,32 @@
-#include <SPI.h>
-#include <SD.h>
+#include <Arduino.h>
 #include "main_config.h"
+
+#ifdef _SD_ENABLE_
 
 #include "endpoint_types.h"
 #include "endpoint_sd.h"
 #include "module_utils.h"
+#include "module_sd.h"
 
 #define SD_DEFAULT_FREQ   25000000
 
-long endp_sd_begin(JsonObject& request, JsonObject& response, int magic)
-{
-  uint32_t ssPin = request["ssPin"];
+// long endp_sd_begin(JsonObject& request, JsonObject& response, int magic)
+// {
+//   uint32_t ssPin = request["ssPin"];
 
-  bool ret = SD.begin(ssPin, SPI, SD_DEFAULT_FREQ);
+//   bool ret = sd.begin(ssPin, SPI, SD_DEFAULT_FREQ);
 
-  response["result"] = ret;
+//   response["result"] = ret;
 
-  return 0;
-}
+//   return 0;
+// }
 
 long endp_sd_exists(JsonObject& request, JsonObject& response, int magic)
 {
   const char *fname = request["filename"];
   if( fname == NULL )
     return -1;
-  bool ret = SD.exists(fname);
+  bool ret = sd.exists(fname);
 
   response["result"] = ret;
 
@@ -36,7 +38,7 @@ long endp_sd_mkdir(JsonObject& request, JsonObject& response, int magic)
   const char *fname = request["filename"];
   if( fname == NULL )
     return -1;
-  bool ret = SD.mkdir(fname);
+  bool ret = sd.mkdir(fname);
 
   response["result"] = ret;
   
@@ -48,7 +50,7 @@ long endp_sd_remove(JsonObject& request, JsonObject& response, int magic)
   const char *fname = request["filename"];
   if( fname == NULL )
     return -1;
-  bool ret = SD.remove(fname);
+  bool ret = sd.remove(fname);
 
   response["result"] = ret;
   
@@ -60,7 +62,7 @@ long endp_sd_rmdir(JsonObject& request, JsonObject& response, int magic)
   const char *fname = request["filename"];
   if( fname == NULL )
     return -1;
-  bool ret = SD.rmdir(fname);
+  bool ret = sd.rmdir(fname);
 
   response["result"] = ret;
   
@@ -72,7 +74,7 @@ long endp_sd_size(JsonObject& request, JsonObject& response, int magic)
   const char *fname = request["filename"];
   if( fname == NULL )
     return -1;
-  File file = SD.open(fname);
+  File file = sd.open(fname);
   if( !file )
     return -1;
   uint32_t size = file.size();
@@ -88,7 +90,7 @@ long endp_sd_readBinary(JsonObject& request, JsonObject& response, int magic)
   const char *fname = request["filename"];
   if( fname == NULL )
     return -1;
-  File file = SD.open(fname, FILE_READ);
+  File file = sd.open(fname, FILE_READ);
   if( !file )
     return -1;
   uint32_t fsize = file.size();
@@ -133,7 +135,7 @@ long endp_sd_writeBinary(JsonObject& request, JsonObject& response, int magic)
   if( fname == NULL )
     return -1;
 
-  File file = SD.open(fname, FILE_WRITE);
+  File file = sd.open(fname, FILE_WRITE);
   if( !file )
     return -1;
 
@@ -172,7 +174,7 @@ long endp_sd_readText(JsonObject& request, JsonObject& response, int magic)
   const char *fname = request["filename"];
   if( fname == NULL )
     return -1;
-  File file = SD.open(fname, FILE_READ);
+  File file = sd.open(fname, FILE_READ);
   if( !file )
     return -1;
 
@@ -198,7 +200,7 @@ long endp_sd_writeText(JsonObject& request, JsonObject& response, int magic)
   if( fname == NULL )
     return -1;
 
-  File file = SD.open(fname, FILE_WRITE);
+  File file = sd.open(fname, FILE_WRITE);
   if( !file )
     return -1;
 
@@ -225,7 +227,7 @@ long endp_sd_isDirectory(JsonObject& request, JsonObject& response, int magic)
   const char *fname = request["filename"];
   if( fname == NULL )
     return -1;
-  File file = SD.open(fname);
+  File file = sd.open(fname);
   if( !file )
     return -1;
   
@@ -242,7 +244,7 @@ long endp_sd_list(JsonObject& request, JsonObject& response, int magic)
   const char *fname = request["filename"];
   if( fname == NULL )
     return -1;
-  File base = SD.open(fname);
+  File base = sd.open(fname);
   if( !base )
     return -1;
 
@@ -259,7 +261,7 @@ long endp_sd_list(JsonObject& request, JsonObject& response, int magic)
 }
 
 EndpointEntry sd_table[] = {
-  EndpointEntry{ endp_sd_begin, "/sd-begin", -1 },
+//  EndpointEntry{ endp_sd_begin, "/sd-begin", -1 },
   EndpointEntry{ endp_sd_exists, "/sd-exists", -1 },
   EndpointEntry{ endp_sd_mkdir, "/sd-mkdir", -1 },
   EndpointEntry{ endp_sd_remove, "/sd-remove", -1 },
@@ -275,3 +277,5 @@ EndpointEntry sd_table[] = {
 };
 
 const int num_of_sd_entry = sizeof(sd_table) / sizeof(EndpointEntry);
+
+#endif

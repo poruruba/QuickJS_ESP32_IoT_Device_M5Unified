@@ -3,15 +3,15 @@
 
 #ifdef _LCD_ENABLE_
 
-#ifdef _SD_ENABLE_
-#include <SD.h>
-#endif
-
 #include "quickjs.h"
 #include "module_lcd.h"
 #include "module_utils.h"
 #include "module_type.h"
 #include "module_esp32.h"
+
+#ifdef _SD_ENABLE_
+#include "module_sd.h"
+#endif
 
 #define NUM_OF_SPRITE   5
 static LGFX_Sprite* sprites[NUM_OF_SPRITE];
@@ -136,7 +136,7 @@ static JSValue esp32_lcd_draw_image_file(JSContext *ctx, JSValueConst jsThis, in
   const char *fpath = JS_ToCString(ctx, argv[0]);
   if( fpath == NULL )
     return JS_EXCEPTION;
-  File file = SD.open(fpath, FILE_READ);
+  File file = sd.open(fpath, FILE_READ);
   if( !file ){
     JS_FreeCString(ctx, fpath);
     return JS_EXCEPTION;
@@ -157,14 +157,14 @@ static JSValue esp32_lcd_draw_image_file(JSContext *ctx, JSValueConst jsThis, in
   bool ret = false;
   if( image_buffer[0] == 0xff && image_buffer[1] == 0xd8 ){
     if( magic == 1 )
-      ret = M5.Displays(g_external_display).drawJpgFile(SD, fpath, x, y);
+      ret = M5.Displays(g_external_display).drawJpgFile(sd, fpath, x, y);
     else
-      ret = M5.Display.drawJpgFile(SD, fpath, x, y);
+      ret = M5.Display.drawJpgFile(sd, fpath, x, y);
   }else if (image_buffer[0] == 0x89 && image_buffer[1] == 0x50 && image_buffer[2] == 0x4e && image_buffer[3] == 0x47 ){
     if( magic == 1 )
-      ret = M5.Displays(g_external_display).drawPngFile(SD, fpath, x, y);
+      ret = M5.Displays(g_external_display).drawPngFile(sd, fpath, x, y);
     else
-      ret = M5.Display.drawPngFile(SD, fpath, x, y);
+      ret = M5.Display.drawPngFile(sd, fpath, x, y);
   }
   JS_FreeCString(ctx, fpath);
 
@@ -779,7 +779,7 @@ static JSValue esp32_lcd_createSpriteFromBmpFile(JSContext *ctx, JSValueConst js
   for( int i = 0 ; i < NUM_OF_SPRITE ; i++ ){
     if(sprites[i] == NULL ){
       sprites[i] = new LGFX_Sprite(&M5.Display);
-      sprites[i]->createFromBmpFile(SD, path);
+      sprites[i]->createFromBmpFile(sd, path);
       JS_FreeCString(ctx, path);
       return JS_NewUint32(ctx, i);
     }
@@ -1285,6 +1285,7 @@ void endModule_lcd(void)
       sprites[i] = NULL;
     }
   }
+
   M5.Display.setFont(&fonts::lgfxJapanGothic_16);
   M5.Display.setColorDepth(16);
   M5.Display.setBrightness(128);
