@@ -19,7 +19,7 @@ static M5UnitSynth synth;
 static MML_Synth mml[NUM_OF_SYNCH];
 static TimerHandle_t mmlTimer;
 static bool timerRunning = false;
-static uint32_t g_period = 10;
+static uint32_t g_period = 0;
 static uint8_t g_resolution = 10;
 static bool g_repeat = false;
 static float g_volume = SYNTH_DEFAULT_VOLUME;
@@ -378,9 +378,11 @@ long initialize_synth(void)
 void endModule_synth(void){
   stopIntervalTimer();
   g_volume = SYNTH_DEFAULT_VOLUME;
-  for( int i = 0 ; i < NUM_OF_SYNCH; i++ ){
-    synth.setInstrument(SYNTH_DEFAULT_BANK, i, SYNTH_DEFAULT_PROGRAM);
-    mml[i].reset();
+  if( g_period > 0 ){
+    for( int i = 0 ; i < NUM_OF_SYNCH; i++ ){
+      synth.setInstrument(SYNTH_DEFAULT_BANK, i, SYNTH_DEFAULT_PROGRAM);
+      mml[i].reset();
+    }
   }
 }
 

@@ -14,7 +14,7 @@ static MML mml;
 static TimerHandle_t mmlTimer;
 static bool timerRunning = false;
 static uint8_t g_ledc_ch = 0;
-static uint32_t g_period = 10;
+static uint32_t g_period = 0;
 static uint8_t g_resolution = 10;
 static bool g_repeat = false;
 static float g_volume = MML_DEFAULT_VOLUME;
