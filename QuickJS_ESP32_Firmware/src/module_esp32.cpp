@@ -998,9 +998,6 @@ long esp32_initialize(void)
 
   delay(500);
 
-  int display_count = M5.getDisplayCount();
-  Serial.printf("[display_count=%d]\n", display_count);
-
 #if defined ( __M5GFX_M5MODULEDISPLAY__ )
   g_external_display = M5.getDisplayIndex(m5::board_t::board_M5ModuleDisplay);
   g_external_display_type = m5::board_t::board_M5ModuleDisplay;
@@ -1028,6 +1025,28 @@ long esp32_initialize(void)
 #elif defined ( __M5GFX_M5UNITRCA__ )
   g_external_display = M5.getDisplayIndex(m5::board_t::board_M5UnitRCA);
   g_external_display_type = m5::board_t::board_M5UnitRCA;
+#endif
+
+#if defined(_PANEL_ST7796_)
+  Panel_ST7796_Pin_Init();
+  M5.setPrimaryDisplay(Panel_ST7796_display_index);
+#elif defined(_PANEL_ST7789_)
+  M5.In_I2C.release();
+  gpio_reset_pin(GPIO_NUM_21);
+  gpio_reset_pin(GPIO_NUM_22);
+
+  Panel_ST7789_Pin_Init();
+  M5.setPrimaryDisplay(Panel_ST7789_display_index);
+  M5.Display.print("Test");
+#endif
+
+  int display_count = M5.getDisplayCount();
+  Serial.printf("[display_count=%d]\n", display_count);
+
+#ifdef _AUDIO_ES8311_
+  long result = Audio_ES8311_Pin_Init();  
+  if( result != 0 )
+    Serial.println("Audio_ES8311_Pin_Init error");
 #endif
 
   Serial.println("[initializing]");

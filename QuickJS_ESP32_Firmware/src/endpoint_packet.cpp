@@ -193,6 +193,7 @@ long packet_initialize(void)
     if( sem )
       xSemaphoreGive(binSem);
   });
+  handler->setMethod(HTTP_POST);
   server.addHandler(handler);
 
   AsyncCallbackJsonWebHandler *handler_customCall = new AsyncCallbackJsonWebHandler("/customcall_post", [](AsyncWebServerRequest *request, JsonVariant &json) {
@@ -205,6 +206,7 @@ long packet_initialize(void)
     }
     http_delegateRequest(request, (const char*)jsonObj["message"]);
   });
+  handler_customCall->setMethod(HTTP_POST);
   server.addHandler(handler_customCall);
 
   server.on("/customcall_get", HTTP_GET, [](AsyncWebServerRequest* request){
@@ -238,8 +240,6 @@ long packet_initialize(void)
   ws.onEvent(onWebsocketEvent);
   server.addHandler(&ws);
 #endif
-
-//  server.begin();
 
   return 0;
 }

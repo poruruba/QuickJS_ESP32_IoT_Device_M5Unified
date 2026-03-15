@@ -287,46 +287,51 @@ static JSValue http_bridge(JSContext *ctx, JSValueConst jsThis, int argc, JSValu
     value = JS_NewString(ctx, buffer);
   }else if( response_type == HTTP_RESP_BINARY ){
     uint32_t alloclen = REALLOC_MIN_SIZE;
-    unsigned char *bin = (unsigned char*)realloc(NULL, alloclen);
-    if( bin == NULL )
-      goto end;
-    WiFiClient *stream = http.getStreamPtr();
+    unsigned char *bin;
     unsigned long index = 0;
-    while (http.connected()) {
-        size_t size = stream->available();
-        if (size) {
-          if( (index + size ) > alloclen ){
-            if( (index + size) > (alloclen + REALLOC_MIN_SIZE) )
-              alloclen = index + size;
-            else
-              alloclen += REALLOC_MIN_SIZE;
-            unsigned char *t = (unsigned char*)realloc(bin, alloclen);
-            if( t == NULL ){
-              free(bin);
-              goto end;
-            }
-            bin = t;
+    WiFiClient *stream = http.getStreamPtr();
+    int responseLen = http.getSize();
+    if( responseLen >= 0){
+      bin = (unsigned char*)malloc(responseLen);
+      if( bin == NULL )
+        goto end;
+
+      while (index < responseLen) {
+          size_t available = stream->available();
+          if (available > 0) {
+              size_t toRead = min(available, (size_t)1024);
+              int readed = stream->readBytes(&bin[index], toRead);
+              index += readed;
+          } else {
+              delay(1);
           }
-          int clen = stream->readBytes(&bin[index], size);
-          index += clen;
-        }else{
-          break;
-        }
-        delay(1);
+      }
+    }else{
+      bin = (unsigned char*)realloc(NULL, alloclen);
+      if( bin == NULL )
+        goto end;
+
+      unsigned long last = millis();
+      while (http.connected() && (millis() - last < 100)) {
+          size_t size = stream->available();
+          if (size > 0) {
+            last = millis();
+            if( (index + size ) > alloclen ){
+              alloclen += ((index + size) > (alloclen + REALLOC_MIN_SIZE)) ? size : REALLOC_MIN_SIZE;
+              unsigned char *t = (unsigned char*)realloc(bin, alloclen);
+              if( t == NULL ){
+                free(bin);
+                goto end;
+              }
+              bin = t;
+            }
+            int clen = stream->readBytes(&bin[index], size);
+            index += clen;
+          }else{
+            delay(1);
+          }
+      }
     }
-
-    // int binlen = http.getSize();
-    // String result = http.getString();
-    // const char *b64 = result.c_str();
-    // unsigned long binlen = b64_decode_length(b64);
-    // unsigned char *bin = (unsigned char*)malloc(binlen);
-    // Serial.printf("3 binlen=%d bin=%ld\n", binlen, bin);
-    // if( bin == NULL )
-    //   goto end;
-    // b64_decode(b64, bin);
-//    value = JS_NewArrayBufferCopy(ctx, bin, binlen);
-
-//    value = JS_NewArrayBufferCopy(ctx, bin, index);
     value = create_Uint8Array(ctx, bin, index);
     free(bin);
   }else if( response_type == HTTP_RESP_NONE ){

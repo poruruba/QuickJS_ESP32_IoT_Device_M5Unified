@@ -1292,6 +1292,15 @@ void endModule_lcd(void)
   M5.Display.setRotation(1);
   M5.Display.setCursor(0, 0);
   M5.Display.setTextColor(FONT_COLOR);  
+
+  if( g_external_display != -1 ){
+    M5.Displays(g_external_display).setFont(&fonts::lgfxJapanGothic_16);
+    M5.Displays(g_external_display).setColorDepth(16);
+    M5.Displays(g_external_display).setBrightness(128);
+    M5.Displays(g_external_display).setRotation(1);
+    M5.Displays(g_external_display).setCursor(0, 0);
+    M5.Displays(g_external_display).setTextColor(FONT_COLOR);
+  }
 }
 
 JsModuleEntry lcd_module = {

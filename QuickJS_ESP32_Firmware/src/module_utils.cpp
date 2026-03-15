@@ -574,32 +574,50 @@ static JSValue utils_http_binary(JSContext *ctx, JSValueConst jsThis, int argc, 
 
   if (status_code == 200){
     uint32_t alloclen = REALLOC_MIN_SIZE;
-    unsigned char *bin = (unsigned char*)realloc(NULL, alloclen);
-    if( bin == NULL )
-      goto end;
-    WiFiClient *stream = http.getStreamPtr();
+    unsigned char *bin;
     unsigned long index = 0;
-    while (http.connected()) {
-        size_t size = stream->available();
-        if (size) {
-          if( (index + size) > alloclen ){
-            if( (index + size) > (alloclen + REALLOC_MIN_SIZE) )
-              alloclen = index + size;
-            else
-              alloclen += REALLOC_MIN_SIZE;
-            unsigned char *t = (unsigned char*)realloc(bin, alloclen);
-            if( t == NULL ){
-              free(bin);
-              goto end;
-            }
-            bin = t;
+    WiFiClient *stream = http.getStreamPtr();
+    int responseLen = http.getSize();
+    if( responseLen >= 0){
+      bin = (unsigned char*)malloc(responseLen);
+      if( bin == NULL )
+        goto end;
+
+      while (index < responseLen) {
+          size_t available = stream->available();
+          if (available > 0) {
+              size_t toRead = min(available, (size_t)1024);
+              int readed = stream->readBytes(&bin[index], toRead);
+              index += readed;
+          } else {
+              delay(1);
           }
-          int clen = stream->readBytes(&bin[index], size);
-          index += clen;
-        }else{
-          break;
-        }
-        delay(1);
+      }
+    }else{
+      bin = (unsigned char*)realloc(NULL, alloclen);
+      if( bin == NULL )
+        goto end;
+
+      unsigned long last = millis();
+      while (http.connected() && (millis() - last < 100)) {
+          size_t size = stream->available();
+          if (size > 0) {
+            last = millis();
+            if( (index + size ) > alloclen ){
+              alloclen += ((index + size) > (alloclen + REALLOC_MIN_SIZE)) ? size : REALLOC_MIN_SIZE;
+              unsigned char *t = (unsigned char*)realloc(bin, alloclen);
+              if( t == NULL ){
+                free(bin);
+                goto end;
+              }
+              bin = t;
+            }
+            int clen = stream->readBytes(&bin[index], size);
+            index += clen;
+          }else{
+            delay(1);
+          }
+      }
     }
     value = create_Uint8Array(ctx, bin, index);
     free(bin);
@@ -1102,52 +1120,58 @@ uint8_t *http_get_binary2(const char *url, uint32_t *p_len)
 
   // file found at server
   if (httpCode == HTTP_CODE_OK){
-    // get tcp stream
+    uint32_t alloclen = REALLOC_MIN_SIZE;
+    unsigned char *bin;
+    unsigned long index = 0;
     WiFiClient *stream = http.getStreamPtr();
-
-    // get lenght of document (if no Content-Length header, then error)
-    int len = http.getSize();
-    if( len <= 0 ){
-      Serial.printf("[HTTP] content-length invalid\n");
-      http.end();
-      return NULL;
-    }
-    Serial.printf("[HTTP] Content-Length=%d\n", len);
-    p_buffer = (uint8_t*)malloc(len);
-    if( p_buffer == NULL ){
-      Serial.printf("[HTTP] buffer malloc failed\n");
-      http.end();
-      return NULL;
-    }
-
-    uint32_t index = 0;
-    *p_len = len;
-
-    // read all data from server
-    while (http.connected() && ( index < len )){
-      // get available data size
-      size_t size = stream->available();
-
-      if (size > 0){
-        if ((index + size) > len){
-          Serial.printf("[HTTP] buffer size over\n");
-          free(p_buffer);
-          http.end();
-          return NULL;
-        }
-        int c = stream->readBytes(&p_buffer[index], size);
-        index += c;
+    int responseLen = http.getSize();
+    if( responseLen >= 0){
+      bin = (unsigned char*)malloc(responseLen);
+      if( bin == NULL ){
+        http.end();
+        return NULL;
       }
-      delay(1);
-    }
 
-    if (index != len){
-      Serial.printf("[HTTP] receive size mismatch\n");
-      free(p_buffer);
-      http.end();
-      return NULL;
+      while (index < responseLen) {
+          size_t available = stream->available();
+          if (available > 0) {
+              size_t toRead = min(available, (size_t)1024);
+              int readed = stream->readBytes(&bin[index], toRead);
+              index += readed;
+          } else {
+              delay(1);
+          }
+      }
+    }else{
+      bin = (unsigned char*)realloc(NULL, alloclen);
+      if( bin == NULL ){
+        http.end();
+        return NULL;
+      }
+
+      unsigned long last = millis();
+      while (http.connected() && (millis() - last < 100)) {
+          size_t size = stream->available();
+          if (size > 0) {
+            last = millis();
+            if( (index + size ) > alloclen ){
+              alloclen += ((index + size) > (alloclen + REALLOC_MIN_SIZE)) ? size : REALLOC_MIN_SIZE;
+              unsigned char *t = (unsigned char*)realloc(bin, alloclen);
+              if( t == NULL ){
+                free(bin);
+                http.end();
+                return NULL;
+              }
+              bin = t;
+            }
+            int clen = stream->readBytes(&bin[index], size);
+            index += clen;
+          }else{
+            delay(1);
+          }
+      }
     }
-    Serial.printf("[HTTP] finished\n");
+    p_buffer = bin;
   }else{
     Serial.printf("[HTTP] GET... failed, error: %s\n", http.errorToString(httpCode).c_str());
     http.end();

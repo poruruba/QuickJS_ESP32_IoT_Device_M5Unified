@@ -166,8 +166,9 @@ static JSValue audio_begin(JSContext *ctx, JSValueConst jsThis, int argc, JSValu
     JS_ToInt32(ctx, &output_mode, argv[2]);
 
   auto spk_cfg = M5.Speaker.config();
+  spk_cfg.i2s_port     = I2S_NUM_0;
   spk_cfg.sample_rate = sample_rate;
-    
+
   if( output_mode == AUDIO_OUTPUT_INTERNAL_DAC ){
     spk_cfg.use_dac = true;
   }else if( output_mode == AUDIO_OUTPUT_EXTERNAL_I2S ){
@@ -211,13 +212,18 @@ static JSValue audio_begin(JSContext *ctx, JSValueConst jsThis, int argc, JSValu
 //  Serial.printf("use_dac=%d bck=%d ws=%d data_out=%d mck=%d buf_size=%d sample=%d\n",
 //                  spk_cfg.use_dac, spk_cfg.pin_bck, spk_cfg.pin_ws, spk_cfg.pin_data_out, spk_cfg.pin_mck, buf_size, sample_rate);
   M5.Speaker.config(spk_cfg);
-  M5.Speaker.begin();
+
+  bool ret = M5.Speaker.begin();
+  if( !ret )
+    return JS_NewBool(ctx, ret);
+
+  M5.Speaker.setVolume(audio_volume);
 
   out = new AudioOutputM5Speaker(&M5.Speaker);
   if( !out->setBufferSize(buf_size) )
     return JS_EXCEPTION;
 
-  return JS_UNDEFINED;
+  return JS_NewBool(ctx, ret);
 }
 
 static JSValue audio_update(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
@@ -432,6 +438,11 @@ JSModuleDef *addModule_audio(JSContext *ctx, JSValue global)
   return mod;
 }
 
+long initialize_audio(void)
+{
+  return 0;
+}
+
 void endModule_audio(void)
 {
   audio_source_dispose();
@@ -444,7 +455,7 @@ void endModule_audio(void)
 }
 
 JsModuleEntry audio_module = {
-  NULL,
+  initialize_audio,
   addModule_audio,
   NULL,
   endModule_audio

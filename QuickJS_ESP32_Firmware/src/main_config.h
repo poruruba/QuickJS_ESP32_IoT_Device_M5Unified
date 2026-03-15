@@ -4,6 +4,8 @@
 #include <Arduino.h>
 
 //#define _WEBSERV_DISABLE_
+//#define ENABLE_STATIC_WEB_PAGE
+#define STATIC_REDIRECT_PAGE  "https://poruruba.github.io/QuickJS_ESP32_IoT_Device_M5Unified/QuickJS_ESP32_Firmware/data/html/"
 
 #if 0
 #define _UNIT_ANGLE8_ENABLE_
@@ -86,7 +88,7 @@
 #elif defined(ARDUINO_M5Stack_StampS3)
 #include <M5Unified.h>
 #define MDNS_NAME "QuickJS_ESP32_M5StampS3" // mDNSサービスホスト名
-#elif defined(ARDUINO_ESP32S3_DEV)
+#elif defined(ARDUINO_M5Stick_S3)
 #include <M5Unified.h>
 #define _LCD_ENABLE_
 #define _RTC_ENABLE_
@@ -111,6 +113,25 @@
 #include <M5Unified.h>
 #define _LCD_ENABLE_
 #define MDNS_NAME "QuickJS_ESP32_TEMP" // mDNSサービスホスト名
+#elif defined(ARDUINO_ESP32_S3_35INCH_TOUCH_LCD)
+#include <SD_MMC.h>
+#include <M5Unified.h>
+#include "Driver/Panel_Pin_Config.h"
+#include "Driver/Audio_Pin_Config.h"
+#define _LCD_ENABLE_
+#define _PANEL_ST7796_
+#define _SD_ENABLE_
+#define SD_TYPE_MMC
+#define _AUDIO_ENABLE_
+#define _AUDIO_ES8311_
+#define MDNS_NAME "QuickJS_ESP32_S3" // mDNSサービスホスト名
+#elif defined(ARDUINO_ESP32_WT32_SC01)
+#include <M5Unified.h>
+#include "Driver/Panel_Pin_Config.h"
+#include "Driver/Audio_Pin_Config.h"
+#define _LCD_ENABLE_
+#define _PANEL_ST7789_
+#define MDNS_NAME "QuickJS_ESP32_WT32_SC01" // mDNSサービスホスト名
 #endif
 
 #define DUMMY_FNAME  "/dummy"
@@ -143,10 +164,7 @@
 #define PACKET_JSON_DOCUMENT_SIZE  DEFAULT_BUFFER_SIZE
 #define FILE_BUFFER_SIZE DEFAULT_BUFFER_SIZE
 
-#define NUM_BTN_FUNC 8
-
-//#define ENABLE_STATIC_WEB_PAGE
-#define STATIC_REDIRECT_PAGE  "https://poruruba.github.io/QuickJS_ESP32_IoT_Device_M5Unified/QuickJS_ESP32_Firmware/data/html/"
+#define NUM_BTN_FUNC 3
 
 #define FILE_LOADING_NONE     0
 #define FILE_LOADING_RESTART  1
