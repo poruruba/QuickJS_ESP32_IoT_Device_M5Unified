@@ -206,8 +206,8 @@ static JSValue sd_readBinary(JSContext *ctx, JSValueConst jsThis, int argc, JSVa
 
   // JSValue value = create_Uint8Array(ctx, buffer, size);
   // free(buffer);
-//    value = JS_NewArrayBufferCopy(ctx, bin, size);
-    value = JS_NewArrayBuffer(ctx, buffer, size, my_mem_free, NULL, false);
+//    value = JS_NewArrayBufferCopy(ctx, buffer, size);
+  JSValue value = JS_NewArrayBuffer(ctx, buffer, size, my_mem_free, NULL, false);
 
   return value;
 }
