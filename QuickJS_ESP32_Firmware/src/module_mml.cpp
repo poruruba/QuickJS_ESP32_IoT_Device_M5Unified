@@ -14,7 +14,7 @@ static MML mml;
 static TimerHandle_t mmlTimer;
 static bool timerRunning = false;
 static uint8_t g_ledc_ch = 0;
-static uint32_t g_period = 0;
+static int32_t g_period = 10;
 static uint8_t g_resolution = 10;
 static bool g_repeat = false;
 static float g_volume = MML_DEFAULT_VOLUME;
@@ -91,6 +91,13 @@ static JSValue mml_stop(JSContext *ctx, JSValueConst jsThis, int argc, JSValueCo
   return JS_UNDEFINED;
 }
 
+static JSValue mml_reset(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
+{
+  mml.reset();
+
+  return JS_UNDEFINED;
+}
+
 static JSValue mml_setVolume(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
 {
   double volume;
@@ -129,6 +136,9 @@ static const JSCFunctionListEntry mml_funcs[] = {
     JSCFunctionListEntry{"stop", 0, JS_DEF_CFUNC, 0, {
                           func : {0, JS_CFUNC_generic, mml_stop}
                         }},
+    JSCFunctionListEntry{"reset", 0, JS_DEF_CFUNC, 0, {
+                          func : {0, JS_CFUNC_generic, mml_reset}
+                        }},
     JSCFunctionListEntry{"setVolume", 0, JS_DEF_CFUNC, 0, {
                           func : {1, JS_CFUNC_generic, mml_setVolume}
                         }},
@@ -162,8 +172,9 @@ JSModuleDef *addModule_mml(JSContext *ctx, JSValue global)
 static void mmlTimerCallback(TimerHandle_t xTimer) {
   if( timerRunning ){
     if (mml.isBGMPlay()) {
-      if (mml.available()) 
-        mml.playTick();
+      uint32_t msec = millis();
+      if (mml.available(msec)) 
+        mml.playTick(msec);
     }else{
       xTimerStop(mmlTimer, 0);
       timerRunning = false;

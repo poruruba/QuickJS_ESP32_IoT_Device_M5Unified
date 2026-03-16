@@ -19,7 +19,7 @@ static M5UnitSynth synth;
 static MML_Synth mml[NUM_OF_SYNCH];
 static TimerHandle_t mmlTimer;
 static bool timerRunning = false;
-static uint32_t g_period = 0;
+static int32_t g_period = -1;
 static uint8_t g_resolution = 10;
 static bool g_repeat = false;
 static float g_volume = SYNTH_DEFAULT_VOLUME;
@@ -146,7 +146,7 @@ static JSValue unit_synth_reset(JSContext *ctx, JSValueConst jsThis, int argc, J
     mml[i].reset();
   }
 
-  return JS_NewBool(ctx, mml[0].isBGMPlay());
+  return JS_UNDEFINED;
 }
 
 static JSValue unit_synth_isPlaying(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
@@ -383,6 +383,7 @@ void endModule_synth(void){
       synth.setInstrument(SYNTH_DEFAULT_BANK, i, SYNTH_DEFAULT_PROGRAM);
       mml[i].reset();
     }
+    g_period = -1;
   }
 }
 
