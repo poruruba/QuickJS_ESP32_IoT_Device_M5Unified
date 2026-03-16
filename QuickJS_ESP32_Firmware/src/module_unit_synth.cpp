@@ -366,7 +366,7 @@ long initialize_synth(void)
 
   mmlTimer = xTimerCreate(
     "mmlTimer",
-    pdMS_TO_TICKS(g_period),
+    pdMS_TO_TICKS(10),
     pdTRUE,
     nullptr,
     mmlTimerCallback

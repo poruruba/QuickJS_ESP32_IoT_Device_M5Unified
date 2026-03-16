@@ -217,7 +217,7 @@ long initialize_mml(void)
   mml.init(nullptr, func_tone, func_notone, nullptr /* debug */);
   mmlTimer = xTimerCreate(
     "mmlTimer",
-    pdMS_TO_TICKS(g_period),
+    pdMS_TO_TICKS(10),
     pdTRUE,
     nullptr,
     mmlTimerCallback
