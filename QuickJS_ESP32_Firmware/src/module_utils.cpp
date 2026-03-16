@@ -572,7 +572,7 @@ static JSValue utils_http_binary(JSContext *ctx, JSValueConst jsThis, int argc, 
     int responseLen = http.getSize();
 //    Serial.printf("responseLen=%d freeheep=%d\n", responseLen, ESP.getFreeHeap());
     if( responseLen >= 0){
-      bin = (unsigned char*)malloc(responseLen);
+      bin = (unsigned char*)utils_mem_alloc(responseLen);
       if( bin == NULL )
         goto end;
 
@@ -587,7 +587,7 @@ static JSValue utils_http_binary(JSContext *ctx, JSValueConst jsThis, int argc, 
           }
       }
     }else{
-      bin = (unsigned char*)realloc(NULL, alloclen);
+      bin = (unsigned char*)utils_mem_realloc(NULL, alloclen);
       if( bin == NULL )
         goto end;
 
@@ -598,9 +598,9 @@ static JSValue utils_http_binary(JSContext *ctx, JSValueConst jsThis, int argc, 
             last = millis();
             if( (index + size ) > alloclen ){
               alloclen += ((index + size) > (alloclen + REALLOC_MIN_SIZE)) ? size : REALLOC_MIN_SIZE;
-              unsigned char *t = (unsigned char*)realloc(bin, alloclen);
+              unsigned char *t = (unsigned char*)utils_mem_realloc(bin, alloclen);
               if( t == NULL ){
-                free(bin);
+                utils_mem_free(bin);
                 goto end;
               }
               bin = t;
@@ -1292,7 +1292,30 @@ JSValue from_Uint8Array(JSContext *ctx, JSValue value, uint8_t** pp_buffer, uint
   return vbuffer;
 }
 
+void* utils_mem_alloc(size_t size)
+{
+  if( psramInit() ){
+    return heap_caps_malloc(size, MALLOC_CAP_SPIRAM);
+  }else{
+    return malloc(size);
+  }
+}
+
+void* utils_mem_realloc(void* buffer, size_t size)
+{
+  if( psramInit() ){
+    return heap_caps_realloc(buffer, size, MALLOC_CAP_SPIRAM);
+  }else{
+    return realloc(buffer, size);
+  }
+}
+
+void utils_mem_free(void* buffer)
+{
+  free(buffer);
+}
+
 void my_mem_free(JSRuntime *rt, void *opaque, void *ptr)
 {
-  free(ptr);
+  utils_mem_free(ptr);
 }

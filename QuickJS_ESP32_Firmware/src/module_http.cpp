@@ -292,7 +292,7 @@ static JSValue http_bridge(JSContext *ctx, JSValueConst jsThis, int argc, JSValu
     WiFiClient *stream = http.getStreamPtr();
     int responseLen = http.getSize();
     if( responseLen >= 0){
-      bin = (unsigned char*)malloc(responseLen);
+      bin = (unsigned char*)utils_mem_alloc(responseLen);
       if( bin == NULL )
         goto end;
 
@@ -307,7 +307,7 @@ static JSValue http_bridge(JSContext *ctx, JSValueConst jsThis, int argc, JSValu
           }
       }
     }else{
-      bin = (unsigned char*)realloc(NULL, alloclen);
+      bin = (unsigned char*)utils_mem_realloc(NULL, alloclen);
       if( bin == NULL )
         goto end;
 
@@ -318,9 +318,9 @@ static JSValue http_bridge(JSContext *ctx, JSValueConst jsThis, int argc, JSValu
             last = millis();
             if( (index + size ) > alloclen ){
               alloclen += ((index + size) > (alloclen + REALLOC_MIN_SIZE)) ? size : REALLOC_MIN_SIZE;
-              unsigned char *t = (unsigned char*)realloc(bin, alloclen);
+              unsigned char *t = (unsigned char*)utils_mem_realloc(bin, alloclen);
               if( t == NULL ){
-                free(bin);
+                utils_mem_free(bin);
                 goto end;
               }
               bin = t;

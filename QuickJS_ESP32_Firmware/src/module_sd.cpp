@@ -193,7 +193,7 @@ static JSValue sd_readBinary(JSContext *ctx, JSValueConst jsThis, int argc, JSVa
   if( size < 0 || offset + size > fsize )
     size = fsize - offset;
 
-  unsigned char *buffer = (unsigned char*)malloc(size);
+  unsigned char *buffer = (unsigned char*)utils_mem_alloc(size);
   if( buffer == NULL ){
     file.close();
     if( sem ) xSemaphoreGive(binSem);

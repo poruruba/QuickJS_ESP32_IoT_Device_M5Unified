@@ -21,6 +21,10 @@ long getNumberArray(JSContext *ctx, JSValue value, int32_t **pp_buffer, uint32_t
 JSValue createNumberArray(JSContext *ctx, int32_t *p_buffer, uint32_t unit_num);
 JSValue create_Uint8Array(JSContext *ctx, const uint8_t *p_buffer, uint32_t len);
 JSValue from_Uint8Array(JSContext *ctx, JSValue value, uint8_t** pp_buffer, uint32_t *p_num);
+
+void* utils_mem_alloc(size_t size);
+void* utils_mem_realloc(void* buffer, size_t size);
+void utils_mem_free(void* buffer);
 void my_mem_free(JSRuntime *rt, void *opaque, void *ptr);
 
 #endif
