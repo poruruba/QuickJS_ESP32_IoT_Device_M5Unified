@@ -1037,7 +1037,6 @@ long esp32_initialize(void)
 
   Panel_ST7789_Pin_Init();
   M5.setPrimaryDisplay(Panel_ST7789_display_index);
-  M5.Display.print("Test");
 #endif
 
   int display_count = M5.getDisplayCount();

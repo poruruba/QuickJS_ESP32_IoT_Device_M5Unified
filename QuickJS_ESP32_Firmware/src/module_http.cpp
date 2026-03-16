@@ -332,8 +332,10 @@ static JSValue http_bridge(JSContext *ctx, JSValueConst jsThis, int argc, JSValu
           }
       }
     }
-    value = create_Uint8Array(ctx, bin, index);
-    free(bin);
+//    value = create_Uint8Array(ctx, bin, index);
+//    value = JS_NewArrayBufferCopy(ctx, bin, index);
+    value = JS_NewArrayBuffer(ctx, bin, index, my_mem_free, NULL, false);
+//    free(bin);
   }else if( response_type == HTTP_RESP_NONE ){
     value = JS_UNDEFINED;
   }

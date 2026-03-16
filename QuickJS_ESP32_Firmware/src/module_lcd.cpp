@@ -217,7 +217,7 @@ static JSValue esp32_lcd_draw_image(JSContext *ctx, JSValueConst jsThis, int arg
   uint8_t *p_buffer;
   uint8_t unit_size;
   uint32_t unit_num;
-  JSValue vbuffer = getTypedArrayBuffer(ctx, argv[0], (void**)&p_buffer, &unit_size, &unit_num);
+  JSValue vbuffer = getBinaryFromTypedArray(ctx, argv[0], (void**)&p_buffer, &unit_size, &unit_num);
   if( JS_IsNull(vbuffer) )
     return JS_EXCEPTION;
   if( unit_size != 1 ){
@@ -748,7 +748,7 @@ static JSValue esp32_lcd_createSpriteFromBmp(JSContext *ctx, JSValueConst jsThis
   uint8_t *p_buffer;
   uint8_t unit_size;
   uint32_t unit_num;
-  JSValue vbuffer = getTypedArrayBuffer(ctx, argv[0], (void**)&p_buffer, &unit_size, &unit_num);
+  JSValue vbuffer = getBinaryFromTypedArray(ctx, argv[0], (void**)&p_buffer, &unit_size, &unit_num);
   if( JS_IsNull(vbuffer) )
     return JS_EXCEPTION;
   if( unit_size != 1 ){

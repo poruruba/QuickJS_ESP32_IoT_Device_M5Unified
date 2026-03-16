@@ -68,7 +68,6 @@ String urlencode(String str)
 
 static JSValue utils_http_text(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv, int magic)
 {
-  bool sem = xSemaphoreTake(binSem, portMAX_DELAY);
   JSValue value = JS_EXCEPTION;
   HTTPClient http;
   const char *url = JS_ToCString(ctx, argv[0]);
@@ -235,14 +234,11 @@ static JSValue utils_http_text(JSContext *ctx, JSValueConst jsThis, int argc, JS
 
 end:
   http.end();
-  if( sem )
-    xSemaphoreGive(binSem);
   return value;
 }
 
 static JSValue utils_http_json(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv, int magic)
 {
-  bool sem = xSemaphoreTake(binSem, portMAX_DELAY);  
   JSValue value = JS_EXCEPTION;
   HTTPClient http;
   const char *url = JS_ToCString(ctx, argv[0]);
@@ -408,14 +404,11 @@ static JSValue utils_http_json(JSContext *ctx, JSValueConst jsThis, int argc, JS
 
 end:
   http.end();
-  if( sem )
-    xSemaphoreGive(binSem);
   return value;
 }
 
 static JSValue utils_http_binary(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv, int magic)
 {
-  bool sem = xSemaphoreTake(binSem, portMAX_DELAY);
   JSValue value = JS_EXCEPTION;
   HTTPClient http;
   const char *url = JS_ToCString(ctx, argv[0]);
@@ -447,7 +440,6 @@ static JSValue utils_http_binary(JSContext *ctx, JSValueConst jsThis, int argc, 
           JS_FreeValue(ctx, val);
           if( str != NULL ){
 //            Serial.printf("%s=%s\n", name, str);
-
             if( first ){
               if (url_str.indexOf('?') >= 0)
                 url_str += "&";
@@ -578,6 +570,7 @@ static JSValue utils_http_binary(JSContext *ctx, JSValueConst jsThis, int argc, 
     unsigned long index = 0;
     WiFiClient *stream = http.getStreamPtr();
     int responseLen = http.getSize();
+//    Serial.printf("responseLen=%d freeheep=%d\n", responseLen, ESP.getFreeHeap());
     if( responseLen >= 0){
       bin = (unsigned char*)malloc(responseLen);
       if( bin == NULL )
@@ -619,8 +612,10 @@ static JSValue utils_http_binary(JSContext *ctx, JSValueConst jsThis, int argc, 
           }
       }
     }
-    value = create_Uint8Array(ctx, bin, index);
-    free(bin);
+//    value = create_Uint8Array(ctx, bin, index);
+//    value = JS_NewArrayBufferCopy(ctx, bin, index);
+    value = JS_NewArrayBuffer(ctx, bin, index, my_mem_free, NULL, false);
+//    free(bin);
   }else{
     Serial.printf("status_code=%d\n", status_code);
     goto end;
@@ -628,8 +623,6 @@ static JSValue utils_http_binary(JSContext *ctx, JSValueConst jsThis, int argc, 
 
 end:
   http.end();
-  if( sem )
-    xSemaphoreGive(binSem);
   return value;
 }
 
@@ -648,7 +641,7 @@ static JSValue utils_base64(JSContext *ctx, JSValueConst jsThis, int argc, JSVal
     uint8_t *p_buffer;
     uint8_t unit_size;
     uint32_t unit_num;
-    JSValue vbuffer = getTypedArrayBuffer(ctx, argv[0], (void**)&p_buffer, &unit_size, &unit_num);
+    JSValue vbuffer = getBinaryFromTypedArray(ctx, argv[0], (void**)&p_buffer, &unit_size, &unit_num);
     if( JS_IsNull(vbuffer) )
       return JS_EXCEPTION;
     if( unit_size != 1 ){
@@ -694,7 +687,7 @@ static JSValue utils_base32(JSContext *ctx, JSValueConst jsThis, int argc, JSVal
     uint8_t *p_buffer;
     uint8_t unit_size;
     uint32_t unit_num;
-    JSValue vbuffer = getTypedArrayBuffer(ctx, argv[0], (void**)&p_buffer, &unit_size, &unit_num);
+    JSValue vbuffer = getBinaryFromTypedArray(ctx, argv[0], (void**)&p_buffer, &unit_size, &unit_num);
     if( JS_IsNull(vbuffer) )
       return JS_EXCEPTION;
     if( unit_size != 1 ){
@@ -890,7 +883,7 @@ static JSValue utils_array2hex(JSContext *ctx, JSValueConst jsThis,
   uint8_t *p_buffer;
   uint8_t unit_size;
   uint32_t unit_num;
-  JSValue vbuffer = getTypedArrayBuffer(ctx, argv[0], (void**)&p_buffer, &unit_size, &unit_num);
+  JSValue vbuffer = getBinaryFromTypedArray(ctx, argv[0], (void**)&p_buffer, &unit_size, &unit_num);
   if( vbuffer == JS_NULL )
     return JS_EXCEPTION;
   if( unit_size != 1 ){
@@ -1179,10 +1172,37 @@ uint8_t *http_get_binary2(const char *url, uint32_t *p_len)
   }
 
   http.end();
-
-  delay(100);
   
   return p_buffer;
+}
+
+JSValue getBinaryFromTypedArray(JSContext *ctx, JSValue value, void** pp_buffer, uint8_t *p_unit_size, uint32_t *p_unit_num)
+{
+  size_t size;
+  size_t offset;
+  size_t byte_per_element;
+  size_t bsize;
+  JSValue vbuffer = JS_GetTypedArrayBuffer(ctx, value, &offset, &size, &byte_per_element);
+  if( !JS_IsException(vbuffer) ){
+    uint8_t *ptr = JS_GetArrayBuffer(ctx, &bsize, vbuffer);
+    if( ptr == NULL ){
+      JS_FreeValue(ctx, vbuffer);
+      return JS_NULL;
+    }
+    *pp_buffer = ptr + offset;
+    *p_unit_num = size;
+    *p_unit_size = byte_per_element;
+  }else{
+    *pp_buffer = JS_GetArrayBuffer(ctx, &bsize, value);
+    if( *pp_buffer == NULL ){
+      JS_FreeValue(ctx, vbuffer);
+      return JS_NULL;
+    }
+    *p_unit_num = bsize;
+    *p_unit_size = 1;
+  }
+
+  return vbuffer;
 }
 
 JSValue getTypedArrayBuffer(JSContext *ctx, JSValue value, void** pp_buffer, uint8_t *p_unit_size, uint32_t *p_unit_num)
@@ -1243,10 +1263,14 @@ JSValue createNumberArray(JSContext *ctx, int32_t *p_buffer, uint32_t unit_num)
 JSValue create_Uint8Array(JSContext *ctx, const uint8_t *p_buffer, uint32_t len)
 {
     JSValue array_buffer = JS_NewArrayBufferCopy(ctx, p_buffer, len);
+    if( array_buffer == JS_EXCEPTION )
+      return JS_EXCEPTION;
+
     JSValue global_obj = JS_GetGlobalObject(ctx);
     JSValue ctor = JS_GetPropertyStr(ctx, global_obj, "Uint8Array");
     JSValue args[1] = { array_buffer };
     JSValue uint8_array = JS_CallConstructor(ctx, ctor, 1, args);
+
     JS_FreeValue(ctx, ctor);
     JS_FreeValue(ctx, global_obj);
     JS_FreeValue(ctx, array_buffer);
@@ -1257,7 +1281,7 @@ JSValue create_Uint8Array(JSContext *ctx, const uint8_t *p_buffer, uint32_t len)
 JSValue from_Uint8Array(JSContext *ctx, JSValue value, uint8_t** pp_buffer, uint32_t *p_num)
 {
   uint8_t unit_size;
-  JSValue vbuffer = getTypedArrayBuffer(ctx, value, (void**)pp_buffer, &unit_size, p_num);
+  JSValue vbuffer = getBinaryFromTypedArray(ctx, value, (void**)pp_buffer, &unit_size, p_num);
   if( vbuffer == JS_NULL )
     return JS_EXCEPTION;
   if( unit_size != 1 ){
@@ -1266,4 +1290,9 @@ JSValue from_Uint8Array(JSContext *ctx, JSValue value, uint8_t** pp_buffer, uint
   }
 
   return vbuffer;
+}
+
+void my_mem_free(JSRuntime *rt, void *opaque, void *ptr)
+{
+  free(ptr);
 }

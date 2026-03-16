@@ -234,7 +234,7 @@ static JSValue esp32_prefs_putBytes(JSContext *ctx, JSValueConst jsThis,
   uint8_t *p_buffer;
   uint8_t unit_size;
   uint32_t unit_num;
-  JSValue vbuffer = getTypedArrayBuffer(ctx, argv[1], (void**)&p_buffer, &unit_size, &unit_num);
+  JSValue vbuffer = getBinaryFromTypedArray(ctx, argv[1], (void**)&p_buffer, &unit_size, &unit_num);
   if( JS_IsNull(vbuffer) ){
     JS_FreeCString(ctx, key);
     return JS_EXCEPTION;

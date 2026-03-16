@@ -204,8 +204,10 @@ static JSValue sd_readBinary(JSContext *ctx, JSValueConst jsThis, int argc, JSVa
   file.close();
   if( sem ) xSemaphoreGive(binSem);
 
-  JSValue value = create_Uint8Array(ctx, buffer, size);
-  free(buffer);
+  // JSValue value = create_Uint8Array(ctx, buffer, size);
+  // free(buffer);
+//    value = JS_NewArrayBufferCopy(ctx, bin, size);
+    value = JS_NewArrayBuffer(ctx, buffer, size, my_mem_free, NULL, false);
 
   return value;
 }
@@ -227,7 +229,7 @@ static JSValue sd_writeBinary(JSContext *ctx, JSValueConst jsThis, int argc, JSV
   uint8_t *p_buffer;
   uint8_t unit_size;
   uint32_t unit_num;
-  JSValue vbuffer = getTypedArrayBuffer(ctx, argv[1], (void**)&p_buffer, &unit_size, &unit_num);
+  JSValue vbuffer = getBinaryFromTypedArray(ctx, argv[1], (void**)&p_buffer, &unit_size, &unit_num);
   if( JS_IsNull(vbuffer) ){
     file.close();
     if( sem ) xSemaphoreGive(binSem);
