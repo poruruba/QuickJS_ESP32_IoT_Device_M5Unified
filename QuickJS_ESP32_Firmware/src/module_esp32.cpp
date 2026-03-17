@@ -544,6 +544,36 @@ static JSValue esp32_setSnmpTimestamp(JSContext *ctx, JSValueConst jsThis, int a
 }
 #endif
 
+static JSValue esp32_download_jscode(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
+{
+  long ret;
+  const char *url = JS_ToCString(ctx, argv[0]);
+  if( url == NULL )
+    return JS_EXCEPTION;
+  bool every = false;
+  if( argc > 1 )
+    every = JS_ToBool(ctx, argv[1]);
+  ret = write_config_string(CONFIG_FNAME_SOURCE, every ? url : "" );
+  if( ret != 0 ){
+    JS_FreeCString(ctx, url);
+    return JS_EXCEPTION;
+  }
+
+  String response = http_get(url);
+  JS_FreeCString(ctx, url);
+  if( response.length() == 0 )
+    return JS_EXCEPTION;
+
+  ret = save_jscode(response.c_str());
+  if( ret != 0 )
+    return JS_EXCEPTION;
+
+  Serial.printf("save_jscode\n");
+  g_fileloading = FILE_LOADING_RESTART;
+
+  return JS_UNDEFINED;
+}
+
 static JSValue esp32_console_log(JSContext *ctx, JSValueConst jsThis, int argc,
                             JSValueConst *argv, int magic) {
   int i = 0;
@@ -703,6 +733,9 @@ static const JSCFunctionListEntry esp32_funcs[] = {
                          }},
     JSCFunctionListEntry{"wifiIsConnected", 0, JS_DEF_CFUNC, 0, {
                            func : {0, JS_CFUNC_generic, esp32_wifi_is_connected}
+                         }},
+    JSCFunctionListEntry{"downloadJscode", 0, JS_DEF_CFUNC, 0, {
+                           func : {2, JS_CFUNC_generic, esp32_download_jscode}
                          }},
     JSCFunctionListEntry{"webStart", 0, JS_DEF_CFUNC, 0, {
                            func : {0, JS_CFUNC_generic, esp32_web_start}

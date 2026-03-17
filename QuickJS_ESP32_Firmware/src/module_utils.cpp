@@ -998,7 +998,7 @@ JsModuleEntry utils_module = {
   NULL
 };
 
-long http_get(String url, String *response)
+String http_get(const char* url)
 {
   Serial.println(url);
 
@@ -1018,15 +1018,15 @@ long http_get(String url, String *response)
     int len = http.getSize();
     Serial.printf("[HTTP] Content-Length=%d\n", len);
     
-    *response = http.getString();
+    String response = http.getString();
 
     http.end();
     delay(100);
-    return 0;
+    return response;
   }else{
     Serial.printf("[HTTP] GET... failed, error: %s\n", http.errorToString(httpCode).c_str());
     http.end();
-    return -1;
+    return String("");
   }
 }
 

@@ -26,6 +26,7 @@ SemaphoreHandle_t binSem;
 
 static long m5_connect(void);
 static long start_qjs(void);
+static char* download_jscode(const char *url);
 static char* load_jscode(void);
 static long load_all_modules(void);
 
@@ -169,7 +170,12 @@ static long start_qjs(void)
     Serial.println("[can't load module]");
   }
 
-  char *js_code = load_jscode();
+  char *js_code;
+  String url = read_config_string(CONFIG_FNAME_SOURCE);
+  if( url.length() > 0 )
+    js_code = download_jscode(url.c_str());
+  else
+    js_code = load_jscode();
   if( js_code != NULL ){
     Serial.println("[executing]");
     qjs.exec(js_code);
@@ -211,8 +217,26 @@ long read_jscode(char *p_buffer, uint32_t maxlen)
   p_buffer[size] = '\0';
 
   return 0;
-  }
-    
+}
+
+static char* download_jscode(const char *url)
+{
+  String response = http_get(url);
+  if( response.length() == 0 )
+    return NULL;
+
+  size_t size = response.length();
+  if( (size + strlen(jscode_epilogue) + 1) > sizeof(g_download_buffer) )
+    return NULL;
+
+  char* js_code = g_download_buffer;
+  strcpy(js_code, response.c_str());
+
+  strcat(js_code, jscode_epilogue);
+
+  return js_code;
+}
+
 static char* load_jscode(void)
 {
   if( !SPIFFS.exists(MAIN_FNAME) )

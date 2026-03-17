@@ -6,7 +6,7 @@
 
 extern JsModuleEntry utils_module;
 
-// long http_get(String url, String *response);
+String http_get(const char* url);
 // long http_get_binary(String url, uint8_t *p_buffer, unsigned long *p_len);
 uint8_t *http_get_binary2(const char *url, uint32_t *p_len);
 
