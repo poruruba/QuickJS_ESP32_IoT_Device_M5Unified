@@ -142,6 +142,7 @@ JSModuleDef *addModule_unit_pbhub(JSContext *ctx, JSValue global)
 }
 
 JsModuleEntry unit_pbhub_module = {
+  "UnitPbhub",
   NULL,
   addModule_unit_pbhub,
   NULL,

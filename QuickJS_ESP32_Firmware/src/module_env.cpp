@@ -174,6 +174,7 @@ JSModuleDef *addModule_env(JSContext *ctx, JSValue global)
 }
 
 JsModuleEntry env_module = {
+  "Env",
   NULL,
   addModule_env,
   NULL,

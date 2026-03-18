@@ -278,6 +278,7 @@ void endModule_ledc(void){
 }
 
 JsModuleEntry ledc_module = {
+  "Ledc",
   initialize_ledc,
   addModule_ledc,
   loopModule_ledc,

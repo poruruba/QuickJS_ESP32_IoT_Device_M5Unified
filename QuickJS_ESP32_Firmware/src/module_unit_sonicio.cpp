@@ -67,6 +67,7 @@ JSModuleDef *addModule_unit_sonicio(JSContext *ctx, JSValue global)
 }
 
 JsModuleEntry unit_sonicio_module = {
+  "UnitSonicIo",
   NULL,
   addModule_unit_sonicio,
   NULL,

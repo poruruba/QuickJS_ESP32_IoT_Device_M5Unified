@@ -622,6 +622,19 @@ static JSValue esp32_get_config(JSContext *ctx, JSValueConst jsThis, int argc, J
   return value;
 }
 
+static JSValue esp32_get_jsmodule_list(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
+{
+  JSValue array = JS_NewArray(ctx);
+  ESP32QuickJS* self = (ESP32QuickJS*)JS_GetContextOpaque(ctx);
+  int count;
+  JsModuleEntry *list = self->get_module_list(&count);
+  for( int i = 0 ; i < count ; i++ ){
+    JS_SetPropertyUint32(ctx, array, i, JS_NewString(ctx, list[i].moduleName));
+  }
+
+  return array;
+}
+
 static JSValue esp32_console_log(JSContext *ctx, JSValueConst jsThis, int argc,
                             JSValueConst *argv, int magic) {
   int i = 0;
@@ -725,6 +738,9 @@ static const JSCFunctionListEntry esp32_funcs[] = {
                          }},
     JSCFunctionListEntry{"getChipModel", 0, JS_DEF_CFUNC, 0, {
                            func : {0, JS_CFUNC_generic, esp32_get_chipModel}
+                         }},
+    JSCFunctionListEntry{"getJsmoduleList", 0, JS_DEF_CFUNC, 0, {
+                           func : {0, JS_CFUNC_generic, esp32_get_jsmodule_list}
                          }},
     JSCFunctionListEntry{"syslog", 0, JS_DEF_CFUNC, 0, {
                            func : {1, JS_CFUNC_generic, esp32_syslog}
@@ -1063,6 +1079,7 @@ void endModule_esp32(void){
 }
 
 JsModuleEntry esp32_module = {
+  "Esp32",
   initialize_esp32,
   addModule_esp32,
   NULL,
@@ -1070,6 +1087,7 @@ JsModuleEntry esp32_module = {
 };
 
 JsModuleEntry console_module = {
+  "Console",
   NULL,
   addModule_console,
   NULL,

@@ -9,6 +9,7 @@ typedef void(*LoopModuleImpl)(void);
 typedef void(*EndModuleImpl)(void);
 
 typedef struct {
+  const char *moduleName;
   InitializeModuleImpl initializeImpl;
   AddModuleImpl addImpl;
   LoopModuleImpl loopImpl;

@@ -232,6 +232,7 @@ void endModule_mml(void){
 }
 
 JsModuleEntry mml_module = {
+  "Mml",
   initialize_mml,
   addModule_mml,
   NULL,

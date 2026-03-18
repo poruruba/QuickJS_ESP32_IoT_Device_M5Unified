@@ -391,6 +391,7 @@ JSModuleDef *addModule_crypto(JSContext *ctx, JSValue global)
 }
 
 JsModuleEntry crypto_module = {
+  "Crypto",
   NULL,
   addModule_crypto,
   NULL,

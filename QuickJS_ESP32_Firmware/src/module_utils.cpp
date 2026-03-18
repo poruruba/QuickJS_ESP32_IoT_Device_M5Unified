@@ -992,6 +992,7 @@ JSModuleDef *addModule_utils(JSContext * ctx, JSValue global)
 }
 
 JsModuleEntry utils_module = {
+  "Utils",
   NULL,
   addModule_utils,
   NULL,

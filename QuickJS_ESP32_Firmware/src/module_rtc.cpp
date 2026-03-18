@@ -123,6 +123,7 @@ long initialize_rtc(void){
 }
 
 JsModuleEntry rtc_module = {
+  "Rtc",
   initialize_rtc,
   addModule_rtc,
   NULL,

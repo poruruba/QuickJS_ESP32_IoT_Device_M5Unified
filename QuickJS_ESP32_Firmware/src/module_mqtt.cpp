@@ -348,6 +348,7 @@ void endModule_mqtt(void)
 }
 
 JsModuleEntry mqtt_module = {
+  "Mqtt",
   NULL,
   addModule_mqtt,
   loopModule_mqtt,

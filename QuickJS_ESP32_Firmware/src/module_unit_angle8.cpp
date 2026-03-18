@@ -86,6 +86,7 @@ JSModuleDef *addModule_unit_angle8(JSContext *ctx, JSValue global)
 }
 
 JsModuleEntry unit_angle8_module = {
+  "UnitAngle8",
   NULL,
   addModule_unit_angle8,
   NULL,

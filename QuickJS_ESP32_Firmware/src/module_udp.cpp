@@ -131,6 +131,7 @@ void endModule_udp(void){
 }
 
 JsModuleEntry udp_module = {
+  "Udp",
   NULL,
   addModule_udp,
   NULL,

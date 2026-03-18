@@ -76,6 +76,7 @@ long initialize_imu(void){
 }
 
 JsModuleEntry imu_module = {
+  "Imu",
   initialize_imu,
   addModule_imu,
   NULL,

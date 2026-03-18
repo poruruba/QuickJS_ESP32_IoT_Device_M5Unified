@@ -364,6 +364,7 @@ void loopModule_input(void){
 }
 
 JsModuleEntry input_module = {
+  "Input",
   NULL,
   addModule_input,
   loopModule_input,

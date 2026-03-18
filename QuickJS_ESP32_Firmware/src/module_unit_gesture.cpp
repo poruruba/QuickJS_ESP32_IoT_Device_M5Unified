@@ -143,6 +143,7 @@ JSModuleDef *addModule_unit_gesture(JSContext *ctx, JSValue global)
 }
 
 JsModuleEntry unit_gesture_module = {
+  "UnitGesture",
   NULL,
   addModule_unit_gesture,
   NULL,

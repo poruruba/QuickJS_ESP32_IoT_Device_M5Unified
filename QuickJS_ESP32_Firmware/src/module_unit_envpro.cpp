@@ -84,6 +84,7 @@ JSModuleDef *addModule_unit_envpro(JSContext *ctx, JSValue global)
 }
 
 JsModuleEntry unit_envpro_module = {
+  "UnitEnvPro",
   NULL,
   addModule_unit_envpro,
   NULL,

@@ -308,6 +308,7 @@ JSModuleDef *addModule_wire1(JSContext *ctx, JSValue global)
 }
 
 JsModuleEntry wire_module = {
+  "Wire",
   NULL,
   addModule_wire,
   NULL,
@@ -315,6 +316,7 @@ JsModuleEntry wire_module = {
 };
 
 JsModuleEntry wire1_module = {
+  "Wire1",
   NULL,
   addModule_wire1,
   NULL,

@@ -163,6 +163,7 @@ void endModule_asr(void)
 }
 
 JsModuleEntry unit_asr_module = {
+  "UnitAsr",
   NULL,
   addModule_unit_asr,
   NULL,

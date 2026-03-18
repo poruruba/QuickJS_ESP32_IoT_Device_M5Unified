@@ -201,6 +201,7 @@ JSModuleDef *addModule_unit_bytebutton(JSContext *ctx, JSValue global)
 }
 
 JsModuleEntry unit_bytebutton_module = {
+  "UnitByteButton",
   NULL,
   addModule_unit_bytebutton,
   NULL,

@@ -255,6 +255,7 @@ JSModuleDef *addModule_unit_step16(JSContext *ctx, JSValue global)
 }
 
 JsModuleEntry unit_step16_module = {
+  "UnitStep16",
   NULL,
   addModule_unit_step16,
   NULL,

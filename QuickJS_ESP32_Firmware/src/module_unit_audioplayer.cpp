@@ -249,6 +249,7 @@ void endModule_unit_audioplayer(void)
 }
 
 JsModuleEntry unit_audioplayer_module = {
+  "UnitAudioPlayer",
   NULL,
   addModule_unit_audioplayer,
   loopModule_unit_audioplayer,

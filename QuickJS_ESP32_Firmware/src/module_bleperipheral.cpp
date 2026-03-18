@@ -299,6 +299,7 @@ long initializeModule_bleperipheral(void)
 }
 
 JsModuleEntry bleperipheral_module = {
+  "BlePeripheral",
   initializeModule_bleperipheral,
   addModule_bleperipheral,
   NULL,

@@ -455,6 +455,7 @@ void endModule_audio(void)
 }
 
 JsModuleEntry audio_module = {
+  "Audio",
   initialize_audio,
   addModule_audio,
   NULL,

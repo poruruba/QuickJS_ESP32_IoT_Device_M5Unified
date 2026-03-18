@@ -1304,6 +1304,7 @@ void endModule_lcd(void)
 }
 
 JsModuleEntry lcd_module = {
+  "Lcd",
   initialize_lcd,
   addModule_lcd,
   NULL,

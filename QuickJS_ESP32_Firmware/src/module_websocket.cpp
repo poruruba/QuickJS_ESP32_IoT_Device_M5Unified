@@ -245,6 +245,7 @@ void loopModule_websocket(void){
 }
 
 JsModuleEntry websocket_module = {
+  "Websocket",
   NULL,
   addModule_websocket,
   loopModule_websocket,

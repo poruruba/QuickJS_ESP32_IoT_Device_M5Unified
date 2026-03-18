@@ -421,6 +421,7 @@ void endModule_sd(void){
 }
 
 JsModuleEntry sd_module = {
+  "Sd",
   NULL,
   addModule_sd,
   NULL,

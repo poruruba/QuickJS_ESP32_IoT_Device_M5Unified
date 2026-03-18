@@ -373,6 +373,7 @@ void endModule_prefs(void)
 }
 
 JsModuleEntry prefs_module = {
+  "Prefs",
   NULL,
   addModule_prefs,
   NULL,

@@ -388,6 +388,7 @@ void endModule_synth(void){
 }
 
 JsModuleEntry unit_synth_module = {
+  "UnitSynth",
   initialize_synth,
   addModule_synth,
   NULL,

@@ -86,6 +86,7 @@ JSModuleDef *addModule_unit_color(JSContext *ctx, JSValue global)
 }
 
 JsModuleEntry unit_color_module = {
+  "UnitColor",
   NULL,
   addModule_unit_color,
   NULL,

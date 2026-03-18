@@ -1,4 +1,8 @@
 #include <Arduino.h>
+#include "main_config.h"
+
+#ifdef _UART_ENABLE_
+
 #include "quickjs.h"
 #include "module_type.h"
 #include "module_utils.h"
@@ -172,8 +176,11 @@ void endModule_uart(void){
 }
 
 JsModuleEntry uart_module = {
+  "Uart",
   NULL,
   addModule_uart,
   NULL,
   endModule_uart
 };
+
+#endif

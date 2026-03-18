@@ -261,6 +261,7 @@ void endModule_ir(void){
 }
 
 JsModuleEntry ir_module = {
+  "Ir",
   NULL,
   addModule_ir,
   NULL,

@@ -132,6 +132,7 @@ void endModule_graphql(void){
 }
 
 JsModuleEntry graphql_module = {
+  "Graphql",
   NULL,
   addModule_graphql,
   NULL,

@@ -114,6 +114,7 @@ JSModuleDef *addModule_gpio(JSContext *ctx, JSValue global)
 }
 
 JsModuleEntry gpio_module = {
+  "Gpio",
   NULL,
   addModule_gpio,
   NULL,

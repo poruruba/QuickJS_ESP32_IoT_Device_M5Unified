@@ -132,8 +132,10 @@ static JsModuleEntry module_entries[] = {
   wire1_module,
   pixels_module,
   udp_module,
-  uart_module,
   prefs_module,
+#ifdef _UART_ENABLE_
+  uart_module,
+#endif
 #ifdef _IR_ENABLE_
   ir_module,
 #endif
@@ -688,6 +690,11 @@ class ESP32QuickJS {
       if( module_entries[i].endImpl != NULL )
         module_entries[i].endImpl();
     }
+  }
+
+  JsModuleEntry* get_module_list(int* p_count){
+    *p_count = sizeof(module_entries) / sizeof(JsModuleEntry);
+    return module_entries;
   }
 
 protected:

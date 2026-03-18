@@ -345,6 +345,7 @@ void endModule_espnow(void){
 }
 
 JsModuleEntry espnow_module = {
+  "EspNow",
   NULL,
   addModule_espnow,
   loopModule_espnow,

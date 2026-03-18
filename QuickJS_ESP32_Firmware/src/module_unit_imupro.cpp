@@ -200,6 +200,7 @@ JSModuleDef *addModule_unit_imupro(JSContext *ctx, JSValue global)
 }
 
 JsModuleEntry unit_imupro_module = {
+  "UnitImuPro",
   NULL,
   addModule_unit_imupro,
   NULL,

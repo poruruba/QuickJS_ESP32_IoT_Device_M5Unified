@@ -669,6 +669,7 @@ void endModule_http(void)
 }
 
 JsModuleEntry http_module = {
+  "Http",
   NULL,
   addModule_http,
   loopModule_http,

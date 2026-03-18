@@ -214,6 +214,7 @@ void loopModule_websocket_client(void)
 }
 
 JsModuleEntry websocket_client_module = {
+  "WebsocketClient",
   initialize_websocket_client,
   addModule_websocket_client,
   loopModule_websocket_client,

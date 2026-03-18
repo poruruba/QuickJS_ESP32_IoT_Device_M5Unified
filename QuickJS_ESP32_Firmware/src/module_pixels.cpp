@@ -170,6 +170,7 @@ void endModule_pixels(void)
 }
 
 JsModuleEntry pixels_module = {
+  "Pixels",
   NULL,
   addModule_pixels,
   NULL,

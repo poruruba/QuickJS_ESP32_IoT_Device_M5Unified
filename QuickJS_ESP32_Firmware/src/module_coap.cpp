@@ -288,6 +288,7 @@ void endModule_coap(void){
 }
 
 JsModuleEntry coap_module = {
+  "Coap",
   initialize_coap,
   addModule_coap,
   loopModule_coap,

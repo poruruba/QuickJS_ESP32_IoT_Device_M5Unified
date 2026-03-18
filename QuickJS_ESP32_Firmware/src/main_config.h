@@ -39,6 +39,7 @@
 #define _RTC_ENABLE_
 #define _SD_ENABLE_
 #define _SNMP_AGENT_ENABLE_
+#define _UART_ENABLE_
 #define _WEBSOCKET_ENABLE_
 #define _WEBSOCKET_CLIENT_ENABLE_
 #endif

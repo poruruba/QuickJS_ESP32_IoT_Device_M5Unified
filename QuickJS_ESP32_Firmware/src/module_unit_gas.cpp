@@ -58,6 +58,7 @@ JSModuleDef *addModule_unit_gas(JSContext *ctx, JSValue global)
 }
 
 JsModuleEntry unit_gas_module = {
+  "UnitGas",
   NULL,
   addModule_unit_gas,
   NULL,
