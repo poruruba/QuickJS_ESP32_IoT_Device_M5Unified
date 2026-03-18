@@ -58,7 +58,7 @@ String read_config_string(const char *fname)
   String text = fp.readString();
   fp.close();
 
-  return text;
+  return String(text.c_str());
 }
 
 long write_config_string(const char *fname, const char *text)

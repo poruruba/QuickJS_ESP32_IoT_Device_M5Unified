@@ -79,7 +79,7 @@ static JSValue graphql_execute(JSContext *ctx, JSValueConst jsThis, int argc, JS
   if( result.length() == 0 )
     return JS_EXCEPTION;
 
-  JSValue result_object = JS_ParseJSON(ctx, result.c_str(), result.length(), "json");
+  JSValue result_object = JS_ParseJSON(ctx, result.c_str(), strlen(result.c_str()), "json");
 
   return result_object;
 }

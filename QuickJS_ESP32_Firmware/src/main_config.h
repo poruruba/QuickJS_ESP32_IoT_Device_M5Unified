@@ -142,6 +142,7 @@
 #define CONFIG_FNAME_MQTT  "/mqtt.ini"
 #define CONFIG_FNAME_BRIDGE  "/bridge.ini"
 #define CONFIG_FNAME_SOURCE  "/source.ini"
+#define CONFIG_FNAME_CONFIG  "/config.ini"
 #define CONFIG_AWS_CREDENTIAL1  "/awscred1.ini"
 #define CONFIG_AWS_CREDENTIAL2  "/awscred2.ini"
 #define CONFIG_AWS_CREDENTIAL3  "/awscred3.ini"

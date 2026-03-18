@@ -280,7 +280,7 @@ static JSValue http_bridge(JSContext *ctx, JSValueConst jsThis, int argc, JSValu
 
   if (response_type == HTTP_RESP_JSON ){
     String result = http.getString();
-    value = JS_ParseJSON(ctx, result.c_str(), result.length(), "json");
+    value = JS_ParseJSON(ctx, result.c_str(), strlen(result.c_str()), "json");
   }else if( response_type == HTTP_RESP_TEXT ){
     String result = http.getString();
     const char *buffer = result.c_str();
@@ -437,7 +437,7 @@ static JSValue http_pushMessage(JSContext *ctx, JSValueConst jsThis, int argc, J
   }
 
   String response = http.getString();
-  JSValue value = JS_ParseJSON(ctx, response.c_str(), response.length(), "json");
+  JSValue value = JS_ParseJSON(ctx, response.c_str(), strlen(response.c_str()), "json");
   if( value == JS_UNDEFINED || value == JS_EXCEPTION )
     return JS_EXCEPTION;
   JSValue status = JS_GetPropertyStr(ctx, value, "status");

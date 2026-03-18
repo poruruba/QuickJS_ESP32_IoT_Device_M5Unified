@@ -553,10 +553,16 @@ static JSValue esp32_download_jscode(JSContext *ctx, JSValueConst jsThis, int ar
   bool every = false;
   if( argc > 1 )
     every = JS_ToBool(ctx, argv[1]);
-  ret = write_config_string(CONFIG_FNAME_SOURCE, every ? url : "" );
-  if( ret != 0 ){
-    JS_FreeCString(ctx, url);
-    return JS_EXCEPTION;
+  if( every ){
+    ret = write_config_string(CONFIG_FNAME_SOURCE, url );
+    if( ret != 0 ){
+      JS_FreeCString(ctx, url);
+      return JS_EXCEPTION;
+    }
+  }else{
+    String source_url = read_config_string(CONFIG_FNAME_SOURCE);
+    if( source_url.length() != 0 )
+      write_config_string(CONFIG_FNAME_SOURCE, "");
   }
 
   String response = http_get(url);
@@ -572,6 +578,48 @@ static JSValue esp32_download_jscode(JSContext *ctx, JSValueConst jsThis, int ar
   g_fileloading = FILE_LOADING_RESTART;
 
   return JS_UNDEFINED;
+}
+
+static JSValue esp32_set_config(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
+{
+  if( JS_IsNull(argv[0]) || JS_IsUndefined(argv[0]) ){
+    String config = read_config_string(CONFIG_FNAME_CONFIG);
+    if( config.length() != 0 )
+      write_config_string(CONFIG_FNAME_CONFIG, "");
+  }else if( JS_IsObject(argv[0]) ){
+    JSValue json = JS_JSONStringify(ctx, argv[0], JS_UNDEFINED, JS_UNDEFINED);
+    if( JS_IsNull(json) || JS_IsUndefined(json) )
+      return JS_EXCEPTION;
+    const char *p_config = JS_ToCString(ctx, json);
+    if( p_config == NULL ){
+      JS_FreeValue(ctx, json);
+      return JS_EXCEPTION;
+    }
+    long ret = write_config_string(CONFIG_FNAME_CONFIG, p_config);
+    JS_FreeCString(ctx, p_config);
+    JS_FreeValue(ctx, json);
+    if( ret != 0 )
+      return JS_EXCEPTION;
+  }else{
+    return JS_EXCEPTION;
+  }
+
+  return JS_UNDEFINED;
+}
+
+static JSValue esp32_get_config(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
+{
+  String config = read_config_string(CONFIG_FNAME_CONFIG);
+  if( config.length() == 0 )
+    return JS_NewObject(ctx);
+  Serial.printf("config=%s\n", config.c_str());
+
+  JSValue value = JS_ParseJSON(ctx, config.c_str(), config.length(), "json");
+  Serial.println("OK?");
+  if( JS_IsNull(value) || JS_IsUndefined(value) )
+    return JS_EXCEPTION;
+
+  return value;
 }
 
 static JSValue esp32_console_log(JSContext *ctx, JSValueConst jsThis, int argc,
@@ -736,6 +784,12 @@ static const JSCFunctionListEntry esp32_funcs[] = {
                          }},
     JSCFunctionListEntry{"downloadJscode", 0, JS_DEF_CFUNC, 0, {
                            func : {2, JS_CFUNC_generic, esp32_download_jscode}
+                         }},
+    JSCFunctionListEntry{"setConfig", 0, JS_DEF_CFUNC, 0, {
+                           func : {1, JS_CFUNC_generic, esp32_set_config}
+                         }},
+    JSCFunctionListEntry{"getConfig", 0, JS_DEF_CFUNC, 0, {
+                           func : {0, JS_CFUNC_generic, esp32_get_config}
                          }},
     JSCFunctionListEntry{"webStart", 0, JS_DEF_CFUNC, 0, {
                            func : {0, JS_CFUNC_generic, esp32_web_start}

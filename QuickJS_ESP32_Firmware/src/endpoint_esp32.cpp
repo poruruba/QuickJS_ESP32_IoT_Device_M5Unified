@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include <SPIFFS.h>
+#include <ArduinoJson.h>
 
 #include "main_config.h"
 #include "endpoint_packet.h"
@@ -160,6 +161,10 @@ long endp_code_upload(JsonObject& request, JsonObject& response, int magic)
     if( g_autoupdate )
       Serial.println("autoupdate: on");
 
+    String source_url = read_config_string(CONFIG_FNAME_SOURCE);
+    if( source_url.length() != 0 )
+      write_config_string(CONFIG_FNAME_SOURCE, "");
+      
     Serial.printf("save_jscode\n");
     g_fileloading = FILE_LOADING_RESTART;
   }else{
@@ -238,6 +243,35 @@ long endp_code_eval(JsonObject& request, JsonObject& response, int magic)
   return 0;
 }
 
+long endp_config_upload(JsonObject& request, JsonObject& response, int magic)
+{
+  const char *p_config = request["config"];
+
+  if( p_config == NULL || *p_config == '\0' ){
+    String config = read_config_string(CONFIG_FNAME_CONFIG);
+    if( config.length() != 0 )
+      write_config_string(CONFIG_FNAME_CONFIG, "");
+  }else{
+    JsonDocument doc;
+    DeserializationError err = deserializeJson(doc, p_config);
+    if( err )
+      return -1;
+    long ret = write_config_string(CONFIG_FNAME_CONFIG, p_config);
+    if( ret != 0 )
+      return -1;
+  }
+
+  return 0;
+}
+
+long endp_config_download(JsonObject& request, JsonObject& response, int magic)
+{
+  String config = read_config_string(CONFIG_FNAME_CONFIG);
+  response["result"]["config"] = (char*)config.c_str();
+
+  return 0;
+}
+
 long endp_console_log(JsonObject& request, JsonObject& response, int magic)
 {
   if( request["msg"].is<JsonArray>() ){
@@ -281,6 +315,8 @@ EndpointEntry esp32_table[] = {
   EndpointEntry{ endp_code_delete, "/code-delete", 0 },
   EndpointEntry{ endp_code_list, "/code-list", 0 },
   EndpointEntry{ endp_code_eval, "/code-eval", 0 },
+  EndpointEntry{ endp_config_upload, "/config-upload", 0 },
+  EndpointEntry{ endp_config_download, "/config-download", 0 },
   EndpointEntry{ endp_console_log, "/console-log", 0 },
 };
 const int num_of_esp32_entry = sizeof(esp32_table) / sizeof(EndpointEntry);

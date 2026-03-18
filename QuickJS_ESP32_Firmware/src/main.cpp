@@ -170,6 +170,12 @@ static long start_qjs(void)
     Serial.println("[can't load module]");
   }
 
+  String config = read_config_string(CONFIG_FNAME_CONFIG);
+  if( config.length() != 0 ){
+    String config_val = String("var config = JSON.parse(`") + config + "`);";
+    JS_Eval(qjs.ctx, config_val.c_str(), strlen(config_val.c_str()), "<input>", JS_EVAL_TYPE_GLOBAL);
+  }
+
   char *js_code;
   String url = read_config_string(CONFIG_FNAME_SOURCE);
   if( url.length() > 0 )
