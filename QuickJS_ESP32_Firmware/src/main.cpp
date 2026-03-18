@@ -172,7 +172,7 @@ static long start_qjs(void)
 
   String config = read_config_string(CONFIG_FNAME_CONFIG);
   if( config.length() != 0 ){
-    String config_val = String("var config = JSON.parse(`") + config + "`);";
+    String config_val = String("var g_config = JSON.parse(`") + config + "`);";
     JS_Eval(qjs.ctx, config_val.c_str(), strlen(config_val.c_str()), "<input>", JS_EVAL_TYPE_GLOBAL);
   }
 
