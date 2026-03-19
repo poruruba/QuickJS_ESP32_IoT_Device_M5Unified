@@ -154,7 +154,7 @@ JSModuleDef *addModule_unit_asr(JSContext *ctx, JSValue global)
   return mod;
 }
 
-void endModule_asr(void)
+void endModule_unit_asr(void)
 {
   if( isBegan ){
     Serial1.end();
@@ -167,7 +167,7 @@ JsModuleEntry unit_asr_module = {
   NULL,
   addModule_unit_asr,
   NULL,
-  endModule_asr
+  endModule_unit_asr
 };
 
 #endif

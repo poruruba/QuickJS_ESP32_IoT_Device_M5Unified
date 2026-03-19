@@ -8,6 +8,7 @@
 #define STATIC_REDIRECT_PAGE  "https://poruruba.github.io/QuickJS_ESP32_IoT_Device_M5Unified/QuickJS_ESP32_Firmware/data/html/"
 
 #if 0
+#define _UNIT_AIRQUALITY_ENABLE_
 #define _UNIT_ANGLE8_ENABLE_
 #define _UNIT_ASR_ENABLE_
 #define _UNIT_AUDIOPLAYER_ENABLE_
