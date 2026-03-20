@@ -1,10 +1,17 @@
 #include <Arduino.h>
-#include <SPIFFS.h>
+#include <LittleFS.h>
 #include "main_config.h"
 
 long read_config_long(uint16_t index, long def)
 {
-  File fp = SPIFFS.open(CONFIG_FNAME, "r");
+  if( !LittleFS.exists(CONFIG_FNAME) ){
+    File fp = LittleFS.open(CONFIG_FNAME, FILE_WRITE);
+    if( fp )
+      fp.close();
+    return def;
+  }
+
+  File fp = LittleFS.open(CONFIG_FNAME, FILE_READ);
   if( !fp )
     return def;
   
@@ -27,7 +34,7 @@ long read_config_long(uint16_t index, long def)
 
 long write_config_long(uint16_t index, long value)
 {
-  File fp = SPIFFS.open(CONFIG_FNAME, "a+");
+  File fp = LittleFS.open(CONFIG_FNAME, "a+");
   if (!fp)
     return -1;
   
@@ -51,7 +58,14 @@ long write_config_long(uint16_t index, long value)
 
 String read_config_string(const char *fname)
 {
-  File fp = SPIFFS.open(fname, FILE_READ);
+  if( !LittleFS.exists(fname) ){
+    File fp = LittleFS.open(fname, FILE_WRITE);
+    if( fp )
+      fp.close();
+    return String("");
+  }
+
+  File fp = LittleFS.open(fname, FILE_READ);
   if( !fp )
     return String("");
 
@@ -63,7 +77,7 @@ String read_config_string(const char *fname)
 
 long write_config_string(const char *fname, const char *text)
 {
-  File fp = SPIFFS.open(fname, FILE_WRITE);
+  File fp = LittleFS.open(fname, FILE_WRITE);
   if( !fp )
     return -1;
 

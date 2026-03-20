@@ -18,7 +18,7 @@
 #include <time.h>
 
 #include <Esp.h>
-#include <SPIFFS.h>
+#include <LittleFS.h>
 
 #include "quickjs.h"
 #include "quickjs_esp32.h"
@@ -392,8 +392,8 @@ static JSValue esp32_getStorageInfo(JSContext *ctx, JSValueConst jsThis, int arg
 
   JS_SetPropertyStr(ctx, obj, "ram_total", JS_NewUint32(ctx, getRamTotal()));
   JS_SetPropertyStr(ctx, obj, "ram_used", JS_NewUint32(ctx, getRamUsed()));
-  JS_SetPropertyStr(ctx, obj, "spiffs_total", JS_NewUint32(ctx, SPIFFS.totalBytes()));
-  JS_SetPropertyStr(ctx, obj, "spiffs_used", JS_NewUint32(ctx, SPIFFS.usedBytes()));
+  JS_SetPropertyStr(ctx, obj, "spiffs_total", JS_NewUint32(ctx, LittleFS.totalBytes()));
+  JS_SetPropertyStr(ctx, obj, "spiffs_used", JS_NewUint32(ctx, LittleFS.usedBytes()));
   JS_SetPropertyStr(ctx, obj, "heap_total", JS_NewUint32(ctx, ESP.getHeapSize()));
   JS_SetPropertyStr(ctx, obj, "heap_free", JS_NewUint32(ctx, ESP.getFreeHeap()));
   JS_SetPropertyStr(ctx, obj, "heap_free_min", JS_NewUint32(ctx, ESP.getMinFreeHeap()));

@@ -138,7 +138,7 @@
 
 #define DUMMY_FNAME  "/dummy"
 #define MAIN_FNAME  "/main.js"
-#define MODULE_DIR  "/modules/"
+#define MODULE_DIR  "/modules"
 #define CONFIG_FNAME  "/config.ini"
 #define CONFIG_FNAME_SYSLOG  "/syslog.ini"
 #define CONFIG_FNAME_MQTT  "/mqtt.ini"

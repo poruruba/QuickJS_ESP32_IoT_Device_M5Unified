@@ -1,6 +1,6 @@
 #include <Arduino.h>
 #include <WiFi.h>
-#include <SPIFFS.h>
+#include <LittleFS.h>
 #include <time.h>
 
 #include "main_config.h"
@@ -35,31 +35,31 @@ void setup()
   if( ret != 0 )
     Serial.println("esp32_initialize failed");
 
-  if( !SPIFFS.begin() )
-    Serial.println("SPIFFS begin failed");
+  if( !LittleFS.begin(true) )
+    Serial.println("LittleFS begin failed");
   delay(100);
 
-  if( !SPIFFS.exists(DUMMY_FNAME) ){
-    File fp = SPIFFS.open(DUMMY_FNAME, FILE_WRITE);
+  if( !LittleFS.exists(DUMMY_FNAME) ){
+    LittleFS.mkdir(MODULE_DIR);
+    File fp = LittleFS.open(DUMMY_FNAME, FILE_WRITE);
     if( !fp ){
-      Serial.println("SPIFFS FORMAT START");
-      if( !SPIFFS.format() )
-        Serial.println("SPIFFS format failed");
-      Serial.println("SPIFFS FORMAT END");
+      Serial.println("LittleFS FORMAT START");
+      if( !LittleFS.format() )
+        Serial.println("LittleFS format failed");
+      Serial.println("LittleFS FORMAT END");
 
-      if( !SPIFFS.begin() )
-        Serial.println("SPIFFS begin failed");
+      if( !LittleFS.begin() )
+        Serial.println("LittleFS begin failed");
       delay(100);
 
-      fp = SPIFFS.open(DUMMY_FNAME, FILE_WRITE);
+      LittleFS.mkdir(MODULE_DIR);
+      fp = LittleFS.open(DUMMY_FNAME, FILE_WRITE);
       if( fp )
         fp.close();
     }else{
       fp.close();
     }
   }
-  if( !SPIFFS.exists(MODULE_DIR) )
-    SPIFFS.mkdir(MODULE_DIR);
 
   g_sleepReason = esp_sleep_get_wakeup_cause();
 
@@ -185,7 +185,7 @@ static long start_qjs(void)
 
 long save_jscode(const char *p_code)
 {
-  File fp = SPIFFS.open(MAIN_FNAME, FILE_WRITE);
+  File fp = LittleFS.open(MAIN_FNAME, FILE_WRITE);
   if( !fp )
     return -1;
   fp.write((uint8_t*)p_code, strlen(p_code));
@@ -196,11 +196,11 @@ long save_jscode(const char *p_code)
 
 long read_jscode(char *p_buffer, uint32_t maxlen)
 {
-  if( !SPIFFS.exists(MAIN_FNAME) ){
+  if( !LittleFS.exists(MAIN_FNAME) ){
     p_buffer[0] = '\0';
     return 0;
   }
-  File fp = SPIFFS.open(MAIN_FNAME, FILE_READ);
+  File fp = LittleFS.open(MAIN_FNAME, FILE_READ);
   if( !fp )
     return -1;
   size_t size = fp.size();
@@ -235,9 +235,9 @@ static char* download_jscode(const char *url)
 
 static char* load_jscode(void)
 {
-  if( !SPIFFS.exists(MAIN_FNAME) )
+  if( !LittleFS.exists(MAIN_FNAME) )
     return NULL;
-  File fp = SPIFFS.open(MAIN_FNAME, FILE_READ);
+  File fp = LittleFS.open(MAIN_FNAME, FILE_READ);
   if( !fp )
     return NULL;
   size_t size = fp.size();
@@ -258,12 +258,13 @@ static char* load_jscode(void)
 long save_module(const char* p_fname, const char *p_code)
 {
   char filename[64];
-  if( strlen(p_fname) > sizeof(filename) - strlen(MODULE_DIR) - 1)
+  if( (strlen(MODULE_DIR) + 1 + strlen(p_fname) + 1)> sizeof(filename))
     return -1;
   strcpy(filename, MODULE_DIR);
+  strcat(filename, "/");
   strcat(filename, p_fname);
 
-  File fp = SPIFFS.open(filename, FILE_WRITE);
+  File fp = LittleFS.open(filename, FILE_WRITE);
   if( !fp )
     return -1;
   fp.write((uint8_t*)p_code, strlen(p_code));
@@ -275,12 +276,13 @@ long save_module(const char* p_fname, const char *p_code)
 long read_module(const char* p_fname, char *p_buffer, uint32_t maxlen)
 {
   char filename[64];
-  if( strlen(p_fname) > sizeof(filename) - strlen(MODULE_DIR) - 1)
+  if( (strlen(MODULE_DIR) + 1 + strlen(p_fname) + 1)> sizeof(filename))
     return -1;
   strcpy(filename, MODULE_DIR);
+  strcat(filename, "/");
   strcat(filename, p_fname);
 
-  File fp = SPIFFS.open(filename, FILE_READ);
+  File fp = LittleFS.open(filename, FILE_READ);
   if( !fp )
     return -1;
   uint32_t size = fp.size();
@@ -298,18 +300,19 @@ long read_module(const char* p_fname, char *p_buffer, uint32_t maxlen)
 long delete_module(const char *p_fname)
 {
   char filename[64];
-  if( strlen(p_fname) > sizeof(filename) - strlen(MODULE_DIR) - 1)
+  if( (strlen(MODULE_DIR) + 1 + strlen(p_fname) + 1)> sizeof(filename))
     return -1;
   strcpy(filename, MODULE_DIR);
+  strcat(filename, "/");
   strcat(filename, p_fname);
 
-  bool ret = SPIFFS.remove(filename);
+  bool ret = LittleFS.remove(filename);
   return ret ? 0 : -1;
 }
 
 static long load_all_modules(void)
 {
-  File dir = SPIFFS.open("/");
+  File dir = LittleFS.open("/");
   if( !dir )
     return -1;
 

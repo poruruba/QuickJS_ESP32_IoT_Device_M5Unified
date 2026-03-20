@@ -5,7 +5,7 @@
 
 #include <WiFi.h>
 #include <WiFiUdp.h>
-#include <SPIFFS.h>
+#include <LittleFFS.h>
 #include <SNMP_Agent.h>
 #include "wifi_utils.h"
 #include "storage_info.h"
@@ -179,7 +179,7 @@ long snmp_initialize(void)
 
   // hrStorageSize
   snmp.addReadOnlyIntegerHandler(".1.3.6.1.2.1.25.2.3.1.5.1", getFlashSize());
-  snmp.addReadOnlyIntegerHandler(".1.3.6.1.2.1.25.2.3.1.5.2", SPIFFS.totalBytes());
+  snmp.addReadOnlyIntegerHandler(".1.3.6.1.2.1.25.2.3.1.5.2", LittleFS.totalBytes());
   snmp.addDynamicIntegerHandler(".1.3.6.1.2.1.25.2.3.1.5.3",
     []() -> int {
       return getRamTotal();
@@ -203,7 +203,7 @@ long snmp_initialize(void)
   snmp.addReadOnlyIntegerHandler(".1.3.6.1.2.1.25.2.3.1.6.1", getPartitionApplication());
   snmp.addDynamicIntegerHandler(".1.3.6.1.2.1.25.2.3.1.6.2", 
     []() -> int {
-      return SPIFFS.usedBytes();
+      return LittleFS.usedBytes();
     }
   );
   snmp.addDynamicIntegerHandler(".1.3.6.1.2.1.25.2.3.1.6.3",

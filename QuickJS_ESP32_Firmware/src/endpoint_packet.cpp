@@ -1,6 +1,6 @@
 #include <Arduino.h>
 #include <WiFi.h>
-#include <SPIFFS.h>
+#include <LittleFS.h>
 #include <ESPmDNS.h>
 #include <ArduinoJson.h>
 #include <unordered_map> 
@@ -232,7 +232,7 @@ long packet_initialize(void)
   DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
   DefaultHeaders::Instance().addHeader("Access-Control-Allow-Headers", "*");
 #ifdef ENABLE_STATIC_WEB_PAGE
-  server.serveStatic("/", SPIFFS, "/html/").setDefaultFile("index.html");
+  server.serveStatic("/", LittleFS, "/html/").setDefaultFile("index.html");
 #endif
   server.onNotFound(notFound);
 

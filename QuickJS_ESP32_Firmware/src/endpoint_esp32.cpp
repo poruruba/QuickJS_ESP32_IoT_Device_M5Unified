@@ -1,6 +1,6 @@
 #include <Arduino.h>
 #include <WiFi.h>
-#include <SPIFFS.h>
+#include <LittleFS.h>
 #include <ArduinoJson.h>
 
 #include "main_config.h"
@@ -195,16 +195,14 @@ long endp_code_list(JsonObject& request, JsonObject& response, int magic)
 //  JsonArray arry = response.createNestedArray("result");
   JsonArray arry = response["result"].to<JsonArray>();
 
-  File dir = SPIFFS.open("/");
+  File dir = LittleFS.open(MODULE_DIR);
   if( !dir )
     return -1;
   File file = dir.openNextFile();
   int i = 0;
   while(file){
-    const char *fname = file.path();
-    if( strncmp(fname, MODULE_DIR, strlen(MODULE_DIR)) == 0 ){
-      arry[i++] = (char*)&fname[strlen(MODULE_DIR)];
-    }
+    const char *fname = file.name();
+    arry[i++] = (char*)fname;
     file.close();
     file = dir.openNextFile();
   }
