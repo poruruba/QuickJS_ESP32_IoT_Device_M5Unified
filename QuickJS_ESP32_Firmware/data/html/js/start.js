@@ -399,7 +399,7 @@ var vue_options = {
         },
         esp32_setEnableConsoleSyslog: async function(){
             try{
-                await this.arduino.setEnableConsoleSyslog(this.consolesyslog_enable);
+                await this.arduino.setEnableConsoleSyslog(this.syslogconsole_enable);
                 this.toast_show("設定しました。");
             }catch(error){
                 console.error(error);
