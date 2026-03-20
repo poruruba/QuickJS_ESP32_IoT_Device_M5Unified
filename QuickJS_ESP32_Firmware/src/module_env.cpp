@@ -16,7 +16,46 @@ static DHT12 dht12;
 #endif
 #ifdef ENV_MODULE_SHT40
 #include "Adafruit_SHT4x.h"
-static Adafruit_SHT4x sht40 = Adafruit_SHT4x();
+static Adafruit_SHT4x sht40;
+#endif
+#ifdef ENV_MODULE_BMP280
+#include <Wire.h>
+#include <Adafruit_BMP280.h>
+#define BMP280_SENSOR_ADDR 0x76
+static Adafruit_BMP280 bmp(&Wire);
+#endif
+
+#ifdef ENV_MODULE_BMP280
+static JSValue env_bmp280_begin(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
+{
+    bool status = bmp.begin(BMP280_SENSOR_ADDR);
+    if (!status) {
+        return JS_EXCEPTION;
+    }
+
+    return JS_UNDEFINED;
+}
+
+static JSValue env_bmp280_readTemperature(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
+{
+    float temp = bmp.readTemperature();
+
+    return JS_NewFloat64(ctx, temp);
+}
+
+static JSValue env_bmp280_readPressure(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
+{
+    float press = bmp.readPressure();
+
+    return JS_NewFloat64(ctx, press);
+}
+
+static JSValue env_bmp280_readAltitude(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
+{
+    float alt = bmp.readAltitude(1013.25);
+
+    return JS_NewFloat64(ctx, alt);
+}
 #endif
 
 #ifdef ENV_MODULE_DHT12
@@ -153,6 +192,24 @@ static const JSCFunctionListEntry env_funcs[] = {
     JSCFunctionListEntry{
         "SHT4X_LOW_HEATER_100MS", 0, JS_DEF_PROP_INT32, 0, {
           i32 : SHT4X_LOW_HEATER_100MS
+        }},
+#endif
+#ifdef ENV_MODULE_BMP280
+    JSCFunctionListEntry{
+        "bmp280_begin", 0, JS_DEF_CFUNC, 0, {
+          func : {0, JS_CFUNC_generic, env_bmp280_begin}
+        }},
+    JSCFunctionListEntry{
+        "bmp280_readTemperature", 0, JS_DEF_CFUNC, 0, {
+          func : {0, JS_CFUNC_generic, env_bmp280_readTemperature}
+        }},
+    JSCFunctionListEntry{
+        "bmp280_readPressure", 0, JS_DEF_CFUNC, 0, {
+          func : {0, JS_CFUNC_generic, env_bmp280_readPressure}
+        }},
+    JSCFunctionListEntry{
+        "bmp280_readAltitude", 0, JS_DEF_CFUNC, 0, {
+          func : {0, JS_CFUNC_generic, env_bmp280_readAltitude}
         }},
 #endif
 };

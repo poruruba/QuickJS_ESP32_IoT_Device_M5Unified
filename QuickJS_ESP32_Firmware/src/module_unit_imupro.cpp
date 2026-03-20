@@ -25,7 +25,7 @@ static JSValue unit_imupro_begin(JSContext *ctx, JSValueConst jsThis, int argc, 
     uint32_t sampleFrequency = 20;
     JS_ToUint32(ctx, &sampleFrequency, argv[0]);
 
-    unsigned status = bmp.begin(BMP280_SENSOR_ADDR);
+    bool status = bmp.begin(BMP280_SENSOR_ADDR);
     if (!status) {
         Serial.println(
             F("Could not find a valid BMP280 sensor, check wiring or "

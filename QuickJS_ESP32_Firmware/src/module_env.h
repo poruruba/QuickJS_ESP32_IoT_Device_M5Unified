@@ -6,6 +6,7 @@
 #define ENV_MODULE_SHT40
 #define ENV_MODULE_SHT30
 #define ENV_MODULE_DHT12
+#define ENV_MODULE_BMP280
 
 extern JsModuleEntry env_module;
 

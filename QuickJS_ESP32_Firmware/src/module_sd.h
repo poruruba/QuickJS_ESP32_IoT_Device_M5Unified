@@ -3,6 +3,8 @@
 
 #include "module_type.h"
 
+//#define SD_TYPE_MMC
+
 #ifdef SD_TYPE_MMC
 #define sd  SD_MMC
 #else
