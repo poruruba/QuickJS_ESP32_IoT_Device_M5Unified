@@ -16,7 +16,6 @@ var vue_options = {
         upload_mode: "main",
         target_module: "",
         module_name: "",
-        chk_autoupdate: false,
         module_list: [],
         base_url: base_url,
         ipaddress: "",
@@ -28,6 +27,7 @@ var vue_options = {
 
         syslog_host: "",
         syslog_port: 514,
+        syslogconsole_enable: false,
         httpbridge_url: "",
 
         rtc_date: {},
@@ -88,7 +88,6 @@ var vue_options = {
         prefs_value: "",
 
         esp32_millis_result: null,
-
         esp32_console_message: "",
 
         js_upload: "",
@@ -96,6 +95,8 @@ var vue_options = {
         js_export: "",
         hasWorkspace: false,
         workspace: null,
+
+        js_config: "",
     },
     computed: {
         device_model_string: function(){
@@ -381,6 +382,25 @@ var vue_options = {
         esp32_setSyslogServer: async function(){
             try{
                 await this.arduino.setSyslogServer(this.syslog_host, this.syslog_port);
+                this.toast_show("設定しました。");
+            }catch(error){
+                console.error(error);
+                alert(error);
+            }
+        },
+        esp32_getEnableConsoleSyslog: async function(){
+            try{
+                var result = await this.arduino.getEnableConsoleSyslog();
+                this.syslogconsole_enable = result.enable;
+            }catch(error){
+                console.error(error);
+                alert(error);
+            }
+        },
+        esp32_setEnableConsoleSyslog: async function(){
+            try{
+                await this.arduino.setEnableConsoleSyslog(this.consolesyslog_enable);
+                this.toast_show("設定しました。");
             }catch(error){
                 console.error(error);
                 alert(error);
@@ -398,6 +418,7 @@ var vue_options = {
         esp32_setHttpBridgeServer: async function(){
             try{
                 await this.arduino.setHttpBridgeServer(this.httpbridge_url);
+                this.toast_show("設定しました。");
             }catch(error){
                 console.error(error);
                 alert(error);
@@ -692,7 +713,7 @@ var vue_options = {
             try{
                 if( this.upload_mode == 'main'){
                     if( this.exec_mode == 'code')
-                    await this.arduino.code_upload_main(this.input_text, this.chk_autoupdate);
+                    await this.arduino.code_upload_main(this.input_text);
                     else if( this.exec_mode == 'eval')
                         await this.arduino.code_eval(this.input_text);
                 }else{
@@ -786,6 +807,17 @@ var vue_options = {
                 console.error(error);
                 alert(error);
             }
+        },
+
+        start_js_config: async function(){
+            var config = await this.arduino.getConfig();
+            this.js_config = JSON.stringify(config, null, '\t');
+            this.dialog_open("#js_config_dialog");
+        },
+        do_set_config: async function(){
+            var config = JSON.parse(this.js_config);
+            await this.arduino.setConfig(config);
+            this.toast_show("設定しました。");
         },
 
         do_upload: async function(){

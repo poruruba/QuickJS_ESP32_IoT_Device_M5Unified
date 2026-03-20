@@ -76,6 +76,7 @@
       <div id="editor" class="tab-pane fade in active">
         <br>
 
+        <button class="btn btn-default pull-right" v-on:click="start_js_config">Config</button>
         <div class="form-inline">
           <label>ライブラリファイルのリスト</label>
           <button class="btn btn-primary" v-on:click="get_module_list">リスト取得</button>
@@ -98,9 +99,6 @@
             <option value="module">Library</option>
           </select>
           <input v-if="upload_mode=='module'" type="text" class="form-control" v-model="module_name">
-          <span v-if="upload_mode=='main'">
-            <input type="checkbox" id="chk_autoupdate" v-model="chk_autoupdate"><label for="chk_autoupdate">autoupdate</label>
-          </span>
         </span>
         <button class="btn btn-primary" v-on:click="upload_textarea">アップロード</button>&nbsp;
         <button class="btn btn-primary" v-on:click="save_textarea">ファイル保存</button>
@@ -295,6 +293,11 @@
           <button class="btn btn-default btn-sm" v-on:click="esp32_getSyslogServer">取得</button>
           <button class="btn btn-default btn-sm" v-on:click="esp32_setSyslogServer">設定</button>
         </div>
+        <div class="form-inline">
+          <label><input type="checkbox" v-model="syslogconsole_enable">enableSyslogConsole</label>
+          <button class="btn btn-default btn-sm" v-on:click="esp32_getEnableConsoleSyslog">取得</button>
+          <button class="btn btn-default btn-sm" v-on:click="esp32_setEnableConsoleSyslog">設定</button>
+        </div>
         <div>
           <label>httpbridge</label>
           <label>url</label> <input type="text" class="form-control" v-model="httpbridge_url">
@@ -358,13 +361,28 @@
             </div>
             <div class="modal-body">
               <textarea class="form-control" rows="20" readonly>{{js_export}}</textarea>
-        </div>
-        <div class="modal-footer">
-              <button class="btn btn-primary" v-on:click="do_copy_export">クリップボードにコピー</button>
-              <button class="btn btn-default" v-on:click="dialog_close('#export_js_dialog')">閉じる</button>
-        </div>
-      </div>
-    </modal-dialog>
+            </div>
+            <div class="modal-footer">
+                  <button class="btn btn-primary" v-on:click="do_copy_export">クリップボードにコピー</button>
+                  <button class="btn btn-default" v-on:click="dialog_close('#export_js_dialog')">閉じる</button>
+            </div>
+          </div>
+        </modal-dialog>
+
+        <modal-dialog size="lg" id="js_config_dialog">
+          <div slot="content">
+            <div class="modal-header">
+              <label>Config</label>
+            </div>
+            <div class="modal-body">
+              <textarea class="form-control" rows="20" v-model="js_config"></textarea>
+            </div>
+            <div class="modal-footer">
+              <button class="btn btn-primary" v-on:click="do_set_config">設定</button>
+              <button class="btn btn-default" v-on:click="dialog_close('#js_config_dialog')">閉じる</button>
+            </div>
+          </div>
+        </modal-dialog>
 
       </div>
 

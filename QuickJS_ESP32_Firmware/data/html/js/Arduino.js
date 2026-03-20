@@ -52,6 +52,14 @@ class Arduino{
     return this.webapi_request("/setSyslogServer", { host: host, port: port });
   }
 
+  async getEnableConsoleSyslog(){
+    return this.webapi_request("/getEnableConsoleSyslog", {});
+  }
+
+  async setEnableConsoleSyslog(enable){
+    return this.webapi_request("/setEnableConsoleSyslog", { enable: enable });
+  }
+
   async getSyslogServer(){
     return this.webapi_request("/getSyslogServer", {});
   }
@@ -71,11 +79,8 @@ class Arduino{
       await this.webapi_request("/code-upload", { code: code } );
   }
 
-  async code_upload_main(code, autoupdate){
-    if( autoupdate !== undefined )
-      await this.webapi_request("/code-upload", { code: code, autoupdate: autoupdate } );
-    else
-      await this.webapi_request("/code-upload", { code: code } );
+  async code_upload_main(code){
+    await this.webapi_request("/code-upload", { code: code } );
   }
 
   async code_eval(code){
@@ -115,6 +120,15 @@ class Arduino{
 
   async customCall(message){
     return this.customcall_request(message);
+  }
+
+  async getConfig(){
+    var result = this.webapi_request("/getConfig", {} );
+    return JSON.parse(result.config);
+  }
+
+  async setConfig(config){
+    await this.webapi_request('/setConfig', {config: JSON.stringify(config)});
   }
 
   bufferToBase64(buf) {
