@@ -13,17 +13,17 @@
 #define SYNTH_DEFAULT_PROGRAM 0
 #define SYNTH_DEFAULT_BANK 0
 
-#define NUM_OF_SYNCH  3
+#define NUM_OF_SYNTH  3
 
 static M5UnitSynth synth;
-static MML_Synth mml[NUM_OF_SYNCH];
+static MML_Synth mml[NUM_OF_SYNTH];
 static TimerHandle_t mmlTimer;
 static bool timerRunning = false;
 static int32_t g_period = -1;
 static uint8_t g_resolution = 10;
 static bool g_repeat = false;
 static float g_volume = SYNTH_DEFAULT_VOLUME;
-static char *gp_mml_text[NUM_OF_SYNCH];
+static char *gp_mml_text[NUM_OF_SYNTH];
 
 static void startIntervalTimer(uint32_t period);
 static void stopIntervalTimer(void);
@@ -70,7 +70,7 @@ static JSValue unit_synth_play(JSContext *ctx, JSValueConst jsThis, int argc, JS
     uint32_t length;
     JS_ToUint32(ctx, &length, value);
     JS_FreeValue(ctx, value);
-    if( length > NUM_OF_SYNCH )
+    if( length > NUM_OF_SYNTH )
       return JS_EXCEPTION;
 
     for( int i = 0 ; i < length ; i++ ){
@@ -102,7 +102,7 @@ static JSValue unit_synth_play(JSContext *ctx, JSValueConst jsThis, int argc, JS
   if( argc > 1 )
     repeat = JS_ToBool(ctx, argv[1]);
 
-  for( int i = 0 ; i < NUM_OF_SYNCH ; i++ ){
+  for( int i = 0 ; i < NUM_OF_SYNTH ; i++ ){
     if( gp_mml_text[i] == NULL )
       break;
     mml[i].init(nullptr, func_tone, func_notone, func_instrument, /* nullptr */ debug);
@@ -111,7 +111,7 @@ static JSValue unit_synth_play(JSContext *ctx, JSValueConst jsThis, int argc, JS
 
   g_repeat = repeat;
 
-  for( int i = 0 ; i < NUM_OF_SYNCH ; i++ ){
+  for( int i = 0 ; i < NUM_OF_SYNTH ; i++ ){
     if( gp_mml_text[i] == NULL )
       break;
     mml[i].playBGM();
@@ -145,7 +145,7 @@ static JSValue unit_synth_getVolume(JSContext *ctx, JSValueConst jsThis, int arg
 
 static JSValue unit_synth_reset(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
 {
-  for( int i = 0 ; i < NUM_OF_SYNCH ; i++ ){
+  for( int i = 0 ; i < NUM_OF_SYNTH ; i++ ){
     mml[i].reset();
   }
 
@@ -192,14 +192,12 @@ static JSValue unit_synth_setAllNoteOff(JSContext *ctx, JSValueConst jsThis, int
 
 static JSValue unit_synth_setInstrument(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
 {
-  uint32_t idx;
-  JS_ToUint32(ctx, &idx, argv[0]);
-  if( idx >= NUM_OF_SYNCH )
-    return JS_EXCEPTION;
+  uint32_t channel;
+  JS_ToUint32(ctx, &channel, argv[0]);
   uint32_t val;
   JS_ToUint32(ctx, &val, argv[1]);
 
-  synth.setInstrument(SYNTH_DEFAULT_BANK, idx, val);
+  synth.setInstrument(SYNTH_DEFAULT_BANK, channel, val);
 
   return JS_UNDEFINED;
 }
@@ -380,7 +378,7 @@ static void mmlTimerCallback(TimerHandle_t xTimer) {
   if( timerRunning ){
     if (mml[0].isBGMPlay()) {
       uint32_t msec = millis();
-      for( int i = 0 ; i < NUM_OF_SYNCH ; i++ ){
+      for( int i = 0 ; i < NUM_OF_SYNTH ; i++ ){
         if( gp_mml_text[i] == NULL )
           break;
         if (mml[i].available(msec))
@@ -390,7 +388,7 @@ static void mmlTimerCallback(TimerHandle_t xTimer) {
       xTimerStop(mmlTimer, 0);
       timerRunning = false;
       if( g_repeat ){
-        for( int i = 0 ; i < NUM_OF_SYNCH ; i++ ){
+        for( int i = 0 ; i < NUM_OF_SYNTH ; i++ ){
           if( gp_mml_text[i] == NULL )
             break;
           mml[i].playBGM();
@@ -406,7 +404,7 @@ static void stopIntervalTimer(void){
   if( timerRunning ){
     g_repeat = false;
     xTimerStop(mmlTimer, 0);
-    for( int i = 0 ; i < NUM_OF_SYNCH; i++ ){
+    for( int i = 0 ; i < NUM_OF_SYNTH; i++ ){
       if( gp_mml_text[i] == NULL )
         break;
       free(gp_mml_text[i]);
@@ -431,7 +429,7 @@ static void startIntervalTimer(uint32_t period){
 
 long initialize_synth(void)
 {
-  for( int i = 0 ; i < NUM_OF_SYNCH; i++ ){
+  for( int i = 0 ; i < NUM_OF_SYNTH; i++ ){
     mml[i] = MML_Synth(i);
     gp_mml_text[i] = NULL;
   }
@@ -451,7 +449,7 @@ void endModule_synth(void){
   stopIntervalTimer();
   g_volume = SYNTH_DEFAULT_VOLUME;
   if( g_period > 0 ){
-    for( int i = 0 ; i < NUM_OF_SYNCH; i++ ){
+    for( int i = 0 ; i < NUM_OF_SYNTH; i++ ){
       synth.setInstrument(SYNTH_DEFAULT_BANK, i, SYNTH_DEFAULT_PROGRAM);
       mml[i].reset();
     }
