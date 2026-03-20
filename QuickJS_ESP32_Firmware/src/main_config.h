@@ -149,7 +149,6 @@
 #define CONFIG_AWS_CREDENTIAL2  "/awscred2.ini"
 #define CONFIG_AWS_CREDENTIAL3  "/awscred3.ini"
 
-#define CONFIG_INDEX_AUTOUPDATE 0
 #define CONFIG_INDEX_AUTOSYSLOG 1
 
 //#define WIFI_SSID "【固定のWiFiアクセスポイントのSSID】" // WiFiアクセスポイントのSSID
@@ -182,7 +181,6 @@
 extern unsigned char g_fileloading;
 extern char g_download_buffer[FILE_BUFFER_SIZE];
 extern esp_sleep_wakeup_cause_t g_sleepReason;
-extern bool g_autoupdate;
 
 extern SemaphoreHandle_t binSem;
 

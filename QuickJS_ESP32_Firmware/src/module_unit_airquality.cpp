@@ -37,7 +37,7 @@ static JSValue unit_airquality_update(JSContext *ctx, JSValueConst jsThis, int a
   return JS_UNDEFINED;
 }
 
-static JSValue unit_airquality_stop(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
+static JSValue unit_airquality_end(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
 {
   airquality.stopTimer();
   return JS_UNDEFINED;
@@ -67,8 +67,8 @@ static const JSCFunctionListEntry unit_airquality_funcs[] = {
           func : {0, JS_CFUNC_generic, unit_airquality_update}
         }},
     JSCFunctionListEntry{
-        "stop", 0, JS_DEF_CFUNC, 0, {
-          func : {0, JS_CFUNC_generic, unit_airquality_stop}
+        "end", 0, JS_DEF_CFUNC, 0, {
+          func : {0, JS_CFUNC_generic, unit_airquality_end}
         }},
     JSCFunctionListEntry{
         "reset", 0, JS_DEF_CFUNC, 0, {

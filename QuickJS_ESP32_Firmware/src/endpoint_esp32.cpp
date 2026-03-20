@@ -137,30 +137,15 @@ long endp_getDeviceModel(JsonObject& request, JsonObject& response, int magic)
   return 0;
 }
 
-long endp_get_code_config(JsonObject& request, JsonObject& response, int magic)
-{
-  long autoupdate = read_config_long(CONFIG_INDEX_AUTOUPDATE, 0);
-
-  response["result"]["autoupdate"] = autoupdate ? true : false;
-
-  return 0;
-}
-
 long endp_code_upload(JsonObject& request, JsonObject& response, int magic)
 {
   const char *p_code = request["code"];
   const char *p_fname = request["fname"];
 
   if( p_fname == NULL ){
-    bool autoupdate = request["autoupdate"] || false;
     long ret = save_jscode(p_code);
     if( ret != 0 )
       return 0;
-    write_config_long(CONFIG_INDEX_AUTOUPDATE, autoupdate ? 1 : 0);
-    g_autoupdate = autoupdate;
-    if( g_autoupdate )
-      Serial.println("autoupdate: on");
-
     String source_url = read_config_string(CONFIG_FNAME_SOURCE);
     if( source_url.length() != 0 )
       write_config_string(CONFIG_FNAME_SOURCE, "");
@@ -309,7 +294,6 @@ EndpointEntry esp32_table[] = {
   EndpointEntry{ endp_getEnableConsoleSyslog, "/getEnableConsoleSyslog", 0 },
   EndpointEntry{ endp_setHttpBridgeServer, "/setHttpBridgeServer", 0 },
   EndpointEntry{ endp_getHttpBridgeServer, "/getHttpBridgeServer", 0 },
-  EndpointEntry{ endp_get_code_config, "/get-code-config", 0 },
   EndpointEntry{ endp_code_upload, "/code-upload", 0 },
   EndpointEntry{ endp_code_download, "/code-download", 0 },
   EndpointEntry{ endp_code_delete, "/code-delete", 0 },

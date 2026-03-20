@@ -48,8 +48,11 @@ static JSValue unit_synth_begin(JSContext *ctx, JSValueConst jsThis, int argc, J
   uint32_t rx_pin, tx_pin;
   JS_ToUint32(ctx, &rx_pin, argv[0]);
   JS_ToUint32(ctx, &tx_pin, argv[1]);
-  uint32_t period;
-  JS_ToUint32(ctx, &period, argv[2]);
+  uint32_t period = 10;
+  if( argc > 2 )
+    JS_ToUint32(ctx, &period, argv[2]);
+  if( period <= 0 )
+    return JS_EXCEPTION;
 
   g_period = period;
 
@@ -177,6 +180,16 @@ static JSValue unit_synth_setNoteOff(JSContext *ctx, JSValueConst jsThis, int ar
   return JS_UNDEFINED;
 }
 
+static JSValue unit_synth_setAllNoteOff(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
+{
+  uint32_t channel, pitch, velocity;
+  JS_ToUint32(ctx, &channel, argv[0]);
+
+  synth.setAllNotesOff(channel);
+
+  return JS_UNDEFINED;
+}
+
 static JSValue unit_synth_setInstrument(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
 {
   uint32_t idx;
@@ -221,6 +234,9 @@ static const JSCFunctionListEntry unit_synth_funcs[] = {
                         }},
     JSCFunctionListEntry{"setNoteOff", 0, JS_DEF_CFUNC, 0, {
                           func : {2, JS_CFUNC_generic, unit_synth_setNoteOff}
+                        }},
+    JSCFunctionListEntry{"setAllNoteOff", 0, JS_DEF_CFUNC, 0, {
+                          func : {1, JS_CFUNC_generic, unit_synth_setAllNoteOff}
                         }},
     JSCFunctionListEntry{
         "CATEGORY_PIANO_00", 0, JS_DEF_PROP_INT32, 0, {
@@ -285,6 +301,62 @@ static const JSCFunctionListEntry unit_synth_funcs[] = {
     JSCFunctionListEntry{
         "CATEGORY_SOUND_EFFECTS_00", 0, JS_DEF_PROP_INT32, 0, {
           i32 : 120
+        }},
+    JSCFunctionListEntry{
+        "NOTE_BASE", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : 24
+        }},
+    JSCFunctionListEntry{
+        "NOTE_OCTAVE", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : 12
+        }},
+    JSCFunctionListEntry{
+        "NOTE_C", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : 0
+        }},
+    JSCFunctionListEntry{
+        "NOTE_CS", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : 1
+        }},
+    JSCFunctionListEntry{
+        "NOTE_D", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : 2
+        }},
+    JSCFunctionListEntry{
+        "NOTE_DS", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : 3
+        }},
+    JSCFunctionListEntry{
+        "NOTE_E", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : 4
+        }},
+    JSCFunctionListEntry{
+        "NOTE_F", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : 5
+        }},
+    JSCFunctionListEntry{
+        "NOTE_FS", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : 6
+        }},
+    JSCFunctionListEntry{
+        "NOTE_G", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : 7
+        }},
+    JSCFunctionListEntry{
+        "NOTE_GS", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : 8
+        }},
+    JSCFunctionListEntry{
+        "NOTE_A", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : 9
+        }},
+    JSCFunctionListEntry{
+        "NOTE_AS", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : 10
+        }},
+    JSCFunctionListEntry{
+        "NOTE_B", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : 11
         }},
 };
 

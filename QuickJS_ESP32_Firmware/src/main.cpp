@@ -15,8 +15,6 @@
 extern const char jscode_default[] asm("_binary_rom_default_js_start");
 extern const char jscode_epilogue[] asm("_binary_rom_epilogue_js_start");
 
-bool g_autoupdate = false;
-
 char g_download_buffer[FILE_BUFFER_SIZE];
 unsigned char g_fileloading = FILE_LOADING_NONE;
 esp_sleep_wakeup_cause_t g_sleepReason = ESP_SLEEP_WAKEUP_UNDEFINED;
@@ -86,11 +84,6 @@ void setup()
     Serial.println("snmp_initialize error");
 #endif
 
-  long conf = read_config_long(CONFIG_INDEX_AUTOUPDATE, 0);
-  g_autoupdate = (conf != 0) ? true : false;
-  if( g_autoupdate )
-    Serial.println("autoupdate: on");
-
   if(Serial.available() > 0) {
     if( Serial.read() == 0x04 ){ // Ctrl-D
       g_fileloading = FILE_LOADING_PAUSE;
@@ -122,9 +115,6 @@ void loop()
 #ifdef _SNMP_AGENT_ENABLE_    
   snmp_loop();
 #endif
-
-  if( g_autoupdate )
-    qjs.update_modules();
 
   // For timer, async, etc.
   if( !qjs.loop() ){
