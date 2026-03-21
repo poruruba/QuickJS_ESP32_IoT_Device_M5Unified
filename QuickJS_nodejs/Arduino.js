@@ -125,13 +125,13 @@ class Arduino{
     return this.customcall_request( message );
   }
 
-  async getConfig(){
-    var result = this.webapi_request("/getConfig", {} );
+  async config_download(){
+    var result = this.webapi_request("/config-download", {} );
     return JSON.parse(result.config);
   }
 
-  async setConfig(config){
-    await this.webapi_request('/setConfig', {config: JSON.stringify(config)});
+  async config_upload(config){
+    await this.webapi_request('/config-upload', {config: JSON.stringify(config)});
   }
 
   async webapi_request(endpoint, body) {

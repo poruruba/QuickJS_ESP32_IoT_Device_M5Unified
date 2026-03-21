@@ -800,13 +800,13 @@ var vue_options = {
         },
 
         start_js_config: async function(){
-            var config = await this.arduino.getConfig();
+            var config = await this.arduino.config_download();
             this.js_config = JSON.stringify(config, null, '\t');
             this.dialog_open("#js_config_dialog");
         },
         do_set_config: async function(){
             var config = JSON.parse(this.js_config);
-            await this.arduino.setConfig(config);
+            await this.arduino.config_upload(config);
             this.toast_show("設定しました。");
         },
 
