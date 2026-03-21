@@ -6,13 +6,6 @@ class Sd{
    this.module_type = "/sd-";
   }
 
-  async begin(sspin){
-    var params = {
-      ssPin: sspin
-    };
-    return this.arduino.webapi_request(this.module_type + "begin", params);
-  }
-
   async exists(filename){
     var params = {
       filename: filename

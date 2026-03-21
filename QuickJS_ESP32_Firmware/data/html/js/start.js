@@ -225,16 +225,6 @@ var vue_options = {
             }
         },
         // SD
-        sd_begin: async function(){
-            try{
-                var result = await this.Sd.begin(this.sd_sspin);
-                if( !result )
-                    alert("Sd.beginに失敗しました。");
-            }catch(error){
-                console.error(error);
-                alert(error);
-            }
-        },
         sd_exists: async function(){
             try{
                 var result = await this.Sd.exists(this.sd_filename);
