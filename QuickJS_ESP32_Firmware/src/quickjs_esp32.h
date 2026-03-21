@@ -25,7 +25,10 @@
 #include "module_pixels.h"
 #include "module_udp.h"
 #include "module_prefs.h"
+#include "module_http.h"
+#ifdef _UART_ENABLE_
 #include "module_uart.h"
+#endif
 #ifdef _IR_ENABLE_
 #include "module_ir.h"
 #endif
@@ -73,9 +76,6 @@
 #endif
 #ifdef _UNIT_AIRQUALITY_ENABLE_
 #include "module_unit_airquality.h"
-#endif
-#ifdef _HTTP_ENABLE_
-#include "module_http.h"
 #endif
 #ifdef _CRYPTO_ENABLE_
 #include "module_crypto.h"
@@ -136,6 +136,7 @@ static JsModuleEntry module_entries[] = {
   pixels_module,
   udp_module,
   prefs_module,
+  http_module,
 #ifdef _UART_ENABLE_
   uart_module,
 #endif
@@ -186,9 +187,6 @@ static JsModuleEntry module_entries[] = {
 #endif
 #ifdef _UNIT_AIRQUALITY_ENABLE_
   unit_airquality_module,
-#endif
-#ifdef _HTTP_ENABLE_
-  http_module,
 #endif
 #ifdef _CRYPTO_ENABLE_
   crypto_module,

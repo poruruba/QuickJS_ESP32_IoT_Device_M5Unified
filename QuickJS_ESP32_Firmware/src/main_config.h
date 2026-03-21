@@ -30,7 +30,6 @@
 #define _ENV_ENABLE_
 #define _ESPNOW_ENABLE_
 #define _GRAPHQL_ENABLE_
-#define _HTTP_ENABLE_
 #define _IMU_ENABLE_
 #define _IR_ENABLE_
 #define _LCD_ENABLE_
@@ -44,8 +43,6 @@
 #define _WEBSOCKET_ENABLE_
 #define _WEBSOCKET_CLIENT_ENABLE_
 #endif
-
-#define _HTTP_ENABLE_
 
 #if defined(ARDUINO_M5Stack_ATOM)
 #include <M5Unified.h>
