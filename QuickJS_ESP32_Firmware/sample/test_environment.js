@@ -4,11 +4,14 @@ import * as pbhub from "UnitPbhub";
 import * as gas from "UnitGas";
 import * as utils from "Utils";
 
+const PIN_SDA = 32;
+const PIN_SCL = 33;
+
 const beebotte_channel = "【ChannelName】";
 const beebotte_token = "【BeebotteChannelToken】";
 
 function setup(){
-  wire.begin(32, 33);
+  wire.begin(PIN_SDA, PIN_SCL);
   pbhub.begin();
   gas.begin();
   env.sht40_begin();

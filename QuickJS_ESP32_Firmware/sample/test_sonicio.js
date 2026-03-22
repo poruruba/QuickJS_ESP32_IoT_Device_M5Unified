@@ -1,6 +1,9 @@
 import * as sonicio from "UnitSonicIo";
 import * as ledc from "Ledc";
 
+const PIN_TRIG = 26;
+const PIN_ECHO = 36;
+
 const channel = 0;
 
 function map(x, in_min, in_max, out_min, out_max) {
@@ -10,7 +13,7 @@ function map(x, in_min, in_max, out_min, out_max) {
 function setup() {
     ledc.setup(channel, 2000, 8);
     ledc.attachPin(33, channel)
-    sonicio.begin(26, 36);
+    sonicio.begin(PIN_TRIG, PIN_ECHO);
 }
 
 var touched = false;

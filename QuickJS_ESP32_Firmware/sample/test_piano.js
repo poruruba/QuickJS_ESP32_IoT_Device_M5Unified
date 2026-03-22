@@ -2,6 +2,11 @@ import * as unitsynth from "UnitSynth";
 import * as bytebutton from "UnitByteButton";
 import * as wire from "Wire";
 
+const PIN_SDA = 32;
+const PIN_SCL = 33;
+const PIN_RX = 26;
+const PIN_TX = 36;
+
 var base = unitsynth.NOTE_BASE + unitsynth.NOTE_OCTAVE * 3;
 var tones = [
   base + unitsynth.NOTE_C,
@@ -17,9 +22,9 @@ const channel = 0;
 var prev_status = 0xff;
 
 function setup(){
-  wire.begin(32, 33);
+  wire.begin(PIN_SDA, PIN_SCL);
   bytebutton.begin();
-  unitsynth.begin(26, 36);
+  unitsynth.begin(PIN_RX, PIN_TX);
   unitsynth.setAllNoteOff(channel);
   unitsynth.setInstrument(channel, unitsynth.CATEGORY_PIANO_00);
 }

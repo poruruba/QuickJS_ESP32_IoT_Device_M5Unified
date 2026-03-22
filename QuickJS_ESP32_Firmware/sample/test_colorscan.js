@@ -5,6 +5,9 @@ import * as utils from "Utils";
 import * as pixels from "Pixels";
 import * as input from "Input";
 
+const PIN_SDA = 32;
+const PIN_SCL = 33;
+const PIN_PIXELS = 26;
 const contrast = 2;
 var scaned_color = 0x000000;
 
@@ -19,9 +22,9 @@ function adjustContrast(value, contrast) {
 }
 
 function setup(){
-  wire.begin(32, 33);
+  wire.begin(PIN_SDA, PIN_SCL);
   color.begin();
-  pixels.begin(26, 3);
+  pixels.begin(PIN_PIXELS, 3);
   lcd.clear();
   lcd.setTextColor(0xffffff);
 }

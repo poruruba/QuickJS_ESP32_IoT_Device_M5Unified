@@ -3,7 +3,6 @@ import * as imu from "Imu";
 
 function setup(){
 	lcd.setFont(16);
-	lcd.setTextSize(1);
 	lcd.fillScreen(0x000000);
 }
 
