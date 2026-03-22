@@ -73,10 +73,10 @@
 #define _SD_ENABLE_
 #define _AUDIO_ENABLE_
 #define MDNS_NAME "QuickJS_ESP32_M5Core2" // mDNSサービスホスト名
-#elif defined(ARDUINO_ESP32C3_DEV)
+#elif defined(ARDUINO_M5Stack_StampC3)
 #include <M5Unified.h>
 #define MDNS_NAME "QuickJS_ESP32_M5StampC3" // mDNSサービスホスト名
-#elif defined(ARDUINO_ESP32C3U_DEV)
+#elif defined(ARDUINO_M5Stack_StampC3U)
 #include <M5Unified.h>
 #define MDNS_NAME "QuickJS_ESP32_M5StampC3U" // mDNSサービスホスト名
 #elif defined(ARDUINO_M5Stack_ATOMS3)
@@ -101,17 +101,13 @@
 #define _SD_ENABLE_
 #define _CAMERA_ENABLE_
 #define MDNS_NAME "QuickJS_ESP32_UnitCamS3" // mDNSサービスホスト名
-#elif defined(ARDUINO_ESP32C6_DEV)
+#elif defined(ARDUINO_M5Stack_NANOC6)
 #include <M5Unified.h>
 #define MDNS_NAME "QuickJS_ESP32_C6" // mDNSサービスホスト名
-#elif defined(ARDUINO_ESP32_M5CAMERA)
+#elif defined(ARDUINO_ESP32_M5Camera)
 #include <M5Unified.h>
 #define _CAMERA_ENABLE_
 #define MDNS_NAME "QuickJS_ESP32_M5CAMERA" // mDNSサービスホスト名
-#elif defined(ARDUINO_ESP32_TEMP)
-#include <M5Unified.h>
-#define _LCD_ENABLE_
-#define MDNS_NAME "QuickJS_ESP32_TEMP" // mDNSサービスホスト名
 #elif defined(ARDUINO_ESP32_S3_35INCH_TOUCH_LCD)
 #include <SD_MMC.h>
 #include <M5Unified.h>
@@ -131,6 +127,10 @@
 #define _LCD_ENABLE_
 #define _PANEL_ST7789_
 #define MDNS_NAME "QuickJS_ESP32_WT32_SC01" // mDNSサービスホスト名
+#elif defined(ARDUINO_ESP32_TEMP)
+#include <M5Unified.h>
+#define _LCD_ENABLE_
+#define MDNS_NAME "QuickJS_ESP32_TEMP" // mDNSサービスホスト名
 #endif
 
 #define DUMMY_FNAME  "/dummy"
