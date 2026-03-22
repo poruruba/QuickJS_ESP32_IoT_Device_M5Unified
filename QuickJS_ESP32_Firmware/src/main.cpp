@@ -312,39 +312,38 @@ long delete_module(const char *p_fname)
 
 static long load_all_modules(void)
 {
-  File dir = LittleFS.open("/");
+  File dir = LittleFS.open(MODULE_DIR);
   if( !dir )
     return -1;
 
   File file = dir.openNextFile();
   while(file){
-    const char *fname = file.path();
-    if( strncmp(fname, MODULE_DIR, strlen(MODULE_DIR)) == 0 ){
-      const char *module_name = file.name();
-      size_t size = file.size();
+    const char *module_name = file.name();
+    size_t size = file.size();
 
-      char *js_modules_code = (char*)malloc(size + 1);
-      if( js_modules_code == NULL ){
-        Serial.println("malloc failed");
-        return -1;
-      }
-      js_modules_code[0] = '\0';
-
-      file.readBytes(&js_modules_code[0], size);
-      js_modules_code[size] = '\0';
-
-      long ret = qjs.load_module(&js_modules_code[0], strlen(js_modules_code), module_name);
-      if( ret != 0 ){
-        Serial.printf("load module(%s) failed\n", module_name);
-        free(js_modules_code);
-        file.close();
-        dir.close();
-        return -1;
-      }
-      free(js_modules_code);
-      js_modules_code = NULL;
-      Serial.printf("load module(%s) loaded\n", module_name);
+    char *js_modules_code = (char*)malloc(size + 1);
+    if( js_modules_code == NULL ){
+      Serial.println("malloc failed");
+      file.close();
+      dir.close();
+      return -1;
     }
+    js_modules_code[0] = '\0';
+
+    file.readBytes(&js_modules_code[0], size);
+    js_modules_code[size] = '\0';
+
+    long ret = qjs.load_module(&js_modules_code[0], strlen(js_modules_code), module_name);
+    if( ret != 0 ){
+      Serial.printf("load module(%s) failed\n", module_name);
+      free(js_modules_code);
+      file.close();
+      dir.close();
+      return -1;
+    }
+    free(js_modules_code);
+    js_modules_code = NULL;
+    Serial.printf("load module(%s) loaded\n", module_name);
     file.close();
     file = dir.openNextFile();
   }
