@@ -127,7 +127,22 @@
             </div>
             <div class="modal-footer">
               <button class="btn btn-primary" v-on:click="copy_to_texearea">テキストエリアにコピー</button>
-              <button class="btn btn-default" v-on:click="dialog_close('#quickjs_js_dialog')">閉じる</button>
+              <button class="btn btn-default" data-dismiss="modal">閉じる</button>
+            </div>
+          </div>
+        </modal-dialog>
+
+        <modal-dialog size="lg" id="js_config_dialog">
+          <div slot="content">
+            <div class="modal-header">
+              <label>Config</label>
+            </div>
+            <div class="modal-body">
+              <textarea class="form-control" rows="20" v-model="js_config"></textarea>
+            </div>
+            <div class="modal-footer">
+              <button class="btn btn-primary" v-on:click="do_set_config">設定</button>
+              <button class="btn btn-default" data-dismiss="modal">閉じる</button>
             </div>
           </div>
         </modal-dialog>
@@ -305,7 +320,7 @@
 
 
       <div id="blockly" class="tab-pane fade in">
-    <br>
+      <br>
         <div v-if="!hasWorkspace">
           <button class="btn btn-primary" v-on:click="createWorkspace">Create Workspace</button>
         </div>
@@ -331,7 +346,7 @@
             <div class="modal-footer">
               <button class="btn btn-primary" v-on:click="do_upload">アップロード</button>
               <button class="btn btn-default" v-on:click="do_copy_upload">クリップボードにコピー</button>
-              <button class="btn btn-default" v-on:click="dialog_close('#upload_js_dialog')">閉じる</button>
+              <button class="btn btn-default" data-dismiss="modal">閉じる</button>
             </div>
           </div>
         </modal-dialog>
@@ -346,7 +361,7 @@
             </div>
             <div class="modal-footer">
               <button class="btn btn-primary" v-on:click="do_import">インポート</button>
-              <button class="btn btn-default" v-on:click="dialog_close('#import_js_dialog')">閉じる</button>
+              <button class="btn btn-default" data-dismiss="modal">閉じる</button>
             </div>
           </div>
         </modal-dialog>
@@ -361,22 +376,7 @@
             </div>
             <div class="modal-footer">
                   <button class="btn btn-primary" v-on:click="do_copy_export">クリップボードにコピー</button>
-                  <button class="btn btn-default" v-on:click="dialog_close('#export_js_dialog')">閉じる</button>
-            </div>
-          </div>
-        </modal-dialog>
-
-        <modal-dialog size="lg" id="js_config_dialog">
-          <div slot="content">
-            <div class="modal-header">
-              <label>Config</label>
-            </div>
-            <div class="modal-body">
-              <textarea class="form-control" rows="20" v-model="js_config"></textarea>
-            </div>
-            <div class="modal-footer">
-              <button class="btn btn-primary" v-on:click="do_set_config">設定</button>
-              <button class="btn btn-default" v-on:click="dialog_close('#js_config_dialog')">閉じる</button>
+                  <button class="btn btn-default" data-dismiss="modal">閉じる</button>
             </div>
           </div>
         </modal-dialog>
