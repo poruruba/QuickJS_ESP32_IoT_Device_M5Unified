@@ -14,6 +14,53 @@ https://poruruba.github.io/QuickJS_ESP32_IoT_Device_M5Unified/QuickJS_ESP32_Firm
 ダウンロードサイトはこちら（最新ではない場合があります）<br>
 https://poruruba.github.io/EspWebDownloader/quickjs_esp32_firmware/
 
+## サポートライブラリ
+
+|ライブラリ名|概要|
+|---|---|
+|Esp32|ESP32 に関連する基本的な機能を提供します。|
+|Console|UART にデバッグ文を出力します。|
+|Audio|I2S に接続されたスピーカから MP3 音声を再生します。 |
+|BlePeripheral|BLEペリフェラル機能を提供します。|
+|Camera|ESP32 に接続されたカメラの画像撮影機能を提供します。|
+|Coap|CoAP通信機能を提供します。|
+|Crypto|暗号機能を提供します。|
+|Env|I2C に接続された温湿度センサ（SHT30、DH12）を操作します。|
+|EspNow|EspNow の機能を提供します。|
+|Gpio|ESP32 の GPIO を制御します。|
+|Graphql|GraphQL通信機能を提供します。|
+|Http|HttpGateway を介して、HTTPS 通信します。|
+|Imu|ESP32 に接続された 6 軸姿勢センサを制御します。|
+|Ir|ESP32 に接続した赤外線送受信機を制御します。|
+|Input|ボタンの押下を検出します。|
+|Lcd|ESP32 に接続した LCD の表示を制御します。|
+|Ledc|ESP32 の GPIO ピンに対して PWM 出力します。|
+|Mml|Mml の楽譜を再生します。|
+|Pixels|ESP32 に接続した RGB LED を制御します。|
+|Prefs|ESP32 の不揮発メモリの読み書きをします。|
+|Rtc|ESP32 に接続した RTC から時刻を設定・取得します。|
+|Sd|ESP32 に接続された microSD カードのストレージに対するファイルの読み書きをします。|
+|Udp|UDP パケットを送受信します。|
+|Uart|UART 通信のための機能を提供します。|
+|Utils|base64、url エンコード、HTTP 通信などのユーティリティです。|
+|Websocket|Websocket によるサーバ通信機能を提供します。|
+|WebsocketClient|Websocket によるクライアント通信機能を提供します。|
+|Wire|周辺デバイスとの I2C 通信のための機能を提供します。|
+|UnitAirquality|Air Quality Sensor モジュールを制御します。|
+|UnitAngle8|8 ポテンショメータユニットを制御します。|
+|UnitAsr|オフライン音声認識モジュールを制御します。|
+|UnitAudioPlayer|オーディオプレイヤーユニットを制御します。|
+|UnitByteButton|Byte ボタンユニットを制御します。|
+|UnitColor|カラーセンサユニットを制御します。|
+|UnitEnvPro|環境センサ Pro ユニットを制御します。|
+|UnitGas|ガスセンサーユニットを制御します。|
+|UnitGesture|ジェスチャーユニットを制御します。|
+|UnitImuPro|IMU Pro ユニットを制御します。|
+|UnitPbhub|I/O ハブユニットを制御します。|
+|UnitSonicIo|超音波測距ユニット I/O を制御します。|
+|UnitStep16|Step16ロータリエンコーダユニットを制御します。|
+|UnitSynth|シンセサイザユニットを制御します。|
+
 ## 更新履歴
 - 2022-3-26
   - UDP通信機能の追加
