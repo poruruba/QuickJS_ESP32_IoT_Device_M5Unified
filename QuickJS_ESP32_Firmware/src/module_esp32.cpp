@@ -479,6 +479,15 @@ static JSValue esp32_wifi_is_connected(JSContext *ctx, JSValueConst jsThis, int 
   return JS_NewBool(ctx, ret);
 }
 
+static JSValue esp32_wifi_get_channel(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
+{
+  int ret = wifi_get_channel();
+  if( ret < 0 )
+    return JS_EXCEPTION;
+
+  return JS_NewInt32(ctx, ret);
+}
+
 static JSValue esp32_web_start(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
 {
   if( !wifi_is_connected() )
@@ -799,6 +808,9 @@ static const JSCFunctionListEntry esp32_funcs[] = {
                          }},
     JSCFunctionListEntry{"wifiIsConnected", 0, JS_DEF_CFUNC, 0, {
                            func : {0, JS_CFUNC_generic, esp32_wifi_is_connected}
+                         }},
+    JSCFunctionListEntry{"wifiGetChannel", 0, JS_DEF_CFUNC, 0, {
+                           func : {0, JS_CFUNC_generic, esp32_wifi_get_channel}
                          }},
     JSCFunctionListEntry{"downloadJscode", 0, JS_DEF_CFUNC, 0, {
                            func : {2, JS_CFUNC_generic, esp32_download_jscode}

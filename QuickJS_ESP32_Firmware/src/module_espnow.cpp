@@ -3,68 +3,64 @@
 
 #ifdef _ESPNOW_ENABLE_
 
-#include <WiFi.h>
 #include <esp_now.h>
 #include "quickjs.h"
 #include "quickjs_esp32.h"
 #include "module_espnow.h"
+#include <WiFi.h>
+#include <esp_wifi.h>
+#include "wifi_utils.h"
 
 static JSValue g_callback_func = JS_UNDEFINED;
 
+#define ESPNOW_EVENT_TYPE_SEND  0
+#define ESPNOW_EVENT_TYPE_RECV  1
+
+typedef struct {
+  uint8_t type;
+  uint8_t macaddress[6];
+  int32_t send_status;
+  char *p_recv_data;
+} ESPNOW_EVENT_INFO;
+static std::vector<ESPNOW_EVENT_INFO> g_event_list;
+
 static JSContext *g_ctx;
-static esp_now_peer_info_t peerInfo;
-static bool g_send_cb_fire = false;
-static bool g_recv_cb_fire = false;
-static int32_t g_send_status;
-static uint8_t g_send_macaddress[6];
-static uint8_t g_recv_macaddress[6];
-static char *gp_recv_data = NULL;
 static bool isInitialized = false;
 
-void endModule_espnow(void);
-
 static void espnow_OnDataSend(const uint8_t *mac_addr, esp_now_send_status_t status) {
-  memmove(g_send_macaddress, mac_addr, 6);
-  g_send_status = status;
-  g_send_cb_fire = true;
+//  Serial.println("espnow_OnDataSend");
+  ESPNOW_EVENT_INFO info;
+  info.type = ESPNOW_EVENT_TYPE_SEND;
+  memmove(info.macaddress, mac_addr, 6);
+
+  info.send_status = status;
+  info.p_recv_data = NULL;
+
+  g_event_list.push_back(info);
+}
+
+static void espnow_OnDataRecv(const uint8_t *mac_addr, const uint8_t *recvData, int len) {
+//  Serial.println("espnow_OnDataRecv");
+  ESPNOW_EVENT_INFO info;
+  info.type = ESPNOW_EVENT_TYPE_RECV;
+  memmove(info.macaddress, mac_addr, 6);
+
+  info.p_recv_data = (char*)malloc(len + 1);
+  if(info.p_recv_data == NULL )
+    return;
+  memmove(info.p_recv_data, recvData, len);
+  info.p_recv_data[len] = '\0';
+
+  g_event_list.push_back(info);
 }
 
 #if defined(ARDUINO_ESP32C6_DEV)
 static void espnow_OnDataRecv(const esp_now_recv_info_t *info, const uint8_t *recvData, int len) {
-  if( gp_recv_data != NULL ){
-    free(gp_recv_data);
-    gp_recv_data = NULL;
-  }
-
-  gp_recv_data = (char*)malloc(len + 1);
-  if(gp_recv_data == NULL )
-    return;
-  
-  memmove(gp_recv_data, recvData, len);
-  gp_recv_data[len] = '\0';
-  memmove(g_recv_macaddress, info->src_addr, 6);
-  g_recv_cb_fire = true;
-}
-#else
-static void espnow_OnDataRecv(const uint8_t *mac_addr, const uint8_t *recvData, int len) {
-  if( gp_recv_data != NULL ){
-    free(gp_recv_data);
-    gp_recv_data = NULL;
-  }
-
-  gp_recv_data = (char*)malloc(len + 1);
-  if(gp_recv_data == NULL )
-    return;
-  
-  memmove(gp_recv_data, recvData, len);
-  gp_recv_data[len] = '\0';
-  memmove(g_recv_macaddress, mac_addr, 6);
-  g_recv_cb_fire = true;
+//  espnow_OnDataRecv(info->src_addr, recvData, len);
 }
 #endif
 
-static JSValue espnow_send(JSContext *ctx, JSValueConst jsThis,
-                                      int argc, JSValueConst *argv)
+static JSValue espnow_send(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
 {
   if( !isInitialized )
     return JS_EXCEPTION;
@@ -91,24 +87,16 @@ static JSValue espnow_send(JSContext *ctx, JSValueConst jsThis,
   if( data == NULL )
     return JS_EXCEPTION;
   esp_err_t result = esp_now_send(macaddress, (uint8_t*)data, strlen(data));
-  if( result != ESP_OK){
-    JS_FreeCString(ctx, data);
+  JS_FreeCString(ctx, data);
+  if( result != ESP_OK)
     return JS_EXCEPTION;
-  }
 
   return JS_UNDEFINED;
 }
 
-static JSValue espnow_setCallback(JSContext *ctx, JSValueConst jsThis,
-                                      int argc, JSValueConst *argv)
+static JSValue espnow_setCallback(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
 {
-  if( !isInitialized )
-    return JS_EXCEPTION;
-
   g_ctx = ctx;
-
-  esp_now_unregister_send_cb();
-  esp_now_unregister_recv_cb();
 
   if(g_callback_func != JS_UNDEFINED){
     JS_FreeValue(ctx, g_callback_func);
@@ -116,17 +104,17 @@ static JSValue espnow_setCallback(JSContext *ctx, JSValueConst jsThis,
   }
 
   g_callback_func = JS_DupValue(ctx, argv[0]);
-  if( g_callback_func != JS_UNDEFINED ){
-    esp_now_register_send_cb(espnow_OnDataSend);
-    esp_now_register_recv_cb(espnow_OnDataRecv);
-  }
+  if( g_callback_func == JS_UNDEFINED )
+    return JS_EXCEPTION;
 
   return JS_UNDEFINED;
 }
 
-static JSValue espnow_addPeer(JSContext *ctx, JSValueConst jsThis,
-                                      int argc, JSValueConst *argv)
+static JSValue espnow_addPeer(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
 {
+  if( !isInitialized )
+    return JS_EXCEPTION;
+
   JSValue jv;
   uint32_t macaddress_len;
 
@@ -136,28 +124,31 @@ static JSValue espnow_addPeer(JSContext *ctx, JSValueConst jsThis,
   if( macaddress_len < 6 )
     return JS_EXCEPTION;
 
-  for (uint32_t i = 0; i < sizeof(peerInfo.peer_addr); i++){
+  esp_now_peer_info_t peerInfo = {};
+  for (int i = 0; i < 6; i++){
     JSValue jv = JS_GetPropertyUint32(ctx, argv[0], i);
     uint32_t value;
     JS_ToUint32(ctx, &value, jv);
     JS_FreeValue(ctx, jv);
     peerInfo.peer_addr[i] = (uint8_t)value;
   }
-  uint32_t val;
-  JS_ToUint32(ctx, &val, argv[1]);
-  peerInfo.channel = (uint8_t)val;
-  int encrypt = JS_ToBool(ctx, argv[2]);
-  peerInfo.encrypt = (encrypt != 0);
-  
+  peerInfo.channel = 0;
+  bool encrypt = false;
+  if( argc >= 2 )
+    encrypt = JS_ToBool(ctx, argv[1]);
+  peerInfo.encrypt = encrypt;
+
   if (esp_now_add_peer(&peerInfo) != ESP_OK)
     return JS_EXCEPTION;
 
   return JS_UNDEFINED;
 }
 
-static JSValue espnow_deletePeer(JSContext *ctx, JSValueConst jsThis,
-                                      int argc, JSValueConst *argv)
+static JSValue espnow_deletePeer(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
 {
+  if( !isInitialized )
+    return JS_EXCEPTION;
+
   JSValue jv;
   uint32_t macaddress_len;
 
@@ -168,7 +159,7 @@ static JSValue espnow_deletePeer(JSContext *ctx, JSValueConst jsThis,
     return JS_EXCEPTION;
 
   uint8_t macaddress[6];
-  for (uint32_t i = 0; i < sizeof(macaddress); i++){
+  for (int i = 0; i < sizeof(macaddress); i++){
     JSValue jv = JS_GetPropertyUint32(ctx, argv[0], i);
     uint32_t value;
     JS_ToUint32(ctx, &value, jv);
@@ -182,9 +173,11 @@ static JSValue espnow_deletePeer(JSContext *ctx, JSValueConst jsThis,
   return JS_UNDEFINED;
 }
 
-static JSValue espnow_clearPeer(JSContext *ctx, JSValueConst jsThis,
-                                      int argc, JSValueConst *argv)
+static JSValue espnow_clearPeer(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
 {
+  if( !isInitialized )
+    return JS_EXCEPTION;
+    
   esp_now_peer_info_t peer;
   for (esp_err_t e = esp_now_fetch_peer(true, &peer); e == ESP_OK; e = esp_now_fetch_peer(false, &peer)) {
     esp_now_del_peer(peer.peer_addr);
@@ -198,11 +191,33 @@ static JSValue espnow_begin(JSContext *ctx, JSValueConst jsThis, int argc, JSVal
   if( isInitialized )
     return JS_EXCEPTION;
 
-  WiFi.mode(WIFI_STA);
+  if( argc >= 1 ){
+    if( wifi_is_connected() )
+      return JS_EXCEPTION;
+    uint32_t channel;
+    JS_ToUint32(ctx, &channel, argv[0]);
+    WiFi.mode(WIFI_STA);
+    long ret = wifi_change_channel(channel);
+    if( ret != 0 )
+      return JS_EXCEPTION;
+  }
   if (esp_now_init() != ESP_OK) {
     Serial.println("Error initializing ESP-NOW");
     return JS_EXCEPTION;
   }
+  esp_wifi_set_ps(WIFI_PS_NONE);
+
+  esp_now_register_send_cb(espnow_OnDataSend);
+  esp_now_register_recv_cb(espnow_OnDataRecv);
+
+  esp_now_peer_info_t peerInfo = {};
+  for (int i = 0; i < 6; i++)
+    peerInfo.peer_addr[i] = 0xff;
+  peerInfo.channel = 0;
+  peerInfo.encrypt = false;
+
+  esp_now_add_peer(&peerInfo);
+
   isInitialized = true;
 
   return JS_UNDEFINED;
@@ -211,9 +226,26 @@ static JSValue espnow_begin(JSContext *ctx, JSValueConst jsThis, int argc, JSVal
 static JSValue espnow_end(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
 {
   if( !isInitialized )
-    return JS_EXCEPTION;
+    return JS_UNDEFINED;
 
-  endModule_espnow();
+  esp_now_unregister_send_cb();
+  esp_now_unregister_recv_cb();
+
+  esp_now_peer_info_t peer;
+  for (esp_err_t e = esp_now_fetch_peer(true, &peer); e == ESP_OK; e = esp_now_fetch_peer(false, &peer)) {
+    esp_now_del_peer(peer.peer_addr);
+  }
+
+  while(g_event_list.size() > 0){
+    ESPNOW_EVENT_INFO info = g_event_list.front();
+    if( info.p_recv_data != NULL )
+      free(info.p_recv_data);
+    g_event_list.erase(g_event_list.begin());
+  }
+
+  esp_now_deinit();
+  esp_wifi_set_ps(WIFI_PS_MIN_MODEM);
+  isInitialized = false;
 
   return JS_UNDEFINED;
 }
@@ -246,7 +278,7 @@ static const JSCFunctionListEntry espnow_funcs[] = {
         }},
     JSCFunctionListEntry{
         "addPeer", 0, JS_DEF_CFUNC, 0, {
-          func : {3, JS_CFUNC_generic, espnow_addPeer}
+          func : {2, JS_CFUNC_generic, espnow_addPeer}
         }},
     JSCFunctionListEntry{
         "deletePeer", 0, JS_DEF_CFUNC, 0, {
@@ -275,73 +307,67 @@ JSModuleDef *addModule_espnow(JSContext *ctx, JSValue global)
 }
 
 void loopModule_espnow(void){
-  if( g_ctx != NULL ){
-    if( g_send_cb_fire ){
-        Serial.println("g_send_cb_fire");
-
+  if( g_ctx != NULL && g_callback_func != JS_UNDEFINED ){
+    while(g_event_list.size() > 0){
+      ESPNOW_EVENT_INFO info = g_event_list.front();
+      if( info.type == ESPNOW_EVENT_TYPE_SEND ){
         JSValue obj = JS_NewObject(g_ctx);
         JS_SetPropertyStr(g_ctx, obj, "type", JS_NewString(g_ctx, "send"));
         JSValue jsArray = JS_NewArray(g_ctx);
         for (int i = 0; i < 6; i++)
-          JS_SetPropertyUint32(g_ctx, jsArray, i, JS_NewInt32(g_ctx, g_send_macaddress[i]));
+          JS_SetPropertyUint32(g_ctx, jsArray, i, JS_NewInt32(g_ctx, info.macaddress[i]));
         JS_SetPropertyStr(g_ctx, obj, "macaddress", jsArray);
-        JS_SetPropertyStr(g_ctx, obj, "status", JS_NewInt32(g_ctx, g_send_status));
-        g_send_cb_fire = false;
+        JS_SetPropertyStr(g_ctx, obj, "status", JS_NewInt32(g_ctx, info.send_status));
 
         ESP32QuickJS *qjs = (ESP32QuickJS *)JS_GetContextOpaque(g_ctx);
         JSValue ret = qjs->callJsFunc_with_arg(g_ctx, g_callback_func, g_callback_func, 1, &obj);
         JS_FreeValue(g_ctx, obj);
         JS_FreeValue(g_ctx, ret);
-    }
-
-    if( g_recv_cb_fire ){
-        Serial.println("g_recv_cb_fire");
-
+      }else if( info.type == ESPNOW_EVENT_TYPE_RECV ){
         JSValue obj = JS_NewObject(g_ctx);
         JS_SetPropertyStr(g_ctx, obj, "type", JS_NewString(g_ctx, "recv"));
         JSValue jsArray = JS_NewArray(g_ctx);
         for (int i = 0; i < 6; i++)
-          JS_SetPropertyUint32(g_ctx, jsArray, i, JS_NewInt32(g_ctx, g_recv_macaddress[i]));
+          JS_SetPropertyUint32(g_ctx, jsArray, i, JS_NewInt32(g_ctx, info.macaddress[i]));
         JS_SetPropertyStr(g_ctx, obj, "macaddress", jsArray);
-        JS_SetPropertyStr(g_ctx, obj, "data", JS_NewString(g_ctx, gp_recv_data));
-        free(gp_recv_data);
-        gp_recv_data = NULL;
-        g_recv_cb_fire = false;
+        JS_SetPropertyStr(g_ctx, obj, "data", JS_NewString(g_ctx, info.p_recv_data));
+        free(info.p_recv_data);
 
         ESP32QuickJS *qjs = (ESP32QuickJS *)JS_GetContextOpaque(g_ctx);
         JSValue ret = qjs->callJsFunc_with_arg(g_ctx, g_callback_func, g_callback_func, 1, &obj);
         JS_FreeValue(g_ctx, obj);
         JS_FreeValue(g_ctx, ret);
+      }
+
+      g_event_list.erase(g_event_list.begin());
     }
   }
 }
 
 void endModule_espnow(void){
-  esp_now_peer_info_t peer;
-  for (esp_err_t e = esp_now_fetch_peer(true, &peer); e == ESP_OK; e = esp_now_fetch_peer(false, &peer)) {
-    esp_now_del_peer(peer.peer_addr);
-  }
-
   if( isInitialized ){
-    if( g_ctx != NULL ){
-      if( g_callback_func != JS_UNDEFINED ){
-        esp_now_unregister_send_cb();
-        esp_now_unregister_recv_cb();
-        JS_FreeValue(g_ctx, g_callback_func);
-        g_callback_func = JS_UNDEFINED;
-        if( gp_recv_data != NULL ){
-          free(gp_recv_data);
-          gp_recv_data = NULL;
-        }
-        g_send_cb_fire = false;
-        g_recv_cb_fire = false;
-      }
-      g_ctx = NULL;
+    esp_now_unregister_send_cb();
+    esp_now_unregister_recv_cb();
+    esp_now_peer_info_t peer;
+    for (esp_err_t e = esp_now_fetch_peer(true, &peer); e == ESP_OK; e = esp_now_fetch_peer(false, &peer)) {
+      esp_now_del_peer(peer.peer_addr);
     }
-
     esp_now_deinit();
+    esp_wifi_set_ps(WIFI_PS_MIN_MODEM);
     isInitialized = false;
   }
+
+  if( g_callback_func != JS_UNDEFINED ){
+    JS_FreeValue(g_ctx, g_callback_func);
+    g_callback_func = JS_UNDEFINED;
+  }
+  while(g_event_list.size() > 0){
+    ESPNOW_EVENT_INFO info = g_event_list.front();
+    if( info.p_recv_data != NULL )
+      free(info.p_recv_data);
+    g_event_list.erase(g_event_list.begin());
+  }
+  g_ctx = NULL;
 }
 
 JsModuleEntry espnow_module = {

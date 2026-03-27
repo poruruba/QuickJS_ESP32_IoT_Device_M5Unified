@@ -15,6 +15,8 @@ long wifi_try_connect(bool infinit_loop);
 long wifi_connect(const char *ssid, const char *password, unsigned long timeout);
 long wifi_disconnect(void);
 bool wifi_is_connected(void);
+int wifi_get_channel(void);
+long wifi_change_channel(unsigned char channel);
 uint32_t get_ip_address(void);
 uint8_t *get_mac_address(void);
 

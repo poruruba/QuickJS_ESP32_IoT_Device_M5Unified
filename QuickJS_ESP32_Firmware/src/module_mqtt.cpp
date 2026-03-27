@@ -86,6 +86,13 @@ static void mqttDisconnect(void){
     free(g_client_name);
     g_client_name = NULL;
 
+    while(g_event_list.size() > 0){
+      MQTT_EVENT_INFO info = g_event_list.front();
+      free(info.topic_name);
+      free(info.payload);
+      g_event_list.erase(g_event_list.begin());
+    }
+
     isConnected = false;
   }
 }
@@ -322,7 +329,7 @@ void loopModule_mqtt(void)
       delay(500);
     }
 
-    if( g_callback_func != JS_UNDEFINED ){
+    if( g_ctx != NULL && g_callback_func != JS_UNDEFINED ){
       while(g_event_list.size() > 0){
         MQTT_EVENT_INFO info = g_event_list.front();
         JSValue obj = JS_NewObject(g_ctx);

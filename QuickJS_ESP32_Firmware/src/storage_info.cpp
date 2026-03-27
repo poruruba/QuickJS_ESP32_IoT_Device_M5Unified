@@ -1,6 +1,7 @@
 #include "esp_ota_ops.h"
 #include "esp_partition.h"
 #include "esp_heap_caps.h"
+#include "esp_flash.h"
 
 unsigned long getRamUsed(void) {
   multi_heap_info_t info;

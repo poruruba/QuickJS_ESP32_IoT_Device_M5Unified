@@ -273,7 +273,8 @@ JSModuleDef *addModule_bleperipheral(JSContext *ctx, JSValue global)
   return mod;
 }
 
-void endModule_bleperipheral(void){
+void endModule_bleperipheral(void)
+{
   g_pAdvertising->stop();
 
   // default

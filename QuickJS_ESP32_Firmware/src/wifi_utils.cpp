@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <WiFi.h>
+#include <esp_wifi.h>
 
 #include "wifi_utils.h"
 
@@ -82,6 +83,23 @@ long wifi_disconnect(void)
 {
   if( !WiFi.disconnect(true) )
     return -1;
+  return 0;
+}
+
+int wifi_get_channel(void)
+{
+  int ch = WiFi.channel();
+  return ch;
+}
+
+long wifi_change_channel(unsigned char channel)
+{
+  esp_wifi_set_promiscuous(true);
+  esp_err_t err = esp_wifi_set_channel(channel, WIFI_SECOND_CHAN_NONE);
+  esp_wifi_set_promiscuous(false);
+  if( err != ESP_OK )
+    return -1;
+  
   return 0;
 }
 
