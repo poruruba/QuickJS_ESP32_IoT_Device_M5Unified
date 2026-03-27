@@ -123,8 +123,8 @@ class Arduino{
   }
 
   async config_download(){
-    var result = this.webapi_request("/config-download", {} );
-    if( !result )
+    var result = await this.webapi_request("/config-download", {} );
+    if( !result.config )
       return {};
     return JSON.parse(result.config);
   }
