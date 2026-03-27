@@ -6,7 +6,7 @@
 #include "quickjs.h"
 #include "module_type.h"
 #include "module_utils.h"
-
+#include "mem_utils.h"
 #include "esp_camera.h"
 
 enum camera_pins_type {
@@ -687,7 +687,7 @@ static long camera_get_capture(uint8_t **pp_image, size_t *p_image_size)
     return -1;
   }
   
-  *pp_image = (uint8_t*)malloc(fb->len);
+  *pp_image = (uint8_t*)utils_mem_alloc(fb->len);
   if( *pp_image == NULL ){
     Serial.println("Out of memory");
     esp_camera_fb_return(fb);

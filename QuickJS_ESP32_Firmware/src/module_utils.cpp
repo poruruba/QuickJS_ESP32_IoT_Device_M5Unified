@@ -9,6 +9,7 @@
 #include "module_utils.h"
 #include "wifi_utils.h"
 #include "lib_base32.h"
+#include "mem_utils.h"
 
 #define REALLOC_MIN_SIZE  1024
 
@@ -1291,29 +1292,6 @@ JSValue from_Uint8Array(JSContext *ctx, JSValue value, uint8_t** pp_buffer, uint
   }
 
   return vbuffer;
-}
-
-void* utils_mem_alloc(size_t size)
-{
-  if( psramInit() ){
-    return heap_caps_malloc(size, MALLOC_CAP_SPIRAM);
-  }else{
-    return malloc(size);
-  }
-}
-
-void* utils_mem_realloc(void* buffer, size_t size)
-{
-  if( psramInit() ){
-    return heap_caps_realloc(buffer, size, MALLOC_CAP_SPIRAM);
-  }else{
-    return realloc(buffer, size);
-  }
-}
-
-void utils_mem_free(void* buffer)
-{
-  free(buffer);
 }
 
 void my_mem_free(JSRuntime *rt, void *opaque, void *ptr)

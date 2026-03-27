@@ -10,6 +10,7 @@
 #include "quickjs.h"
 #include "quickjs_esp32.h"
 #include "module_http.h"
+#include "mem_utils.h"
 #include "endpoint_packet.h"
 
 #define HTTP_RESP_SHIFT   0

@@ -7,6 +7,8 @@
 #include <Arduino.h>
 #include <algorithm>
 #include <vector>
+#include "mem_utils.h"
+#include <esp_heap_caps.h>
 
 #ifdef ENABLE_WIFI
 #include <WiFi.h>
@@ -452,6 +454,65 @@ class JSTimer
   }
 };
 
+static void *esp32_js_malloc(JSMallocState *s, size_t size) {
+    if (s->malloc_size + size > s->malloc_limit)
+        return NULL;
+    void *ptr = utils_mem_alloc(size);
+    if (!ptr)
+        return NULL;
+    s->malloc_count++;
+    s->malloc_size += heap_caps_get_allocated_size(ptr);
+    return ptr;
+}
+
+static void esp32_js_free(JSMallocState *s, void *ptr) {
+    if (!ptr)
+        return;
+    s->malloc_count--;
+    s->malloc_size -= heap_caps_get_allocated_size(ptr);
+    utils_mem_free(ptr);
+}
+
+static void *esp32_js_realloc(JSMallocState *s, void *ptr, size_t size) {
+    if (!ptr) {
+        if (size == 0)
+            return NULL;
+        return esp32_js_malloc(s, size);
+    }
+    size_t old_size = heap_caps_get_allocated_size(ptr);
+    if (size == 0) {
+        s->malloc_count--;
+        s->malloc_size -= old_size;
+        utils_mem_free(ptr);
+        return NULL;
+    }
+    if (s->malloc_size + size - old_size > s->malloc_limit)
+        return NULL;
+    void *new_ptr = utils_mem_realloc(ptr, size);
+    if (!new_ptr)
+        return NULL;
+    s->malloc_size += heap_caps_get_allocated_size(new_ptr) - old_size;
+    return new_ptr;
+}
+
+static size_t esp32_js_malloc_usable_size(const void *ptr) {
+#if defined(CONFIG_HEAP_POISONING_LIGHT) || defined(CONFIG_HEAP_POISONING_COMPREHENSIVE)
+    // heap_caps_get_allocated_size() includes the tail canary bytes when heap
+    // poisoning is enabled, which would cause QuickJS to write into the canary
+    // area and corrupt the heap. Return 0 to disable the slack optimization.
+    return 0;
+#else
+    return heap_caps_get_allocated_size((void *)ptr);
+#endif
+}
+
+static const JSMallocFunctions esp32_malloc_funcs = {
+    esp32_js_malloc,
+    esp32_js_free,
+    esp32_js_realloc,
+    esp32_js_malloc_usable_size,
+};
+
 class ESP32QuickJS {
  public:
   JSRuntime *rt = NULL;
@@ -470,7 +531,8 @@ class ESP32QuickJS {
   }
 
   void begin() {
-    JSRuntime *rt = JS_NewRuntime();
+//    JSRuntime *rt = JS_NewRuntime();
+    JSRuntime *rt = JS_NewRuntime2(&esp32_malloc_funcs, NULL);
     begin(rt, JS_NewContext(rt));
   }
 
@@ -478,7 +540,12 @@ class ESP32QuickJS {
     this->rt = rt;
     this->ctx = ctx;
     if (memoryLimit == 0) {
-      memoryLimit = ESP.getFreeHeap() >> 1;
+      if (psramInit()) {
+        memoryLimit = ESP.getFreePsram();
+      } else {
+        memoryLimit = ESP.getFreeHeap() - 32 * 1024;  // reserve 32KB for system
+      }
+//      memoryLimit = ESP.getFreeHeap() >> 1;
     }
 //    JS_SetMaxStackSize(rt, JS_DEFAULT_STACK_SIZE);
     JS_SetMemoryLimit(rt, memoryLimit);

@@ -372,8 +372,10 @@ static JSValue esp32_getMemoryUsage(JSContext *ctx, JSValueConst jsThis, int arg
 
   JSValue obj = JS_NewObject(ctx);
   JS_SetPropertyStr(ctx, obj, "malloc_limit", JS_NewUint32(ctx, usage.malloc_limit));
-  JS_SetPropertyStr(ctx, obj, "memory_used_size", JS_NewUint32(ctx, usage.memory_used_size));
   JS_SetPropertyStr(ctx, obj, "malloc_size", JS_NewUint32(ctx, usage.malloc_size));
+  JS_SetPropertyStr(ctx, obj, "memory_used_size", JS_NewUint32(ctx, usage.memory_used_size));
+  JS_SetPropertyStr(ctx, obj, "memory_used_count", JS_NewUint32(ctx, usage.memory_used_count));
+  
   // JS_SetPropertyStr(ctx, obj, "total_heap", JS_NewUint32(ctx, ESP.getHeapSize()));
   // JS_SetPropertyStr(ctx, obj, "free_heap", JS_NewUint32(ctx, ESP.getFreeHeap()));
   // JS_SetPropertyStr(ctx, obj, "total_psram", JS_NewUint32(ctx, ESP.getPsramSize()));

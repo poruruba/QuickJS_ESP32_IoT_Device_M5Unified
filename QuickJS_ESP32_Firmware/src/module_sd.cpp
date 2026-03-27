@@ -7,6 +7,7 @@
 #include "module_type.h"
 #include "module_utils.h"
 #include "module_sd.h"
+#include "mem_utils.h"
 
 #define SD_DEFAULT_FREQ   25000000
 
