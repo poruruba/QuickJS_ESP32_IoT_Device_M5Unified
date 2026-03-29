@@ -13,7 +13,6 @@ using namespace websockets;
 static WebsocketsClient wsc;
 
 typedef enum {
-  WSCB_NONE,
   WSCB_CONNECTED,
   WSCB_DISCONNECTED,
   WSCB_TEXT,
