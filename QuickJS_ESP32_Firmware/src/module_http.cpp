@@ -29,6 +29,10 @@
 
 #define REALLOC_MIN_SIZE  1024
 
+#define HTTP_RESPONSE_TEXT    0
+#define HTTP_RESPONSE_JSON    1
+#define HTTP_RESPONSE_BINARY  2
+
 #include <ESPAsyncWebServer.h>
 #include <AsyncJson.h>
 static JSContext *g_ctx = NULL;
@@ -209,6 +213,44 @@ end:
   return value;
 }
 
+static JSValue http_setAwsCredential(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
+{
+  const char *accessKeyId = JS_ToCString(ctx, argv[0]);
+  if( accessKeyId == NULL )
+    return JS_EXCEPTION;
+  const char *secretAccessKey = JS_ToCString(ctx, argv[1]);
+  if( secretAccessKey == NULL )
+    return JS_EXCEPTION;
+  const char *sessionToken = NULL;
+  if( argc > 2 ){
+    sessionToken = JS_ToCString(ctx, argv[2]);
+    if( sessionToken != NULL && strlen(sessionToken) == 0 ){
+      JS_FreeCString(ctx, sessionToken);
+      sessionToken = NULL;
+    }
+  }
+
+  long ret;  
+  ret = write_config_string(CONFIG_AWS_CREDENTIAL1, accessKeyId);
+  JS_FreeCString(ctx, accessKeyId);
+  if( ret != 0 )
+    return JS_EXCEPTION;
+  ret = write_config_string(CONFIG_AWS_CREDENTIAL2, secretAccessKey);
+  JS_FreeCString(ctx, secretAccessKey);
+  if( ret != 0 )
+    return JS_EXCEPTION;
+  if( sessionToken == NULL ){
+    ret = write_config_string(CONFIG_AWS_CREDENTIAL3, "");
+  }else{
+    ret = write_config_string(CONFIG_AWS_CREDENTIAL3, sessionToken);
+    JS_FreeCString(ctx, sessionToken);
+  }
+  if( ret != 0 )
+    return JS_EXCEPTION;
+
+  return JS_UNDEFINED;
+}
+
 static JSValue http_bridge(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv, int magic)
 {
   uint16_t method = (magic >> HTTP_METHOD_SHIFT) & HTTP_METHOD_MASK;
@@ -274,7 +316,7 @@ static JSValue http_bridge(JSContext *ctx, JSValueConst jsThis, int argc, JSValu
 
   uint8_t response_type = ( magic >> HTTP_RESP_SHIFT ) & HTTP_RESP_MASK;
   JSValue value = JS_EXCEPTION;
-  if (status_code != 200){
+  if ( status_code < 200 || 300 <= status_code ){
     Serial.printf("status_code=%d\n", status_code);
     goto end;
   }
@@ -349,42 +391,298 @@ end:
   return value;
 }
 
-static JSValue http_setAwsCredential(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
+// 0: "", 1: string, -1: undefined, -2: unknown
+static String getStringValue(JSContext *ctx, JSValueConst value, const char *key, long *len)
 {
-  const char *accessKeyId = JS_ToCString(ctx, argv[0]);
-  if( accessKeyId == NULL )
+  JSValue param = JS_GetPropertyStr(ctx, value, key);
+  if( param == JS_UNDEFINED){
+    *len = -1;
+    return String("");
+  }
+  const char *str = JS_ToCString(ctx, param);
+  JS_FreeValue(ctx, param);
+  if( str == NULL ){
+    *len = -2;
+    return String("");
+  }
+  String strValue = String(str);
+  *len = strlen(str);
+  JS_FreeCString(ctx, str);
+
+  return strValue;
+}
+
+// 0: int32_t, -1: undefined
+static int32_t getNumberValue(JSContext *ctx, JSValueConst value, const char *key, long *result)
+{
+  JSValue param = JS_GetPropertyStr(ctx, value, key);
+  if( param == JS_UNDEFINED){
+    *result = -1;
+    return 0;
+  }
+  int32_t numberValue;
+  JS_ToInt32(ctx, &numberValue, param);
+  *result = 0;
+  JS_FreeValue(ctx, param);
+
+  return numberValue;
+}
+
+static JSValue http_request(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
+{
+  JSValue returnValue = JS_EXCEPTION;
+  long len;
+  String url = getStringValue(ctx, argv[0], "url", &len);
+  if( len <= 0 )
     return JS_EXCEPTION;
-  const char *secretAccessKey = JS_ToCString(ctx, argv[1]);
-  if( secretAccessKey == NULL )
-    return JS_EXCEPTION;
-  const char *sessionToken = NULL;
-  if( argc > 2 ){
-    sessionToken = JS_ToCString(ctx, argv[2]);
-    if( sessionToken != NULL && strlen(sessionToken) == 0 ){
-      JS_FreeCString(ctx, sessionToken);
-      sessionToken = NULL;
+
+  String method = getStringValue(ctx, argv[0], "method", &len);
+  if( len <= 0 )
+    method = "GET";
+  method.toUpperCase();
+
+  String content_type = getStringValue(ctx, argv[0], "content_type", &len);
+
+  int8_t type_response_type;
+  long ret;
+  int32_t response_type = getNumberValue(ctx, argv[0], "response_type", &ret);
+  if( ret < 0 )
+    response_type = HTTP_RESPONSE_TEXT;
+
+  JSValue body = JS_GetPropertyStr(ctx, argv[0], "body");
+  JSValue qs = JS_GetPropertyStr(ctx, argv[0], "qs");
+  JSValue headers = JS_GetPropertyStr(ctx, argv[0], "headers");
+
+  HTTPClient http;
+  int status_code = 0;
+
+  if( qs != JS_UNDEFINED ){
+    JSPropertyEnum *atoms;
+    uint32_t len;
+    int ret = JS_GetOwnPropertyNames(ctx, &atoms, &len, qs, JS_GPN_ENUM_ONLY | JS_GPN_STRING_MASK);
+    if (ret != 0)
+      goto end;
+    bool first = true;
+    for (int i = 0; i < len; i++){
+      JSAtom atom = atoms[i].atom;
+      const char *name = JS_AtomToCString(ctx, atom);
+      if( name != NULL ){
+        JSValue value = JS_GetPropertyStr(ctx, qs, name);
+        JS_FreeCString(ctx, name);
+        const char *str = JS_ToCString(ctx, value);
+        if( str != NULL ){
+//            Serial.printf("%s=%s\n", name, str);
+          if( first ){
+            if (url.indexOf('?') >= 0)
+              url += "&";
+            else
+              url += "?";
+            first = false;
+          }else{
+            url += "&";
+          }
+          url += name;
+          url += "=";
+          url += urlencode(str);
+          JS_FreeCString(ctx, str);
+        }
+      }
+      JS_FreeAtom(ctx, atom);
     }
   }
 
-  long ret;  
-  ret = write_config_string(CONFIG_AWS_CREDENTIAL1, accessKeyId);
-  JS_FreeCString(ctx, accessKeyId);
-  if( ret != 0 )
-    return JS_EXCEPTION;
-  ret = write_config_string(CONFIG_AWS_CREDENTIAL2, secretAccessKey);
-  JS_FreeCString(ctx, secretAccessKey);
-  if( ret != 0 )
-    return JS_EXCEPTION;
-  if( sessionToken == NULL ){
-    ret = write_config_string(CONFIG_AWS_CREDENTIAL3, "");
-  }else{
-    ret = write_config_string(CONFIG_AWS_CREDENTIAL3, sessionToken);
-    JS_FreeCString(ctx, sessionToken);
+  http.begin(url);
+  if( !method.equals("GET") && content_type.length() > 0 )
+    http.addHeader("Content-Type", content_type);
+  
+  if( headers != JS_UNDEFINED && JS_IsObject(headers) ){
+    JSPropertyEnum *atoms;
+    uint32_t len;
+    int ret = JS_GetOwnPropertyNames(ctx, &atoms, &len, headers, JS_GPN_ENUM_ONLY | JS_GPN_STRING_MASK);
+    if (ret != 0)
+      goto end;
+    for (int i = 0; i < len; i++){
+      JSAtom atom = atoms[i].atom;
+      const char *name = JS_AtomToCString(ctx, atom);
+      if( name != NULL ){
+        JSValue value = JS_GetPropertyStr(ctx, headers, name);
+        JS_FreeCString(ctx, name);
+        const char *str = JS_ToCString(ctx, value);
+        JS_FreeValue(ctx, value);
+        if( str != NULL ){
+//          Serial.printf("%s=%s\n", name, str);
+          http.addHeader(name, str);
+          JS_FreeCString(ctx, str);
+        }
+      }
+      JS_FreeAtom(ctx, atom);
+    }
   }
-  if( ret != 0 )
-    return JS_EXCEPTION;
 
-  return JS_UNDEFINED;
+  // Serial.println("url=" + url);
+  // Serial.println("method=" + method);
+  // Serial.println("content_type=" + content_type);
+  if( body != JS_UNDEFINED ){
+    if( JS_IsObject(body) ){
+      String body_str = String("");
+      if( content_type.equals("application/www-form-urlencoded")){
+        JSPropertyEnum *atoms;
+        uint32_t len;
+        int ret = JS_GetOwnPropertyNames(ctx, &atoms, &len, body, JS_GPN_ENUM_ONLY | JS_GPN_STRING_MASK);
+        if (ret != 0)
+          goto end;
+
+        bool first = true;
+        for (int i = 0; i < len; i++){
+          JSAtom atom = atoms[i].atom;
+          const char *name = JS_AtomToCString(ctx, atom);
+          if( name != NULL ){
+            JSValue value = JS_GetPropertyStr(ctx, body, name);
+            JS_FreeCString(ctx, name);
+            const char *str = JS_ToCString(ctx, value);
+            JS_FreeValue(ctx, value);
+            if( str != NULL ){
+//              Serial.printf("%s=%s\n", name, str);
+              if( first ){
+                first = false;
+              }else{
+                body_str += "&";
+              }
+              body_str += name;
+              body_str += "=";
+              body_str += urlencode(str);
+              JS_FreeCString(ctx, str);
+            }
+          }
+          JS_FreeAtom(ctx, atom);
+        }
+        status_code = http.sendRequest(method.c_str(), body_str);
+      }else{
+        JSValue json = JS_JSONStringify(ctx, body, JS_UNDEFINED, JS_UNDEFINED);
+        if( json == JS_UNDEFINED )
+          goto end;
+        const char *p_body = JS_ToCString(ctx, json);
+//        Serial.printf("body=%s\n", p_body);
+        JS_FreeValue(ctx, json);
+        if( p_body == NULL )
+          goto end;
+        status_code = http.sendRequest(method.c_str(), (uint8_t*)p_body, strlen(p_body));
+        JS_FreeCString(ctx, p_body);
+      }
+    }else if( JS_IsString(body) ){
+      const char *p_body = JS_ToCString(ctx, body);
+//      Serial.printf("body=%s\n", p_body);
+      status_code = http.sendRequest(method.c_str(), p_body);
+      JS_FreeCString(ctx, p_body);
+    }else{
+      uint8_t *p_buffer;
+      uint8_t unit_size;
+      uint32_t unit_num;
+      JSValue vbuffer = getBinaryFromTypedArray(ctx, body, (void**)&p_buffer, &unit_size, &unit_num);
+      if( vbuffer == JS_UNDEFINED )
+        goto end;
+      if( unit_size != 1 ){
+        JS_FreeValue(ctx, vbuffer);
+        goto end;
+      }
+      status_code = http.sendRequest(method.c_str(), p_buffer, unit_num);
+      JS_FreeValue(ctx, vbuffer);
+    }
+  }else{
+    if( content_type.equals("application/json"))
+      status_code = http.sendRequest(method.c_str(), "{}");
+    else
+      status_code = http.sendRequest(method.c_str());
+  }
+
+  if( body != JS_UNDEFINED ){
+    JS_FreeValue(ctx, body);
+    body = JS_UNDEFINED;
+  }
+  if( qs != JS_UNDEFINED ){
+    JS_FreeValue(ctx, qs);
+    qs = JS_UNDEFINED;
+  }
+  if( headers != JS_UNDEFINED ){
+    JS_FreeValue(ctx, headers);
+    headers = JS_UNDEFINED;
+  }
+    
+  if (200 <= status_code && status_code < 300){
+    if( response_type == HTTP_RESPONSE_TEXT ){
+      String result = http.getString();
+      const char *buffer = result.c_str();
+      returnValue = JS_NewString(ctx, buffer);
+    }else if( response_type == HTTP_RESPONSE_JSON ){
+      String result = http.getString();
+      const char *buffer = result.c_str();
+      returnValue = JS_ParseJSON(ctx, buffer, strlen(buffer), "json");
+    }else if( response_type == HTTP_RESPONSE_BINARY){
+      uint32_t alloclen = REALLOC_MIN_SIZE;
+      unsigned char *bin;
+      unsigned long index = 0;
+      WiFiClient *stream = http.getStreamPtr();
+      int responseLen = http.getSize();
+  //    Serial.printf("responseLen=%d freeheep=%d\n", responseLen, ESP.getFreeHeap());
+      if( responseLen >= 0){
+        bin = (unsigned char*)utils_mem_alloc(responseLen);
+        if( bin == NULL )
+          goto end;
+
+        while (index < responseLen) {
+            size_t available = stream->available();
+            if (available > 0) {
+                size_t toRead = min(available, (size_t)1024);
+                int readed = stream->readBytes(&bin[index], toRead);
+                index += readed;
+            } else {
+                delay(1);
+            }
+        }
+      }else{
+        bin = (unsigned char*)utils_mem_realloc(NULL, alloclen);
+        if( bin == NULL )
+          goto end;
+
+        unsigned long last = millis();
+        while (http.connected() && (millis() - last < 100)) {
+            size_t size = stream->available();
+            if (size > 0) {
+              last = millis();
+              if( (index + size ) > alloclen ){
+                alloclen += ((index + size) > (alloclen + REALLOC_MIN_SIZE)) ? size : REALLOC_MIN_SIZE;
+                unsigned char *t = (unsigned char*)utils_mem_realloc(bin, alloclen);
+                if( t == NULL ){
+                  utils_mem_free(bin);
+                  goto end;
+                }
+                bin = t;
+              }
+              int clen = stream->readBytes(&bin[index], size);
+              index += clen;
+            }else{
+              delay(1);
+            }
+        }
+      }
+      returnValue = JS_NewArrayBuffer(ctx, bin, index, my_mem_free, NULL, false);
+    }
+  }else{
+    Serial.printf("status_code=%d\n", status_code);
+    goto end;
+  }
+
+end:
+  http.end();
+
+  if( body != JS_EXCEPTION )
+    JS_FreeValue(ctx, body);
+  if( qs != JS_EXCEPTION )
+    JS_FreeValue(ctx, qs);
+  if( headers != JS_EXCEPTION )
+    JS_FreeValue(ctx, headers);
+  
+  return returnValue;
 }
 
 static JSValue http_setCustomCallback(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
@@ -551,6 +849,9 @@ static const JSCFunctionListEntry http_funcs[] = {
     JSCFunctionListEntry{"clearHttpContent", 0, JS_DEF_CFUNC, 0, {
                            func : {1, JS_CFUNC_generic, http_clearHttpContent}
                          }},
+    JSCFunctionListEntry{"request", 0, JS_DEF_CFUNC, 0, {
+                           func : {1, JS_CFUNC_generic, http_request}
+                         }},
     JSCFunctionListEntry{"fetch", 0, JS_DEF_CFUNC, 0, {
                            func : {5, JS_CFUNC_generic, http_fetch}
                          }},
@@ -597,6 +898,18 @@ static const JSCFunctionListEntry http_funcs[] = {
     JSCFunctionListEntry{
         "method_post_formdata", 0, JS_DEF_PROP_INT32, 0, {
           i32 : (HTTP_METHOD_POST_FORMDATA << HTTP_METHOD_SHIFT)
+        }},
+    JSCFunctionListEntry{
+        "HTTP_RESP_TEXT", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : HTTP_RESPONSE_TEXT
+        }},
+    JSCFunctionListEntry{
+        "HTTP_RESP_JSON", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : HTTP_RESPONSE_JSON
+        }},
+    JSCFunctionListEntry{
+        "HTTP_RESP_BINARY", 0, JS_DEF_PROP_INT32, 0, {
+          i32 : HTTP_RESPONSE_BINARY
         }},
 };
 

@@ -16,43 +16,52 @@ typedef enum {
   WSCB_NONE,
   WSCB_CONNECTED,
   WSCB_DISCONNECTED,
-  WSCB_TEXT
+  WSCB_TEXT,
+  WSCB_BINARY,
 } WSCB_TYPE;
+
+typedef struct {
+  WSCB_TYPE type;
+  uint8_t *p_payload;
+  uint32_t length;
+} WSCLIENT_EVENT_INFO;
+static std::vector<WSCLIENT_EVENT_INFO> g_event_list;
 
 static JSContext *g_ctx = NULL;
 static JSValue g_callback_func = JS_UNDEFINED;
-static WSCB_TYPE g_type = WSCB_NONE;
-static char *g_payload = NULL;
 
 void onMessageCallback(WebsocketsMessage message) {
-  if( g_payload != NULL ){
-    free(g_payload);
-    g_payload = NULL;
+  WSCLIENT_EVENT_INFO info;
+  if( message.isText() ){
+    info.type = WSCB_TEXT;
+    info.p_payload = (uint8_t*)strdup(message.c_str());
+    if( info.p_payload == NULL )
+      return;
+    g_event_list.push_back(info);
+  }else if( message.isBinary() ){
+    const char* data = message.data().c_str();
+    size_t len = message.length();
+    info.p_payload = (uint8_t*)malloc(len);
+    if( info.p_payload == NULL )
+      return;
+    memmove(info.p_payload, data, len);
+    info.length = len;
+    g_event_list.push_back(info);
+  }else{
+    return;
   }
-  if( !message.isText() )
-    return;
-
-  const char *payload = message.c_str();
-  g_payload = (char *)malloc(strlen(payload) + 1);
-  if( g_payload == NULL )
-    return;
-  strcpy(g_payload, (char*)payload);
-  g_type = WSCB_TEXT;
 }
 
 void onEventsCallback(WebsocketsEvent event, String data) {
+    WSCLIENT_EVENT_INFO info = {};
     if(event == WebsocketsEvent::ConnectionOpened) {
-      if( g_payload != NULL ){
-        free(g_payload);
-        g_payload = NULL;
-      }
-      g_type = WSCB_CONNECTED;
+      info.type = WSCB_CONNECTED;
+      info.p_payload = NULL;
+      g_event_list.push_back(info);
     } else if(event == WebsocketsEvent::ConnectionClosed) {
-      if( g_payload != NULL ){
-        free(g_payload);
-        g_payload = NULL;
-      }
-      g_type = WSCB_DISCONNECTED;
+      info.type = WSCB_DISCONNECTED;
+      info.p_payload = NULL;
+      g_event_list.push_back(info);
     } else if(event == WebsocketsEvent::GotPing) {
 //        Serial.println("Got a Ping!");
     } else if(event == WebsocketsEvent::GotPong) {
@@ -105,10 +114,11 @@ static JSValue websocket_client_disconnect(JSContext *ctx, JSValueConst jsThis, 
 {
   wsc.close();
 
-  g_type = WSCB_NONE;
-  if( g_payload != NULL ){
-    free(g_payload);
-    g_payload = NULL;
+  while(g_event_list.size() > 0){
+    WSCLIENT_EVENT_INFO info = g_event_list.front();
+    if( info.p_payload != NULL )
+      free(info.p_payload);
+    g_event_list.erase(g_event_list.begin());
   }
 
   return JS_UNDEFINED;
@@ -164,44 +174,45 @@ long initialize_websocket_client(void)
 
 void endModule_websocket_client(void)
 {
+  wsc.close();
+
   if( g_callback_func != JS_UNDEFINED ){
     JS_FreeValue(g_ctx, g_callback_func);
     g_callback_func = JS_UNDEFINED;
   }
-  g_ctx = NULL;
 
-  wsc.close();
-
-  g_type = WSCB_NONE;
-  if( g_payload != NULL ){
-    free(g_payload);
-    g_payload = NULL;
+  while(g_event_list.size() > 0){
+    WSCLIENT_EVENT_INFO info = g_event_list.front();
+    if( info.p_payload != NULL )
+      free(info.p_payload);
+    g_event_list.erase(g_event_list.begin());
   }
+
+  g_ctx = NULL;
 }
 
 void loopModule_websocket_client(void)
 {
   wsc.poll();
 
-  if( g_ctx != NULL ){
-    if( g_type != WSCB_NONE){
-      JSValue objs[2];
-      if( g_type == WSCB_CONNECTED ){
+  if( g_ctx != NULL && g_callback_func != JS_UNDEFINED ){
+    while(g_event_list.size() > 0){
+      WSCLIENT_EVENT_INFO info = g_event_list.front();
+      JSValue objs[2] = { JS_UNDEFINED, JS_UNDEFINED };
+      if( info.type == WSCB_CONNECTED ){
         objs[0] = JS_NewString(g_ctx, "connected");
-        objs[1] = JS_UNDEFINED;
-      }else if( g_type == WSCB_DISCONNECTED ){
+      }else if( info.type == WSCB_DISCONNECTED ){
         objs[0] = JS_NewString(g_ctx, "disconnected");
-        objs[1] = JS_UNDEFINED;
-      }else if( g_type == WSCB_TEXT ){
+      }else if( info.type == WSCB_TEXT ){
         objs[0] = JS_NewString(g_ctx, "text");
-        objs[1] = JS_NewString(g_ctx, g_payload);
-      }else{
-        return;
-      }
-      g_type = WSCB_NONE;
-      if( g_payload != NULL ){
-        free(g_payload);
-        g_payload = NULL;
+        objs[1] = JS_NewString(g_ctx, (char*)info.p_payload);
+        free(info.p_payload);
+        info.p_payload = NULL;
+      }else if( info.type == WSCB_BINARY ){
+        objs[0] = JS_NewString(g_ctx, "binary");
+        objs[1] = JS_NewArrayBuffer(g_ctx, info.p_payload, info.length, my_mem_free, NULL, false);
+        free(info.p_payload);
+        info.p_payload = NULL;
       }
 
       ESP32QuickJS *qjs = (ESP32QuickJS *)JS_GetContextOpaque(g_ctx);
@@ -209,6 +220,8 @@ void loopModule_websocket_client(void)
       JS_FreeValue(g_ctx, objs[0]);
       JS_FreeValue(g_ctx, objs[1]);
       JS_FreeValue(g_ctx, ret);
+
+      g_event_list.erase(g_event_list.begin());
     }
   }
 }
