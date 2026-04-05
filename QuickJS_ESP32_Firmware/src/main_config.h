@@ -102,9 +102,9 @@
 #define _IR_ENABLE_
 #define _AUDIO_ENABLE_
 #define MDNS_NAME "QuickJS_ESP32_M5StickS3" // mDNSサービスホスト名
-#elif defined(ARDUINO_M5Stack_NANOC6)
+#elif defined(ARDUINO_M5Stack_NanoC6)
 #include <M5Unified.h>
-#define MDNS_NAME "QuickJS_ESP32_C6" // mDNSサービスホスト名
+#define MDNS_NAME "QuickJS_ESP32_M5NanoC6" // mDNSサービスホスト名
 #elif defined(ARDUINO_ESP32_M5Camera)
 #include <M5Unified.h>
 #define _CAMERA_ENABLE_
@@ -185,6 +185,8 @@
 extern unsigned char g_fileloading;
 extern char g_download_buffer[FILE_BUFFER_SIZE];
 extern esp_sleep_wakeup_cause_t g_sleepReason;
+extern uint32_t jscode_size;
+extern uint32_t jsmodule_size;
 
 extern SemaphoreHandle_t binSem;
 

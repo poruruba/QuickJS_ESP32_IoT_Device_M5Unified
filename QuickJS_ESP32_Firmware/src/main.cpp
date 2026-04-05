@@ -18,6 +18,8 @@ extern const char jscode_epilogue[] asm("_binary_rom_epilogue_js_start");
 char g_download_buffer[FILE_BUFFER_SIZE];
 unsigned char g_fileloading = FILE_LOADING_NONE;
 esp_sleep_wakeup_cause_t g_sleepReason = ESP_SLEEP_WAKEUP_UNDEFINED;
+uint32_t jscode_size = 0;
+uint32_t jsmodule_size = 0;
 
 ESP32QuickJS qjs;
 SemaphoreHandle_t binSem;
@@ -26,7 +28,7 @@ static long m5_connect(void);
 static long start_qjs(void);
 static char* download_jscode(const char *url);
 static char* load_jscode(void);
-static long load_all_modules(void);
+static long load_all_modules(uint32_t *p_total_size);
 
 void setup()
 {
@@ -119,6 +121,8 @@ void loop()
   // For timer, async, etc.
   if( !qjs.loop() ){
     qjs.end();
+    jscode_size = 0;
+    jsmodule_size = 0;
 
     if( g_fileloading != FILE_LOADING_NONE ){
       if( g_fileloading == FILE_LOADING_REBOOT ){
@@ -155,7 +159,7 @@ static long start_qjs(void)
 {
   qjs.begin();
 
-  long ret = load_all_modules();
+  long ret = load_all_modules(&jsmodule_size);
   if( ret != 0 ){
     Serial.println("[can't load module]");
   }
@@ -174,9 +178,11 @@ static long start_qjs(void)
     js_code = load_jscode();
   if( js_code != NULL ){
     Serial.println("[executing]");
+    jscode_size = strlen(js_code);
     qjs.exec(js_code);
   }else{
     Serial.println("[can't load main]");
+    jscode_size = strlen(jscode_default);
     qjs.exec(jscode_default);
   }
 
@@ -310,8 +316,9 @@ long delete_module(const char *p_fname)
   return ret ? 0 : -1;
 }
 
-static long load_all_modules(void)
+static long load_all_modules(uint32_t *p_total_size)
 {
+  *p_total_size = 0;
   File dir = LittleFS.open(MODULE_DIR);
   if( !dir )
     return -1;
@@ -321,6 +328,7 @@ static long load_all_modules(void)
     const char *module_name = file.name();
     size_t size = file.size();
 
+    *p_total_size += size;
     char *js_modules_code = (char*)malloc(size + 1);
     if( js_modules_code == NULL ){
       Serial.println("malloc failed");

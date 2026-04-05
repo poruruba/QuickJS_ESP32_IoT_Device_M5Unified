@@ -20,6 +20,10 @@
 #include <Esp.h>
 #include <LittleFS.h>
 
+#include <lwip/etharp.h>
+#include <lwip/netif.h>
+#include <lwip/ip_addr.h>
+
 #include "quickjs.h"
 #include "quickjs_esp32.h"
 #include "module_type.h"
@@ -375,6 +379,8 @@ static JSValue esp32_getMemoryUsage(JSContext *ctx, JSValueConst jsThis, int arg
   JS_SetPropertyStr(ctx, obj, "malloc_size", JS_NewUint32(ctx, usage.malloc_size));
   JS_SetPropertyStr(ctx, obj, "memory_used_size", JS_NewUint32(ctx, usage.memory_used_size));
   JS_SetPropertyStr(ctx, obj, "memory_used_count", JS_NewUint32(ctx, usage.memory_used_count));
+  JS_SetPropertyStr(ctx, obj, "jscode_size", JS_NewUint32(ctx, jscode_size));
+  JS_SetPropertyStr(ctx, obj, "jsmodule_count", JS_NewUint32(ctx, jsmodule_size));
   
   // JS_SetPropertyStr(ctx, obj, "total_heap", JS_NewUint32(ctx, ESP.getHeapSize()));
   // JS_SetPropertyStr(ctx, obj, "free_heap", JS_NewUint32(ctx, ESP.getFreeHeap()));
@@ -436,9 +442,39 @@ static JSValue esp32_ping(JSContext *ctx, JSValueConst jsThis, int argc, JSValue
 
   bool result = Ping.ping(host);
 
+  JSValue obj = JS_NewObject(ctx);
+  JS_SetPropertyStr(ctx, obj, "result", JS_NewBool(ctx, result));
+
+  bool ip_result = false;
+  IPAddress ip;
+  ip_result = ip.fromString(host);
+  if (!ip_result) {
+    if (WiFi.hostByName(host, ip))
+      ip_result = true;
+  }
+  if( ip_result ){
+    JS_SetPropertyStr(ctx, obj, "ipaddress", JS_NewUint32(ctx, htonl((uint32_t)ip)));
+
+    struct netif* netif = netif_list;
+    struct eth_addr* eth_ret = NULL;
+    const ip4_addr_t* ip_ret = NULL;
+    ip4_addr_t target_ip;
+    target_ip.addr = (uint32_t)ip;
+
+    uint8_t mac_out[6] = { 0 };
+    if (etharp_find_addr(netif, &target_ip, &eth_ret, &ip_ret) >= 0) {
+      memcpy(mac_out, eth_ret->addr, 6);
+      JSValue jsArray = JS_NewArray(ctx);
+      for (int i = 0; i < 6; i++)
+        JS_SetPropertyUint32(ctx, jsArray, i, JS_NewInt32(ctx, mac_out[i]));
+
+      JS_SetPropertyStr(ctx, obj, "macaddress", jsArray);
+    }
+  }
+
   JS_FreeCString(ctx, host);
 
-  return JS_NewBool(ctx, result);
+  return obj;
 }
 
 static JSValue esp32_wifi_connect(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)

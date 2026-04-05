@@ -67,6 +67,38 @@ String urlencode(String str)
   return encodedString;
 }
 
+String urldecode(String str) {
+  String decodedString = "";
+  char c;
+  char code0;
+  char code1;
+
+  for (int i = 0; i < str.length(); i++) {
+    c = str.charAt(i);
+    
+    if (c == '+') {
+      decodedString += ' ';
+    } else if (c == '%') {
+      if (i + 2 < str.length()) {
+        code0 = str.charAt(++i);
+        code1 = str.charAt(++i);
+        
+        auto hexToDec = [](char c) -> int {
+          if (c >= '0' && c <= '9') return c - '0';
+          if (c >= 'a' && c <= 'f') return c - 'a' + 10;
+          if (c >= 'A' && c <= 'F') return c - 'A' + 10;
+          return 0;
+        };
+        
+        decodedString += (char)((hexToDec(code0) << 4) | hexToDec(code1));
+      }
+    } else {
+      decodedString += c;
+    }
+  }
+  return decodedString;
+}
+
 #if 1
 static JSValue utils_http_text(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv, int magic)
 {
@@ -638,6 +670,15 @@ static JSValue utils_urlencode(JSContext * ctx, JSValueConst jsThis, int argc, J
   return value;
 }
 
+static JSValue utils_urldecode(JSContext * ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
+{
+  const char *str = JS_ToCString(ctx, argv[0]);
+  String decoded = urldecode(str);
+  JSValue value = JS_NewString(ctx, decoded.c_str());
+  JS_FreeCString(ctx, str);
+  return value;
+}
+
 static JSValue utils_base64(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv, int magic)
 {
   if( magic == 0 ){
@@ -937,6 +978,9 @@ static const JSCFunctionListEntry utils_funcs[] = {
 #endif
     JSCFunctionListEntry{"urlencode", 0, JS_DEF_CFUNC, 0, {
                            func : {1, JS_CFUNC_generic, utils_urlencode}
+                         }},
+    JSCFunctionListEntry{"urldecode", 0, JS_DEF_CFUNC, 0, {
+                           func : {1, JS_CFUNC_generic, utils_urldecode}
                          }},
     JSCFunctionListEntry{"base64Encode", 0, JS_DEF_CFUNC, 0, {
                            func : {1, JS_CFUNC_generic_magic, {generic_magic : utils_base64}}

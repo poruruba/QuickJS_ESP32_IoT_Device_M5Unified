@@ -364,6 +364,20 @@ static JSValue esp32_lcd_drawAlignedText(JSContext *ctx, JSValueConst jsThis, in
 
 long module_lcd_setFont(uint16_t size, int magic)
 {
+  M5GFX &gfx = (magic == 1) ? M5.Displays(g_external_display) : M5.Display;
+  switch (size){
+//    case 8 : gfx.setFont(&fonts::lgfxJapanGothic_8); break;
+//    case 12 : gfx.setFont(&fonts::lgfxJapanGothic_12); break;
+    case 16 : gfx.setFont(&fonts::lgfxJapanGothic_16); break;
+//    case 20 : gfx.setFont(&fonts::lgfxJapanGothic_20); break;
+//    case 24 : gfx.setFont(&fonts::lgfxJapanGothic_24); break;
+//    case 28 : gfx.setFont(&fonts::lgfxJapanGothic_28); break;
+    case 32 : gfx.setFont(&fonts::lgfxJapanGothic_32); break;
+//    case 36 : gfx.setFont(&fonts::lgfxJapanGothic_36); break;
+//    case 40 : gfx.setFont(&fonts::lgfxJapanGothic_40); break;
+  }
+
+#if 0  
   if( magic == 1 ){
     switch (size){
   //    case 8 : M5.Displays(g_external_display).setFont(&fonts::lgfxJapanGothic_8); break;
@@ -389,6 +403,7 @@ long module_lcd_setFont(uint16_t size, int magic)
   //    case 40 : M5.Display.setFont(&fonts::lgfxJapanGothic_40); break;
     }
   }
+#endif
 
   return 0;
 }
@@ -743,6 +758,41 @@ static JSValue esp32_lcd_displayType(JSContext *ctx, JSValueConst jsThis, int ar
   return JS_NewInt32(ctx, g_external_display_type);
 }
 
+static JSValue esp32_lcd_transformPosition(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv, int magic)
+{
+  if( magic == 1 && g_external_display == -1 )
+    return JS_EXCEPTION;
+
+  uint32_t image_width, image_height;
+  JS_ToUint32(ctx, &image_width, argv[0]);
+  JS_ToUint32(ctx, &image_height, argv[1]);
+
+  int32_t x, y;
+  JS_ToInt32(ctx, &x, argv[2]);
+  JS_ToInt32(ctx, &y, argv[3]);
+  
+  int32_t disp_width, disp_height;
+  if( magic == 1 ){
+    disp_width = M5.Displays(g_external_display).width();
+    disp_height = M5.Displays(g_external_display).height();
+  }else{
+    disp_width = M5.Display.width();
+    disp_height = M5.Display.height();
+  }
+
+  float scale = std::min(disp_width / image_width, disp_height / image_height);
+  float dw = image_width * scale;
+  float dh = image_height * scale;
+  int32_t new_x = (disp_width - dw) / 2;
+  int32_t new_y = (disp_height - dh) / 2;
+
+  JSValue obj = JS_NewObject(ctx);
+  JS_SetPropertyStr(ctx, obj, "x", JS_NewInt32(ctx, new_x));
+  JS_SetPropertyStr(ctx, obj, "y", JS_NewInt32(ctx, new_y));
+
+  return obj;
+}
+
 static JSValue esp32_lcd_createSpriteFromBmp(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv)
 {
   uint8_t *p_buffer;
@@ -975,6 +1025,9 @@ static const JSCFunctionListEntry lcd_funcs[] = {
     JSCFunctionListEntry{"fontHeight", 0, JS_DEF_CFUNC, 0, {
                            func : {0, JS_CFUNC_generic_magic, {generic_magic : esp32_lcd_fontHeight}}
                          }},
+    JSCFunctionListEntry{"transformPosition", 0, JS_DEF_CFUNC, 0, {
+                           func : {4, JS_CFUNC_generic_magic, {generic_magic : esp32_lcd_transformPosition}}
+                         }},
 #ifdef _SD_ENABLE_
     JSCFunctionListEntry{"createSpriteFromBmpFile", 0, JS_DEF_CFUNC, 0, {
                            func : {1, JS_CFUNC_generic, esp32_lcd_createSpriteFromBmpFile}
@@ -1137,6 +1190,9 @@ static const JSCFunctionListEntry lcd_funcs2[] = {
                          }},
     JSCFunctionListEntry{"fontHeight", 0, JS_DEF_CFUNC, 1, {
                            func : {0, JS_CFUNC_generic_magic, {generic_magic : esp32_lcd_fontHeight}}
+                         }},
+    JSCFunctionListEntry{"transformPosition", 0, JS_DEF_CFUNC, 1, {
+                           func : {4, JS_CFUNC_generic_magic, {generic_magic : esp32_lcd_transformPosition}}
                          }},
     JSCFunctionListEntry{"displayType", 0, JS_DEF_CFUNC, 0, {
                            func : {0, JS_CFUNC_generic, esp32_lcd_displayType}

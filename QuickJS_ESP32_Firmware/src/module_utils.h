@@ -17,6 +17,7 @@ unsigned long b64_encode(const unsigned char input[], unsigned long input_length
 unsigned long b64_decode_length(const char input[]);
 unsigned long b64_decode(const char input[], unsigned char output[]);
 String urlencode(String str);
+String urldecode(String str);
 
 JSValue getBinaryFromTypedArray(JSContext *ctx, JSValue value, void** pp_buffer, uint8_t *p_unit_size, uint32_t *p_unit_num);
 JSValue getTypedArrayBuffer(JSContext *ctx, JSValue value, void** p_buffer, uint8_t *p_unit_size, uint32_t *p_unit_num);
