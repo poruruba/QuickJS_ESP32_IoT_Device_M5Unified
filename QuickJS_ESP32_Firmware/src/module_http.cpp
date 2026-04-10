@@ -167,7 +167,7 @@ static JSValue aws_bridge(JSContext *ctx, JSValueConst jsThis, int argc, JSValue
     headers += String("x-amz-security-token:") + sessionToken + "\n";
   headers += String("authorization:") + amzResult.authorization + "\n";
 
-  free(amzResult.authorization);
+  utils_mem_free(amzResult.authorization);
   JS_SetPropertyStr(ctx, obj, "headers", JS_NewString(ctx, headers.c_str()));
   if( payload_str != NULL ){
     JS_SetPropertyStr(ctx, obj, "payload", JS_NewString(ctx, payload_str));
@@ -1116,12 +1116,12 @@ static void toHexStr(int len, const uint8_t *p_bin, char *p_hex){
 
 static void getSignatureKey(const char *key, const char *dateStamp, const char *regionName, const char *serviceName, uint8_t *kSigning){
   int key_len = strlen("AWS4") + strlen(key);
-  char *temp_key = (char*)malloc(key_len + 1);
+  char *temp_key = (char*)utils_mem_alloc(key_len + 1);
   sprintf(temp_key, "%s%s", "AWS4", key);
 
   uint8_t kDate[32];
   hmacCreate((const uint8_t*)temp_key, strlen(temp_key), (const uint8_t*)dateStamp, strlen(dateStamp), kDate);
-  free(temp_key);
+  utils_mem_free(temp_key);
 
   uint8_t kRegion[32];
   hmacCreate(kDate, sizeof(kDate), (const uint8_t*)regionName, strlen(regionName), kRegion);
@@ -1177,22 +1177,22 @@ static AwsAuthorizationResult makeAwsAuthorization(const char *method, const cha
      headers += String(canonicalHeaders);
 
   int canonicalRequest_len = strlen(method) + 1 + strlen(canonicalUri) + 1 + (canonicalQuerystring != NULL ? strlen(canonicalQuerystring) : 0) + 1 + headers.length() + 1 + signedHeaderNames.length() + 1 + strlen(amzResult.payloadHash);
-  char *canonicalRequest = (char*)malloc(canonicalRequest_len + 1);
+  char *canonicalRequest = (char*)utils_mem_alloc(canonicalRequest_len + 1);
   sprintf(canonicalRequest, "%s\n%s\n%s\n%s\n%s\n%s", method, canonicalUri, (canonicalQuerystring != NULL ? canonicalQuerystring : ""), headers.c_str(), signedHeaderNames.c_str(), amzResult.payloadHash);
 
   uint8_t hashCanonicalRequest[32];
   hashCreate((uint8_t*)canonicalRequest, strlen(canonicalRequest), hashCanonicalRequest);
-  free(canonicalRequest);
+  utils_mem_free(canonicalRequest);
   char hashCanonicalRequest_Hex[sizeof(hashCanonicalRequest) * 2 + 1];
   toHexStr(sizeof(hashCanonicalRequest), hashCanonicalRequest, hashCanonicalRequest_Hex);
 
   int scope_len = strlen(dateStamp) + 1 + strlen(region) + 1 + strlen(service) + 1 + strlen(aws4_request);
-  char *credentialScope = (char*)malloc(scope_len + 1);
+  char *credentialScope = (char*)utils_mem_alloc(scope_len + 1);
   sprintf(credentialScope, "%s/%s/%s/%s", dateStamp, region, service, aws4_request);
 
   const char *algorithm = "AWS4-HMAC-SHA256";
   int stringToSign_len = strlen(algorithm) + 1 + strlen(amzResult.amzDate) + 1 + strlen(credentialScope) + 1 + strlen(hashCanonicalRequest_Hex);
-  char *stringToSign = (char*)malloc(stringToSign_len + 1);
+  char *stringToSign = (char*)utils_mem_alloc(stringToSign_len + 1);
   sprintf(stringToSign, "%s\n%s\n%s\n%s", algorithm, amzResult.amzDate, credentialScope, hashCanonicalRequest_Hex);
 
   uint8_t signingKey[32];
@@ -1202,14 +1202,14 @@ static AwsAuthorizationResult makeAwsAuthorization(const char *method, const cha
 
   uint8_t signature[32];
   hmacCreate(signingKey, sizeof(signingKey), (const uint8_t*)stringToSign, strlen(stringToSign), signature);
-  free(stringToSign);
+  utils_mem_free(stringToSign);
   char signature_Hex[sizeof(signature) * 2 + 1];
   toHexStr(sizeof(signature), signature, signature_Hex);
 
   int authorization_len = strlen(algorithm) + strlen(" Credential=") + strlen(accessKeyId) + 1 + strlen(credentialScope) + strlen(", SignedHeaders=") + signedHeaderNames.length() + strlen(", Signature=") + strlen(signature_Hex);
-  char *authorization = (char*)malloc(authorization_len + 1);
+  char *authorization = (char*)utils_mem_alloc(authorization_len + 1);
   sprintf(authorization, "%s Credential=%s/%s, SignedHeaders=%s, Signature=%s", algorithm, accessKeyId, credentialScope, signedHeaderNames.c_str(), signature_Hex);
-  free(credentialScope);
+  utils_mem_free(credentialScope);
 
   amzResult.authorization = authorization;
   amzResult.result = 0;

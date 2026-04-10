@@ -11,6 +11,7 @@
 #include "endpoint_packet.h"
 #include "wifi_utils.h"
 #include "lib_snmp.h"
+#include "mem_utils.h"
 
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
@@ -54,7 +55,7 @@ static char *g_content_type = NULL;
  
 long packet_clear_content(void){
   if (g_content_buffer != NULL) {
-    free(g_content_buffer);
+    utils_mem_free(g_content_buffer);
     g_content_buffer = NULL;
     g_content_size = 0;
   }
@@ -69,7 +70,7 @@ long packet_clear_content(void){
 long packet_set_content(const uint8_t *p_data, size_t len, const char *content_type)
 {
   if (g_content_buffer != NULL) {
-    free(g_content_buffer);
+    utils_mem_free(g_content_buffer);
     g_content_buffer = NULL;
     g_content_size = 0;
   }
@@ -77,7 +78,7 @@ long packet_set_content(const uint8_t *p_data, size_t len, const char *content_t
     free(g_content_type);
     g_content_type = NULL;
   }
-  g_content_buffer = (uint8_t*)malloc(len);
+  g_content_buffer = (uint8_t*)utils_mem_alloc(len);
   if (g_content_buffer == NULL)
     return -1;
   memcpy(g_content_buffer, p_data, len);
@@ -85,7 +86,7 @@ long packet_set_content(const uint8_t *p_data, size_t len, const char *content_t
 
   g_content_type = strdup(content_type);
   if (g_content_type == NULL) {
-    free(g_content_buffer);
+    utils_mem_free(g_content_buffer);
     g_content_buffer = NULL;
     g_content_size = 0;
     return -1;

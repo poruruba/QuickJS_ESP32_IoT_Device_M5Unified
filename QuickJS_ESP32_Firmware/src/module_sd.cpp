@@ -115,7 +115,7 @@ static JSValue sd_readText(JSContext *ctx, JSValueConst jsThis, int argc, JSValu
   }
 
   uint32_t fsize = file.size();
-  char *p_buffer = (char*)malloc(fsize + 1);
+  char *p_buffer = (char*)utils_mem_alloc(fsize + 1);
   if( p_buffer == NULL ){
     file.close();
     if( sem ) xSemaphoreGive(binSem);
@@ -127,7 +127,7 @@ static JSValue sd_readText(JSContext *ctx, JSValueConst jsThis, int argc, JSValu
   p_buffer[fsize] = '\0';
 
   JSValue value = JS_NewString(ctx, p_buffer);
-  free(p_buffer);
+  utils_mem_free(p_buffer);
 
   return value;
 }

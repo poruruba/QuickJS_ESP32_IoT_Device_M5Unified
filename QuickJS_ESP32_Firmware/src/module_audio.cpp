@@ -30,15 +30,15 @@ class AudioOutputM5Speaker : public AudioOutput
     bool setBufferSize(uint32_t buf_size){
       for (int i = 0; i < 3; i++) {
         if( _tri_buffer[i] != NULL ){
-          free(_tri_buffer[i]);
+          utils_mem_free(_tri_buffer[i]);
           _tri_buffer[i] = NULL;
         }
       }
       for (int i = 0; i < 3; i++) {
-        _tri_buffer[i] = (int16_t*)malloc(buf_size * sizeof(int16_t));
+        _tri_buffer[i] = (int16_t*)utils_mem_alloc(buf_size * sizeof(int16_t));
         if (_tri_buffer[i] == NULL) {
           for (int j = 0; j < i; j++) {
-            free(_tri_buffer[j]);
+            utils_mem_free(_tri_buffer[j]);
             _tri_buffer[j] = NULL;
           }
           return false;
@@ -51,7 +51,7 @@ class AudioOutputM5Speaker : public AudioOutput
     virtual ~AudioOutputM5Speaker(void) {
       for (int i = 0; i < 3; i++) {
         if( _tri_buffer[i] != NULL )
-          free(_tri_buffer[i]);
+          utils_mem_free(_tri_buffer[i]);
       }
     };
     
