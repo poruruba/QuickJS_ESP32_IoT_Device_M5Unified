@@ -533,7 +533,6 @@ static JSValue http_request(JSContext *ctx, JSValueConst jsThis, int argc, JSVal
           JS_FreeValue(ctx, vbuffer);
           goto end;
         }
-        Serial.printf("binary %02x %02x %02x\n", p_buffer[0], p_buffer[1], p_buffer[2]);
         status_code = http.sendRequest(method.c_str(), p_buffer, unit_num);
         JS_FreeValue(ctx, vbuffer);
       }else{
