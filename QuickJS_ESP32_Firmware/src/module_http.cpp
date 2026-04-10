@@ -524,50 +524,64 @@ static JSValue http_request(JSContext *ctx, JSValueConst jsThis, int argc, JSVal
   // Serial.println("content_type=" + content_type);
   if( body != JS_UNDEFINED ){
     if( JS_IsObject(body) ){
-      String body_str = String("");
-      if( content_type.equals("application/www-form-urlencoded")){
-        JSPropertyEnum *atoms;
-        uint32_t len;
-        int ret = JS_GetOwnPropertyNames(ctx, &atoms, &len, body, JS_GPN_ENUM_ONLY | JS_GPN_STRING_MASK);
-        if (ret != 0)
+      uint8_t *p_buffer;
+      uint8_t unit_size;
+      uint32_t unit_num;
+      JSValue vbuffer = getBinaryFromTypedArray(ctx, body, (void**)&p_buffer, &unit_size, &unit_num);
+      if( vbuffer != JS_NULL ){
+        if( unit_size != 1 ){
+          JS_FreeValue(ctx, vbuffer);
           goto end;
-
-        bool first = true;
-        for (int i = 0; i < len; i++){
-          JSAtom atom = atoms[i].atom;
-          const char *name = JS_AtomToCString(ctx, atom);
-          if( name != NULL ){
-            JSValue value = JS_GetPropertyStr(ctx, body, name);
-            JS_FreeCString(ctx, name);
-            const char *str = JS_ToCString(ctx, value);
-            JS_FreeValue(ctx, value);
-            if( str != NULL ){
-//              Serial.printf("%s=%s\n", name, str);
-              if( first ){
-                first = false;
-              }else{
-                body_str += "&";
-              }
-              body_str += name;
-              body_str += "=";
-              body_str += urlencode(str);
-              JS_FreeCString(ctx, str);
-            }
-          }
-          JS_FreeAtom(ctx, atom);
         }
-        status_code = http.sendRequest(method.c_str(), body_str);
+        Serial.printf("binary %02x %02x %02x\n", p_buffer[0], p_buffer[1], p_buffer[2]);
+        status_code = http.sendRequest(method.c_str(), p_buffer, unit_num);
+        JS_FreeValue(ctx, vbuffer);
       }else{
-        JSValue json = JS_JSONStringify(ctx, body, JS_UNDEFINED, JS_UNDEFINED);
-        if( json == JS_UNDEFINED )
-          goto end;
-        const char *p_body = JS_ToCString(ctx, json);
-//        Serial.printf("body=%s\n", p_body);
-        JS_FreeValue(ctx, json);
-        if( p_body == NULL )
-          goto end;
-        status_code = http.sendRequest(method.c_str(), (uint8_t*)p_body, strlen(p_body));
-        JS_FreeCString(ctx, p_body);
+        String body_str = String("");
+        if( content_type.equals("application/www-form-urlencoded")){
+          JSPropertyEnum *atoms;
+          uint32_t len;
+          int ret = JS_GetOwnPropertyNames(ctx, &atoms, &len, body, JS_GPN_ENUM_ONLY | JS_GPN_STRING_MASK);
+          if (ret != 0)
+            goto end;
+
+          bool first = true;
+          for (int i = 0; i < len; i++){
+            JSAtom atom = atoms[i].atom;
+            const char *name = JS_AtomToCString(ctx, atom);
+            if( name != NULL ){
+              JSValue value = JS_GetPropertyStr(ctx, body, name);
+              JS_FreeCString(ctx, name);
+              const char *str = JS_ToCString(ctx, value);
+              JS_FreeValue(ctx, value);
+              if( str != NULL ){
+  //              Serial.printf("%s=%s\n", name, str);
+                if( first ){
+                  first = false;
+                }else{
+                  body_str += "&";
+                }
+                body_str += name;
+                body_str += "=";
+                body_str += urlencode(str);
+                JS_FreeCString(ctx, str);
+              }
+            }
+            JS_FreeAtom(ctx, atom);
+          }
+          status_code = http.sendRequest(method.c_str(), body_str);
+        }else{
+          JSValue json = JS_JSONStringify(ctx, body, JS_UNDEFINED, JS_UNDEFINED);
+          if( json == JS_UNDEFINED )
+            goto end;
+          const char *p_body = JS_ToCString(ctx, json);
+  //        Serial.printf("body=%s\n", p_body);
+          JS_FreeValue(ctx, json);
+          if( p_body == NULL )
+            goto end;
+          status_code = http.sendRequest(method.c_str(), (uint8_t*)p_body, strlen(p_body));
+          JS_FreeCString(ctx, p_body);
+        }
       }
     }else if( JS_IsString(body) ){
       const char *p_body = JS_ToCString(ctx, body);
@@ -575,18 +589,7 @@ static JSValue http_request(JSContext *ctx, JSValueConst jsThis, int argc, JSVal
       status_code = http.sendRequest(method.c_str(), p_body);
       JS_FreeCString(ctx, p_body);
     }else{
-      uint8_t *p_buffer;
-      uint8_t unit_size;
-      uint32_t unit_num;
-      JSValue vbuffer = getBinaryFromTypedArray(ctx, body, (void**)&p_buffer, &unit_size, &unit_num);
-      if( vbuffer == JS_UNDEFINED )
-        goto end;
-      if( unit_size != 1 ){
-        JS_FreeValue(ctx, vbuffer);
-        goto end;
-      }
-      status_code = http.sendRequest(method.c_str(), p_buffer, unit_num);
-      JS_FreeValue(ctx, vbuffer);
+      goto end;
     }
   }else{
     if( content_type.equals("application/json"))

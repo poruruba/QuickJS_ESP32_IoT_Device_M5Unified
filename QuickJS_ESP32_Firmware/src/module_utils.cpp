@@ -1244,17 +1244,20 @@ JSValue getBinaryFromTypedArray(JSContext *ctx, JSValue value, void** pp_buffer,
     *pp_buffer = ptr + offset;
     *p_unit_num = size;
     *p_unit_size = byte_per_element;
+
+    return vbuffer;
   }else{
+    JSValue exc = JS_GetException(ctx);
+    JS_FreeValue(ctx, exc);
+    
     *pp_buffer = JS_GetArrayBuffer(ctx, &bsize, value);
-    if( *pp_buffer == NULL ){
-      JS_FreeValue(ctx, vbuffer);
+    if( *pp_buffer == NULL )
       return JS_NULL;
-    }
     *p_unit_num = bsize;
     *p_unit_size = 1;
-  }
 
-  return vbuffer;
+    return JS_DupValue(ctx, value);
+  }
 }
 
 JSValue getTypedArrayBuffer(JSContext *ctx, JSValue value, void** pp_buffer, uint8_t *p_unit_size, uint32_t *p_unit_num)

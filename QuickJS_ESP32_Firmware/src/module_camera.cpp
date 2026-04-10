@@ -141,7 +141,6 @@ static JSValue esp32_camera_getPicture(JSContext *ctx, JSValueConst jsThis, int 
   JSValue value = JS_EXCEPTION;
 //  value = create_Uint8Array(ctx, p_image, image_size);
   value = JS_NewArrayBuffer(ctx, p_image, image_size, my_mem_free, NULL, false);
-  free(p_image);
 
   return value;
 }
@@ -605,9 +604,17 @@ void endModule_camera(void){
   }
 }
 
+long initializeModule_camera(void)
+{
+  M5.In_I2C.release();
+  Wire.end();
+
+  return 0;
+}
+
 JsModuleEntry camera_module = {
   "Camera",
-  NULL,
+  initializeModule_camera,
   addModule_camera,
   NULL,
   endModule_camera
@@ -620,11 +627,34 @@ static long camera_dispose(void)
   return 0;
 }
 
+static void releaseCameraPins(uint8_t type)
+{
+  for (int8_t pin : camera_pins[type]) {
+    if( pin < 0 )
+      continue;
+    gpio_reset_pin((gpio_num_t)pin);
+  }
+}
+
+static void resetCameraHardware(uint8_t pin) {
+  if( pin < 0 )
+    return;
+
+  pinMode(pin, OUTPUT);
+  digitalWrite(pin, LOW); 
+  delay(100);
+  digitalWrite(pin, HIGH); 
+  delay(100);
+}
+
 static long camera_initialize(uint8_t type, uint8_t framesize)
 {
   if( type >= CAMERA_MODEL_NUM )
     return -1;
-    
+
+  releaseCameraPins(type);
+  resetCameraHardware(camera_pins[type][RESET_GPIO_INDEX]);
+
   camera_config_t config;
 
   config.ledc_channel = LEDC_CHANNEL_0;
@@ -655,9 +685,9 @@ static long camera_initialize(uint8_t type, uint8_t framesize)
 
 //  config.frame_size = FRAMESIZE_QVGA;
   config.frame_size = (framesize_t)framesize;
-  config.jpeg_quality = 10;
+  config.jpeg_quality = 12;
   config.fb_count = 1;
-  config.grab_mode = CAMERA_GRAB_LATEST;
+//  config.grab_mode = CAMERA_GRAB_LATEST;
 
   // camera init
   esp_err_t err = esp_camera_init(&config);
@@ -673,12 +703,12 @@ static long camera_get_capture(uint8_t **pp_image, size_t *p_image_size)
 {
   camera_fb_t *fb = NULL;
   fb = esp_camera_fb_get();
-  // if( fb )
-  //   esp_camera_fb_return(fb);
-  // fb = esp_camera_fb_get();
-  if (!fb){
-      Serial.println("Camera capture failed");
-      return -1;
+  if( !fb ){
+    fb = esp_camera_fb_get();
+    if (!fb){
+        Serial.println("Camera capture failed");
+        return -1;
+    }  
   }
 
   if (fb->format != PIXFORMAT_JPEG){
@@ -686,14 +716,14 @@ static long camera_get_capture(uint8_t **pp_image, size_t *p_image_size)
     esp_camera_fb_return(fb);
     return -1;
   }
-  
+
   *pp_image = (uint8_t*)utils_mem_alloc(fb->len);
   if( *pp_image == NULL ){
     Serial.println("Out of memory");
     esp_camera_fb_return(fb);
     return -1;
   }
-  memmove(*pp_image, fb->buf, fb->len);
+  memcpy(*pp_image, fb->buf, fb->len);
   *p_image_size = fb->len;
   esp_camera_fb_return(fb);
 
