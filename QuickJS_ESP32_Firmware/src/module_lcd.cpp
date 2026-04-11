@@ -9,6 +9,9 @@
 #include "module_type.h"
 #include "module_esp32.h"
 
+#define NANOSVG_IMPLEMENTATION
+#include "nanosvg.h"
+
 #ifdef _SD_ENABLE_
 #include "module_sd.h"
 #endif
@@ -17,6 +20,64 @@
 static LGFX_Sprite* sprites[NUM_OF_SPRITE];
 
 #define FONT_COLOR TFT_WHITE
+
+static uint16_t getRGB565(uint32_t c) {
+    return M5.Display.color565(c & 0xFF, (c >> 8) & 0xFF, (c >> 16) & 0xFF);
+}
+
+static long drawSVG(M5GFX* display, const char* buf, int x_off, int y_off) {
+    char* temp_buf = strdup(buf);
+    if( temp_buf == NULL )
+      return -1;
+
+    struct NSVGimage* image = nsvgParse(temp_buf, "px", 96.0f);
+    free(temp_buf);
+    if (!image){
+      Serial.println("nsvgParse: image NULL");
+      return -1;
+    }
+
+    display->startWrite();
+
+    for (NSVGshape* shape = image->shapes; shape != NULL; shape = shape->next) {
+        if (!(shape->flags & NSVG_FLAGS_VISIBLE))
+          continue;
+
+        uint16_t fillColor = getRGB565(shape->fill.color);
+        uint16_t strokeColor = getRGB565(shape->stroke.color);
+
+        for (NSVGpath* p = shape->paths; p != NULL; p = p->next) {
+            if (shape->fill.type == NSVG_PAINT_COLOR && p->npts >= 3) {
+                for (int i = 1; i < p->npts - 1; i++) {
+                    display->fillTriangle(
+                        p->pts[0] + x_off,         p->pts[1] + y_off,         // 起点
+                        p->pts[i * 2] + x_off,     p->pts[i * 2 + 1] + y_off, // 頂点1
+                        p->pts[(i + 1) * 2] + x_off, p->pts[(i + 1) * 2 + 1] + y_off, // 頂点2
+                        fillColor
+                    );
+                }
+            }
+
+            if (shape->stroke.type == NSVG_PAINT_COLOR) {
+                for (int i = 0; i < p->npts - 1; i += 3) {
+                    float* pts = &p->pts[i * 2];
+                    display->drawBezier(
+                        pts[0] + x_off, pts[1] + y_off,
+                        pts[2] + x_off, pts[3] + y_off,
+                        pts[4] + x_off, pts[5] + y_off,
+                        pts[6] + x_off, pts[7] + y_off,
+                        strokeColor
+                    );
+                }
+            }
+        }
+    }
+
+    display->endWrite();
+    nsvgDelete(image);
+
+    return 0;
+}
 
 static JSValue esp32_lcd_clear(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv, int magic)
 {
@@ -246,6 +307,34 @@ static JSValue esp32_lcd_draw_image(JSContext *ctx, JSValueConst jsThis, int arg
   JS_FreeValue(ctx, vbuffer);
 
   return JS_NewBool(ctx, ret);
+}
+
+static JSValue esp32_lcd_draw_svg(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv, int magic)
+{
+  if( magic == 1 && g_external_display == -1 )
+    return JS_EXCEPTION;
+
+  const char *p_svg = JS_ToCString(ctx, argv[0]);
+  if( p_svg == NULL )
+    return JS_EXCEPTION;
+
+  int32_t x = 0, y = 0;
+  if( argc >= 2 )
+    JS_ToInt32(ctx, &x, argv[1]);
+  if( argc >= 3 )
+    JS_ToInt32(ctx, &y, argv[2]);
+
+  long ret;
+  if( magic == 1 )
+    ret = drawSVG(&M5.Displays(g_external_display), p_svg, x, y);
+  else
+    ret = drawSVG(&M5.Display, p_svg, x, y);
+  JS_FreeCString(ctx, p_svg);
+
+  if( ret != 0 )
+    return JS_EXCEPTION;
+
+  return JS_UNDEFINED;
 }
 
 static JSValue esp32_lcd_print(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv, int magic)
@@ -1002,6 +1091,9 @@ static const JSCFunctionListEntry lcd_funcs[] = {
     JSCFunctionListEntry{"fillScreen", 0, JS_DEF_CFUNC, 0, {
                            func : {1, JS_CFUNC_generic_magic, {generic_magic : esp32_lcd_fillScreen}}
                          }},
+    JSCFunctionListEntry{"drawSvg", 0, JS_DEF_CFUNC, 0, {
+                           func : {3, JS_CFUNC_generic_magic, {generic_magic : esp32_lcd_draw_svg}}
+                         }},
 #ifdef _SD_ENABLE_
     JSCFunctionListEntry{"drawImageFile", 0, JS_DEF_CFUNC, 0, {
                            func : {3, JS_CFUNC_generic_magic, {generic_magic : esp32_lcd_draw_image_file}}
@@ -1167,6 +1259,9 @@ static const JSCFunctionListEntry lcd_funcs2[] = {
                          }},
     JSCFunctionListEntry{"fillScreen", 0, JS_DEF_CFUNC, 1, {
                            func : {1, JS_CFUNC_generic_magic, {generic_magic : esp32_lcd_fillScreen}}
+                         }},
+    JSCFunctionListEntry{"drawSvg", 0, JS_DEF_CFUNC, 1, {
+                           func : {3, JS_CFUNC_generic_magic, {generic_magic : esp32_lcd_draw_svg}}
                          }},
 #ifdef _SD_ENABLE_
     JSCFunctionListEntry{"drawImageFile", 0, JS_DEF_CFUNC, 1, {
