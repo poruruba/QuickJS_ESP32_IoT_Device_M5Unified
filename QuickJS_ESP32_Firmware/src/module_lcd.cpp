@@ -392,6 +392,12 @@ static JSValue esp32_lcd_drawAlignedText(JSContext *ctx, JSValueConst jsThis, in
   if( magic == 1 && g_external_display == -1 )
     return JS_EXCEPTION;
 
+  int32_t fontHeight;
+  if( magic == 1 )
+    fontHeight = M5.Displays(g_external_display).fontHeight();
+  else
+    fontHeight = M5.Display.fontHeight();
+
   uint32_t num_item;
   JSValue value = JS_GetPropertyStr(ctx, argv[0], "length");
   JS_ToUint32(ctx, &num_item, value);
@@ -413,6 +419,12 @@ static JSValue esp32_lcd_drawAlignedText(JSContext *ctx, JSValueConst jsThis, in
     JS_FreeValue(ctx, val);
     val = JS_GetPropertyStr(ctx, item, "base_y");
     JS_ToInt32(ctx, &base_y, val);
+    int32_t size = fontHeight;
+    val = JS_GetPropertyStr(ctx, item, "size");
+    if( val != JS_UNDEFINED ){
+      JS_ToInt32(ctx, &size, val);
+      JS_FreeValue(ctx, val);
+    }
     double scale = 1.0;
     val = JS_GetPropertyStr(ctx, item, "scale");
     if( val != JS_UNDEFINED ){
@@ -420,6 +432,7 @@ static JSValue esp32_lcd_drawAlignedText(JSContext *ctx, JSValueConst jsThis, in
       JS_FreeValue(ctx, val);
     }
     JS_FreeValue(ctx, item);
+    scale *= (float)size / (float)fontHeight;
 
     long ret;
     if( magic == 1 ){
