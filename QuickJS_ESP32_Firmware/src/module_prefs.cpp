@@ -1,5 +1,8 @@
 #include <Arduino.h>
 #include "main_config.h"
+
+#ifdef _PREFS_ENABLE_
+
 #include <Preferences.h>
 #include "main_config.h"
 #include "quickjs.h"
@@ -379,3 +382,5 @@ JsModuleEntry prefs_module = {
   NULL,
   endModule_prefs
 };
+
+#endif

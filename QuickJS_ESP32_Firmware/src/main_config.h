@@ -36,6 +36,7 @@
 #define _LEDC_ENABLE_
 #define _MML_ENABLE_
 #define _MQTT_ENABLE_
+#define _PREFS_ENABLE_
 #define _RTC_ENABLE_
 #define _SD_ENABLE_
 #define _SNMP_AGENT_ENABLE_
@@ -85,6 +86,7 @@
 #include <M5Unified.h>
 #define _LCD_ENABLE_
 #define _IMU_ENABLE_
+#define _IR_ENABLE_
 #define MDNS_NAME "QuickJS_ESP32_M5AtomS3R" // mDNSサービスホスト名
 #elif defined(ARDUINO_M5Stack_ATOMS3)
 #include <M5Unified.h>
@@ -104,6 +106,7 @@
 #define MDNS_NAME "QuickJS_ESP32_M5StickS3" // mDNSサービスホスト名
 #elif defined(ARDUINO_M5Stack_NanoC6)
 #include <M5Unified.h>
+#define _IR_ENABLE_
 #define MDNS_NAME "QuickJS_ESP32_M5NanoC6" // mDNSサービスホスト名
 #elif defined(ARDUINO_ESP32_M5Camera)
 #include <M5Unified.h>
@@ -171,7 +174,7 @@
 #define PACKET_JSON_DOCUMENT_SIZE  DEFAULT_BUFFER_SIZE
 #define FILE_BUFFER_SIZE DEFAULT_BUFFER_SIZE
 
-#define NUM_BTN_FUNC 3
+#define NUM_BTN_FUNC 8
 
 #define FILE_LOADING_NONE     0
 #define FILE_LOADING_RESTART  1

@@ -26,8 +26,10 @@
 #include "module_utils.h"
 #include "module_pixels.h"
 #include "module_udp.h"
-#include "module_prefs.h"
 #include "module_http.h"
+#ifdef _PREFS_ENABLE_
+#include "module_prefs.h"
+#endif
 #ifdef _UART_ENABLE_
 #include "module_uart.h"
 #endif
@@ -137,8 +139,10 @@ static JsModuleEntry module_entries[] = {
   wire1_module,
   pixels_module,
   udp_module,
-  prefs_module,
   http_module,
+#ifdef _PREFS_ENABLE_
+  prefs_module,
+#endif
 #ifdef _UART_ENABLE_
   uart_module,
 #endif

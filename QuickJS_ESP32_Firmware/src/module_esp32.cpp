@@ -374,6 +374,23 @@ static JSValue esp32_getMemoryUsage(JSContext *ctx, JSValueConst jsThis, int arg
   ESP32QuickJS *qjs = (ESP32QuickJS *)JS_GetContextOpaque(ctx);
   qjs->getMemoryUsage(&usage);
 
+  if( argc > 0 ){
+    if( JS_ToBool(ctx, argv[0]) ){
+      Serial.printf("[MemUsage] malloc_limit=%lld, malloc_size=%lld, memory_used_size=%lld\n", usage.malloc_limit, usage.malloc_size, usage.memory_used_size);
+      Serial.printf("[MemUsage] atom_count=%lld, atom_size=%lld\n", usage.atom_count, usage.atom_size);
+      Serial.printf("[MemUsage] str_count=%lld, str_size=%lld\n", usage.str_count, usage.str_size);
+      Serial.printf("[MemUsage] obj_count=%lld, obj_size=%lld\n", usage.obj_count, usage.obj_size);
+      Serial.printf("[MemUsage] prop_count=%lld, prop_size=%lld\n", usage.prop_count, usage.prop_size);
+      Serial.printf("[MemUsage] shape_count=%lld, shape_size=%lld\n", usage.shape_count, usage.shape_size);
+      Serial.printf("[MemUsage] js_func_count=%lld, js_func_size=%lld, js_func_code_size=%lld\n", usage.js_func_count, usage.js_func_size, usage.js_func_code_size);
+      Serial.printf("[MemUsage] c_func_count=%lld, array_count=%lld\n", usage.c_func_count, usage.array_count);
+      Serial.printf("[MemUsage] fast_array_count=%lld, fast_array_elements=%lld\n", usage.fast_array_count, usage.fast_array_elements);
+      Serial.printf("[MemUsage] binary_object_count=%lld, binary_object_size=%lld\n", usage.binary_object_count, usage.binary_object_size);
+      Serial.printf("[MemUsage] jscode_size=%d, jsmodule_count=%d\n", jscode_size, jsmodule_size);
+      Serial.printf("[MemUsage] heap_free=%d, psram_free=%d\n", ESP.getFreeHeap(), ESP.getFreePsram());
+    }
+  }
+
   JSValue obj = JS_NewObject(ctx);
   JS_SetPropertyStr(ctx, obj, "malloc_limit", JS_NewUint32(ctx, usage.malloc_limit));
   JS_SetPropertyStr(ctx, obj, "malloc_size", JS_NewUint32(ctx, usage.malloc_size));
@@ -381,11 +398,6 @@ static JSValue esp32_getMemoryUsage(JSContext *ctx, JSValueConst jsThis, int arg
   JS_SetPropertyStr(ctx, obj, "memory_used_count", JS_NewUint32(ctx, usage.memory_used_count));
   JS_SetPropertyStr(ctx, obj, "jscode_size", JS_NewUint32(ctx, jscode_size));
   JS_SetPropertyStr(ctx, obj, "jsmodule_count", JS_NewUint32(ctx, jsmodule_size));
-  
-  // JS_SetPropertyStr(ctx, obj, "total_heap", JS_NewUint32(ctx, ESP.getHeapSize()));
-  // JS_SetPropertyStr(ctx, obj, "free_heap", JS_NewUint32(ctx, ESP.getFreeHeap()));
-  // JS_SetPropertyStr(ctx, obj, "total_psram", JS_NewUint32(ctx, ESP.getPsramSize()));
-  // JS_SetPropertyStr(ctx, obj, "free_psram", JS_NewUint32(ctx, ESP.getFreePsram()));
 
   return obj;
 }
@@ -811,7 +823,7 @@ static const JSCFunctionListEntry esp32_funcs[] = {
                            func : {0, JS_CFUNC_generic, esp32_getEnableConsoleSyslog}
                          }},
     JSCFunctionListEntry{"getMemoryUsage", 0, JS_DEF_CFUNC, 0, {
-                           func : {0, JS_CFUNC_generic, esp32_getMemoryUsage}
+                           func : {1, JS_CFUNC_generic, esp32_getMemoryUsage}
                          }},
     JSCFunctionListEntry{"getStorageInfo", 0, JS_DEF_CFUNC, 0, {
                            func : {0, JS_CFUNC_generic, esp32_getStorageInfo}
@@ -1212,3 +1224,15 @@ void esp32_update(void)
 {
   M5.update();
 }
+
+#if defined(ARDUINO_M5Stack_NanoC6)
+#include "lwip/arch.h"
+#include "lwip/pbuf.h"
+#include "lwip/netif.h"
+
+extern "C" {
+    int lwip_hook_ip6_input(struct pbuf *p, struct netif *inp) {
+        return 0;
+    }
+}
+#endif

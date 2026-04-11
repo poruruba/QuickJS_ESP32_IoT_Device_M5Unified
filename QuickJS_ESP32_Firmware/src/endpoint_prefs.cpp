@@ -1,6 +1,8 @@
 #include <Arduino.h>
-
 #include "main_config.h"
+
+#ifdef _PREFS_ENABLE_
+
 #include "endpoint_types.h"
 #include "module_prefs.h"
 #include "module_utils.h"
@@ -352,3 +354,5 @@ EndpointEntry prefs_table[] = {
 };
 
 const int num_of_prefs_entry = sizeof(prefs_table) / sizeof(EndpointEntry);
+
+#endif

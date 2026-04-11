@@ -21,7 +21,9 @@
 #include "endpoint_esp32.h"
 #include "endpoint_gpio.h"
 #include "endpoint_wire.h"
+#ifdef _PREFS_ENABLE_
 #include "endpoint_prefs.h"
+#endif
 #ifdef _LEDC_ENABLE_
 #include "endpoint_ledc.h"
 #endif
@@ -147,7 +149,9 @@ long packet_initialize(void)
   packet_appendEntry(esp32_table, num_of_esp32_entry);
   packet_appendEntry(gpio_table, num_of_gpio_entry);
   packet_appendEntry(wire_table, num_of_wire_entry);
+#ifdef _PREFS_ENABLE_
   packet_appendEntry(prefs_table, num_of_prefs_entry);
+#endif
 #ifdef _LEDC_ENABLE_
   packet_appendEntry(ledc_table, num_of_ledc_entry);
 #endif
