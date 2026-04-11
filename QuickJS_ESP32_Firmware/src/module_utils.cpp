@@ -99,7 +99,7 @@ String urldecode(String str) {
   return decodedString;
 }
 
-#if 1
+#if 0
 static JSValue utils_http_text(JSContext *ctx, JSValueConst jsThis, int argc, JSValueConst *argv, int magic)
 {
   JSValue value = JS_EXCEPTION;
@@ -953,7 +953,7 @@ static JSValue utils_array2hex(JSContext *ctx, JSValueConst jsThis,
 }
 
 static const JSCFunctionListEntry utils_funcs[] = {
-#if 1
+#if 0
     JSCFunctionListEntry{"httpPostJson", 0, JS_DEF_CFUNC, 0, {
                            func : {3, JS_CFUNC_generic_magic, {generic_magic : utils_http_json}}
                          }},
