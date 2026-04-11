@@ -6,6 +6,7 @@
 #include "quickjs.h"
 #include "module_type.h"
 #include "module_utils.h"
+#include "mem_utils.h"
 
 #include "module_audio.h"
 #include <AudioOutput.h>
