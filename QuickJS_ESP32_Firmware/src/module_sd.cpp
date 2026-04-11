@@ -290,7 +290,7 @@ static JSValue sd_download(JSContext *ctx, JSValueConst jsThis, int argc, JSValu
   JS_FreeCString(ctx, fname);
   if( !file ){
     if( sem ) xSemaphoreGive(binSem);
-    free(p_buffer);
+    utils_mem_free(p_buffer);
     return JS_EXCEPTION;
   }
 
@@ -298,7 +298,7 @@ static JSValue sd_download(JSContext *ctx, JSValueConst jsThis, int argc, JSValu
   file.close();
   if( sem ) xSemaphoreGive(binSem);
 
-  free(p_buffer);
+  utils_mem_free(p_buffer);
 
   return JS_NewInt32(ctx, wrote);
 }

@@ -8,6 +8,7 @@
 #include "module_utils.h"
 #include "module_type.h"
 #include "module_esp32.h"
+#include "mem_utils.h"
 
 #define NANOSVG_IMPLEMENTATION
 #include "nanosvg.h"
@@ -266,6 +267,7 @@ static JSValue esp32_lcd_draw_image_url(JSContext *ctx, JSValueConst jsThis, int
     else
       ret = M5.Display.drawPng(image_buffer, size, x, y);
   }
+  utils_mem_free(image_buffer);
 
   return JS_NewBool(ctx, ret);
 }

@@ -1171,7 +1171,7 @@ uint8_t *http_get_binary2(const char *url, uint32_t *p_len)
     WiFiClient *stream = http.getStreamPtr();
     int responseLen = http.getSize();
     if( responseLen >= 0){
-      bin = (unsigned char*)malloc(responseLen);
+      bin = (unsigned char*)utils_mem_alloc(responseLen);
       if( bin == NULL ){
         http.end();
         return NULL;
@@ -1188,7 +1188,7 @@ uint8_t *http_get_binary2(const char *url, uint32_t *p_len)
           }
       }
     }else{
-      bin = (unsigned char*)realloc(NULL, alloclen);
+      bin = (unsigned char*)utils_mem_realloc(NULL, alloclen);
       if( bin == NULL ){
         http.end();
         return NULL;
@@ -1201,9 +1201,9 @@ uint8_t *http_get_binary2(const char *url, uint32_t *p_len)
             last = millis();
             if( (index + size ) > alloclen ){
               alloclen += ((index + size) > (alloclen + REALLOC_MIN_SIZE)) ? size : REALLOC_MIN_SIZE;
-              unsigned char *t = (unsigned char*)realloc(bin, alloclen);
+              unsigned char *t = (unsigned char*)utils_mem_realloc(bin, alloclen);
               if( t == NULL ){
-                free(bin);
+                utils_mem_free(bin);
                 http.end();
                 return NULL;
               }
